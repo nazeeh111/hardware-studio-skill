@@ -228,6 +228,7 @@ dialog::backdrop { background: #101d19b8; }
   .intro h1 { font-size: clamp(42px, 9vw, 58px); }
   .intro-copy p { max-width: 430px; }
   .hero-graphic { position: absolute; right: -76px; top: 7px; width: 285px; opacity: .27; }
+  .hero-graphic text { display: none; }
   .brief-card { grid-template-columns: 1fr; gap: 5px; padding: 14px; }
   .brief-card label { margin: 0; }
   .brief-card textarea { border: 0; border-top: 1px solid var(--line); padding: 8px 0; min-height: 65px; }

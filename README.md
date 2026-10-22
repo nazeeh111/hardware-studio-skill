@@ -2,6 +2,10 @@
 
 An original, local-first hardware design workspace informed by a public study of [Blueprint.io](https://www.blueprint.io/). It helps turn a small electronics idea into an editable project brief, parts list, connection map, conceptual assembly view, build sequence, and review record. It does not copy Blueprint's code, graphics, brand, private data, or generated project packages.
 
+![Hardware Studio desktop interface](assets/studio-desktop.png)
+
+[View the narrow layout](assets/studio-narrow.png).
+
 ## Run
 
 From this folder:
