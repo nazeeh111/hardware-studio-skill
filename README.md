@@ -12,6 +12,9 @@ For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pic
 
 To create a new rectangular tray, use the [parametric tray generator](tools/tray-generator/README.md) with a millimeter JSON specification. It exports fresh STEP, STL and a dimensioned layout, then reopens the exports in a separate process to check their integrity. Component fit and fabrication checks still need separate evidence.
 
+For exact component STEP files, the same tool folder includes a [fit checker](tools/tray-generator/README.md#check-supplied-component-step-models). Give it explicit model placements; it reports tray/component and component/component intersections, closest distances, envelope margins and source hashes. A clear nominal model report still needs hardware and fabrication checks.
+The [Pico + NeoPixel worked package](examples/pico-neopixel-tray/README.md#reusable-fit-checker) includes both a nominal manufacturer-model report and a deliberately shifted board that the checker detects as a collision. Manufacturer CAD is linked, not redistributed.
+
 The [tray workbench](tray.html) provides a scaled browser plan and controls for dimensions, bosses, locators, through-holes and edge openings. It saves a valid draft with its project, in project JSON, and as `tray-spec.json` in a project ZIP. Run `sh tools/tray-generator/run-local.sh --port 4174` and open `http://127.0.0.1:4174/tray.html` to generate and download STEP/STL directly using local OpenCascade. The launcher uses this Mac's installed OCP environment, an OCP-enabled `python3`, or `HARDWARE_STUDIO_PYTHON` when set. The browser preview and generated geometry are not physical-fit checks. GitHub Pages can prepare the spec but cannot execute Python.
 
 ## Run

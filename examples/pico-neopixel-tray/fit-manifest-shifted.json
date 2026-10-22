@@ -1,0 +1,19 @@
+{
+  "schema": "hardware-studio-fit-v1",
+  "trayPackage": "generated/generator-v1",
+  "components": [
+    {
+      "id": "pico-r3",
+      "step": "vendor/Pico-R3.step",
+      "rotation": [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
+      "translationMm": [60, 1, 8.5]
+    },
+    {
+      "id": "adafruit-1426",
+      "step": "vendor/1426-stick.step",
+      "rotation": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+      "translationMm": [7.6, 28.5, 8]
+    }
+  ],
+  "overlapLimitMm3": 0.01
+}

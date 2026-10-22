@@ -214,7 +214,7 @@ def main():
     shape = make_tray(spec)
     staging = Path(tempfile.mkdtemp(prefix='.tray-staging-', dir=destination.parent))
     try:
-        (staging / 'spec.json').write_text(json.dumps(spec, indent=2) + '\n')
+        (staging / 'spec.json').write_text(json.dumps({'schema': 'hardware-studio-tray-v1', 'units': 'mm', **spec}, indent=2) + '\n')
         (staging / 'layout.svg').write_text(layout_svg(spec))
         export(shape, staging)
         report = {'status': 'kernel-valid; physical fit untested', 'units': 'mm', 'source_spec_sha256': hashlib.sha256(raw).hexdigest(), 'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'mount_count': len(spec['mounts']), 'cutout_count': len(spec['cutouts']), 'solid_valid': BRepCheck_Analyzer(shape).IsValid(), 'vendor_models_included': False}

@@ -1,0 +1,26 @@
+{
+  "status": "fresh-process same-kernel readback passed; physical fit untested",
+  "solid_count": 1,
+  "outer_span_mm": [
+    66.0,
+    45.0,
+    14.0
+  ],
+  "volume_mm3": 13556.36447515953,
+  "stl_triangles": 4076,
+  "stl_outer_span_mm": [
+    66.0,
+    45.0,
+    14.0
+  ],
+  "sha256": {
+    "spec.json": "dad83ef99a3eccbc33044017c6bc8ca2856c877cfa3a3e08bc0e00cee97ab0d2",
+    "tray.step": "e3f0e1d77a82d292396dd66a5a5d0eb87b1188b0859047bafd82a3549747fc44",
+    "tray.stl": "438f5e1b468568306892d2ffd0b38cf5fb33fd2cb57ba1bd92fc801e78262118",
+    "layout.svg": "4b92c2e52275f828e804b1c7e708dae126a5a7c9c9917d4041e703b9cef6a6e1"
+  },
+  "limits": [
+    "Same OpenCascade kernel wrote and read STEP.",
+    "No manufacturer models, printed sample, connector access or physical tolerances were checked."
+  ]
+}

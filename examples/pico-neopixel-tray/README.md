@@ -26,6 +26,18 @@ The tray has 2.5 mm nominal walls and floor, an open USB-side notch, bosses at t
 
 These are same-kernel CAD checks, not independent CAD-system interoperability or physical validation. The USB connector and a mating cable plug were not modeled together. Nominal radial clearance is geometry, not a measured printer tolerance. Try a fit coupon in the intended material and process, then measure real parts and revise the design before fabrication or assembly.
 
+## Reusable fit checker
+
+The [new generator package](generated/generator-v1/spec.json) keeps a re-runnable tray spec with its [STEP](generated/generator-v1/tray.step), [STL](generated/generator-v1/tray.stl) and [readback report](generated/generator-v1/verification.json). The generic `tools/tray-generator/fit.py` uses the [nominal manifest](fit-manifest.json) and [shifted-Pico manifest](fit-manifest-shifted.json). Its published [nominal report](checks/generic-fit-v1/nominal.json) found zero modeled tray/component and component/component intersection, with 3.5 mm closest distance between the two component models. The [negative report](checks/generic-fit-v1/shifted-pico.json) detected 69.30 mm³ of Pico/tray interference after moving the Pico 3 mm toward the front wall. These results match the earlier part-specific check's key collision finding without replacing its hole and connector checks.
+
+To reproduce, download the two linked manufacturer STEP files above into a local `vendor/` folder beside these manifests, naming them `Pico-R3.step` and `1426-stick.step`. Check their hashes against the values above. With an OCP-enabled Python, run from the repository root:
+
+```sh
+python tools/tray-generator/fit.py --manifest examples/pico-neopixel-tray/fit-manifest.json --out /absolute/path/to/new-fit-report
+```
+
+The generic checker reports nominal model collisions and envelope margins. It does not validate mounting-hole alignment, fastener engagement, plug access, tolerances, print process or physical fit.
+
 ## Rebuild and recheck
 
 Run `model.py` in a Python environment with OCP (OpenCascade Python bindings). This example was built and checked with OCP 8.0.1.1 and Python 3.12. The output directory must be new:

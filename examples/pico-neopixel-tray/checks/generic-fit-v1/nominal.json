@@ -1,0 +1,156 @@
+{
+  "schema": "hardware-studio-fit-report-v1",
+  "status": "no modeled intersection above threshold",
+  "scope": "same-kernel nominal STEP geometry; physical fit untested",
+  "units": "mm",
+  "manifest_sha256": "5941522ff5ae4fa2decb9141da67331c8fce7c2ef80a0a8f1b1e4c421d744cc2",
+  "tray_step_sha256": "e3f0e1d77a82d292396dd66a5a5d0eb87b1188b0859047bafd82a3549747fc44",
+  "legacy_spec_rehydrated": false,
+  "tray_bounds": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      66.0,
+      45.0,
+      14.0
+    ],
+    "span_mm": [
+      66.0,
+      45.0,
+      14.0
+    ]
+  },
+  "overlap_limit_mm3": 0.01,
+  "components": [
+    {
+      "id": "pico-r3",
+      "source_sha256": "ea5c693afee3de73e9fcaab1892a5ed44bf789438b9b1e5906e9c4f9859cab8b",
+      "source_solids": 17,
+      "rotation": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "translation_mm": [
+        60.0,
+        4.0,
+        8.5
+      ],
+      "placed_envelope": {
+        "min_mm": [
+          7.6999999999999975,
+          3.999999999999996,
+          8.0
+        ],
+        "max_mm": [
+          60.0,
+          25.0,
+          11.730000000000002
+        ],
+        "span_mm": [
+          52.300000000000004,
+          21.000000000000004,
+          3.730000000000002
+        ]
+      },
+      "cavity_envelope_margins_mm": {
+        "left": 5.1999999999999975,
+        "right": 3.5,
+        "front": 1.499999999999996,
+        "back": 17.5,
+        "floor": 5.5,
+        "rim": 2.269999999999998
+      },
+      "tray_overlap_mm3": 0,
+      "tray_separation_mm": 0.0,
+      "interference_above_threshold": false
+    },
+    {
+      "id": "adafruit-1426",
+      "source_sha256": "d3066e01e96644b0990469cf4450ab909ef0c8b034a12bd8151320fa33f98522",
+      "source_solids": 1,
+      "rotation": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_mm": [
+        7.6,
+        28.5,
+        8.0
+      ],
+      "placed_envelope": {
+        "min_mm": [
+          7.6,
+          28.499999999999996,
+          8.0
+        ],
+        "max_mm": [
+          58.4,
+          38.66,
+          10.6
+        ],
+        "span_mm": [
+          50.8,
+          10.16,
+          2.5999999999999996
+        ]
+      },
+      "cavity_envelope_margins_mm": {
+        "left": 5.1,
+        "right": 5.100000000000001,
+        "front": 25.999999999999996,
+        "back": 3.8400000000000034,
+        "floor": 5.5,
+        "rim": 3.4000000000000004
+      },
+      "tray_overlap_mm3": 0,
+      "tray_separation_mm": 0.0,
+      "interference_above_threshold": false
+    }
+  ],
+  "component_pairs": [
+    {
+      "parts": [
+        "pico-r3",
+        "adafruit-1426"
+      ],
+      "overlap_mm3": 0,
+      "separation_mm": 3.5,
+      "interference_above_threshold": false
+    }
+  ],
+  "limits": [
+    "Source STEP files may omit connectors, tolerances or other physical features.",
+    "Axis-aligned cavity margins are descriptive; openings may intentionally cross a wall.",
+    "Mounting-hole alignment and fastener engagement were not checked.",
+    "No print process, material shrinkage, cable routing, thermal behavior or physical assembly was tested."
+  ]
+}

@@ -22,6 +22,7 @@ class TrayGeneratorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / 'tray'
             subprocess.run([sys.executable, str(root / 'generate.py'), '--spec', str(EXAMPLE), '--out', str(package)], check=True, capture_output=True, text=True)
+            self.assertEqual(validate(json.loads((package / 'spec.json').read_text()))['outer'], {'length': 66.0, 'width': 45.0, 'height': 14.0})
             self.assertEqual(json.loads((package / 'verification.json').read_text())['stl_outer_span_mm'], [66.0, 45.0, 14.0])
             stl = bytearray((package / 'tray.stl').read_bytes())
             struct.pack_into('<f', stl, 84 + 12, float('nan'))
