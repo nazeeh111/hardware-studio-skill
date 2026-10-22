@@ -99,6 +99,9 @@ test('local model cannot present a Pico and 5 V NeoPixel draft without LED power
   assert.throws(() => localAiDraft(raw, brief, 'local-fast:latest'), /logic-level interface/);
   raw.parts.push({ id: 'shift', name: '74AHCT125 logic buffer', category: 'Interface', qty: 1, unitCost: 0 });
   assert.equal(localAiDraft(raw, brief, 'local-fast:latest').parts.length, 5);
+  raw.parts = raw.parts.filter(part => part.id !== 'pixels');
+  raw.wires = [{ id: 'data', from: 'pico', to: 'shift', label: 'data' }];
+  assert.throws(() => localAiDraft(raw, brief, 'local-fast:latest'), /requested addressable LED/);
 });
 
 test('unpriced AI parts export as blank costs', () => {

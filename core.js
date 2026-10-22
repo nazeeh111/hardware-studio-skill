@@ -268,6 +268,7 @@ export function localAiDraft(input, brief, model) {
     { requested: /\btemp(?:erature)?\b|thermo/i, present: /therm|temp|bme\s?280|sht\d|dht\d|ds18|tmp\d|mcp9808/i, name: 'temperature sensor' },
     { requested: /\bsoil\b|\bmoisture\b/i, present: /soil|moisture|capacitive sensor/i, name: 'soil or moisture sensor' },
     { requested: /\bdisplay\b|\bscreen\b|\boled\b/i, present: /display|screen|oled|lcd/i, name: 'display' },
+    { requested: /\b(?:neopixel|ws2812)\b/i, present: /neopixel|ws2812|addressable\s+led/i, name: 'addressable LED' },
     { requested: /\bbutton\b|\bpushbutton\b/i, present: /button|switch/i, name: 'button' },
     { requested: /\bmotor\b|\bservo\b/i, present: /motor|servo/i, name: 'motor' },
     { requested: /\bled\b|\blight\b|\blamp\b/i, present: /led|light|lamp/i, name: 'light source' }
