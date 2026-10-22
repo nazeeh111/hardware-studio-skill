@@ -15,6 +15,8 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
   "wiringUrl": "",
   "traySpec": null,
   "referenceImage": null,
+  "tools": ["Multimeter", "Wire stripper"],
+  "assumptions": ["Exact controller and display modules still need selection."],
   "parts": [
     {
       "id": "controller",
@@ -50,6 +52,7 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
       "phase": "Prepare",
       "title": "Choose exact controller",
       "detail": "Confirm USB power, pinout and physical dimensions against the manufacturer's documentation.",
+      "partIds": ["controller"],
       "done": false
     }
   ],
@@ -59,6 +62,8 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
 ```
 
 The sample demonstrates the carrier only; it is deliberately incomplete as a build plan. For a real deliverable, include every physical part and required connection, pin and voltage notes, a stepwise bring-up sequence, exact source URLs and dates where verified, and unresolved decisions. Do not mark `verified` or `review` true on a generated draft. If a price is unknown, use `0` and explain in `detail` that it is unpriced; do not present the zero as a quote. `sourceUrl` is a supplier listing; `specUrl` is the exact specification or independent evidence used for part review. A checked part needs both `specUrl` and an ISO `checkedAt` timestamp. The app resets those check marks when importing a file.
+
+`tools` and `assumptions` are optional short-text lists for the whole build. A step's optional `partIds` lists the exact IDs of parts used in that operation. The app shows those names beside the step, rejects duplicate IDs in one step, and reports references to missing parts. Deleting a part in the editor also removes its step links. Older projects without these fields still import. The project ZIP contains a readable `build-plan.txt` as well as these fields in `project.json`; neither is a verified procedure.
 
 `powerRails` is optional for older projects. Each rail's `sourcePartId` and load `partId` must match a part ID. `currentMaEach` is the peak current per unit in milliamps; the app multiplies it by that part's quantity. Use `null` when current or rated supply is unknown, and record the source and operating conditions in the project notes. A computed headroom covers only assigned loads, so check startup surges, voltage compatibility, wires, connectors and regulator heat separately.
 

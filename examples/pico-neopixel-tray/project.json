@@ -198,55 +198,112 @@
       "phase": "Prepare",
       "title": "Confirm source model revisions",
       "detail": "Download the Raspberry Pi and Adafruit STEP files named in the example README and compare their hashes with the fit report.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "pico-r3",
+        "neopixel-1426"
+      ]
     },
     {
       "phase": "Prepare",
       "title": "Check mechanical dimensions",
       "detail": "Run the verification script, then measure the exact boards and connector on physical samples before committing to a print.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "tray",
+        "pico-r3",
+        "neopixel-1426"
+      ]
     },
     {
       "phase": "Prepare",
       "title": "Select and rate the 5 V source",
       "detail": "Choose an exact regulated source, dual-branch harness, cable and connectors. The LED upper-bound estimate is 8 × 60 = 480 mA; add measured or sourced Pico and shifter peak currents, then check all ratings with headroom.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "supply",
+        "pico-r3",
+        "neopixel-1426",
+        "ahct"
+      ]
     },
     {
       "phase": "Wire",
       "title": "Assemble the off-tray data interface",
       "detail": "With power disconnected, wire Pico GP2 to SN74AHCT125N 1A, hold 1OE low, connect 1Y through 470 Ω to Stick DIN, tie unused IC inputs and add 0.1 µF bypass close to VCC/GND. Verify pin numbering for the purchased package.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "pico-r3",
+        "ahct",
+        "res470",
+        "neopixel-1426",
+        "bypass"
+      ]
     },
     {
       "phase": "Wire",
       "title": "Connect power and common ground",
       "detail": "With power disconnected, branch the same verified 5 V source to Pico micro-USB, Stick +5V/GND and shifter VCC/GND; add 1000 µF capacitor across Stick input with correct polarity. Do not use Pico VBUS as the LED feed in this plan.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "supply",
+        "pico-r3",
+        "neopixel-1426",
+        "ahct",
+        "bulkcap",
+        "bypass"
+      ]
     },
     {
       "phase": "Test",
       "title": "Bench test before tray assembly",
       "detail": "Current-limit the source for initial bring-up, begin at low brightness, then measure worst-case current, rail sag and signal levels with the actual parts. Stop if the supply, cable or connector limits are exceeded.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "supply",
+        "pico-r3",
+        "neopixel-1426",
+        "ahct",
+        "res470",
+        "bulkcap",
+        "bypass"
+      ]
     },
     {
       "phase": "Test",
       "title": "Print a fit coupon",
       "detail": "Use the intended material and printer to test locator-pin diameter, wall thickness and board-hole engagement before printing the full tray.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "tray",
+        "pico-r3",
+        "neopixel-1426"
+      ]
     },
     {
       "phase": "Test",
       "title": "Dry-fit unpowered parts",
       "detail": "Check board insertion and removal, USB plug access, cable bend, wire clearance and retention without connecting power.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "tray",
+        "pico-r3",
+        "neopixel-1426"
+      ]
     },
     {
       "phase": "Prepare",
       "title": "Package the auxiliary electronics",
       "detail": "Measure the level shifter, capacitors, resistor, harness and USB plug; locate them mechanically, add insulation and strain relief, then revise CAD. They are absent from the current two-board tray model.",
-      "done": false
+      "done": false,
+      "partIds": [
+        "tray",
+        "supply",
+        "ahct",
+        "res470",
+        "bulkcap",
+        "bypass"
+      ]
     }
   ],
   "notes": "Mechanical STEP fit is only for Pico and Stick, with 1.5 mm minimum Pico wall clearance and 3.78 mm published Stick wall clearance. Auxiliary electronics, distribution harness and mating USB plug are not modeled. The 480 mA LED figure is Adafruit’s maximum-white estimate for eight pixels, not a measured assembly draw. Supply rating, Pico peak draw and level-shifter dynamic draw remain unknown, so the power worksheet must stay incomplete. All prices are unknown; no bench wiring or physical fit was performed.",
@@ -254,5 +311,16 @@
     "electrical": false,
     "mechanical": false,
     "sourcing": false
-  }
+  },
+  "tools": [
+    "Digital calipers for the purchased boards",
+    "Multimeter for unpowered continuity and regulated 5 V checks",
+    "3D printer or fabrication access for test pieces",
+    "Soldering and insulated wire preparation tools"
+  ],
+  "assumptions": [
+    "The downloaded maker STEP revisions match the exact boards purchased; verify this before fabrication.",
+    "The 5 V supply and distribution harness are not selected or rated yet.",
+    "All fit and electrical work remains a prototype plan until physical and bench checks are recorded."
+  ]
 }

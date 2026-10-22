@@ -63,6 +63,30 @@ test('tray geometry survives project JSON import and revision restore while new 
   assert.throws(() => parseSavedWorkspace(JSON.stringify({ projects: [broken], currentId: broken.id })), /Wall/);
 });
 
+test('build preparation and part-linked steps survive import and catch broken references', () => {
+  const project = makeProject(STARTERS[0]);
+  project.tools = ['Multimeter', 'Wire stripper'];
+  project.assumptions = ['USB supply ratings need review'];
+  project.steps[0].partIds = ['esp32', 'bme280'];
+  const imported = safeProject(project);
+  assert.deepEqual(imported.tools, project.tools);
+  assert.deepEqual(imported.assumptions, project.assumptions);
+  assert.deepEqual(imported.steps[0].partIds, ['esp32', 'bme280']);
+  const saved = parseSavedWorkspace(JSON.stringify({ projects: [imported], currentId: imported.id }));
+  assert.deepEqual(saved.projects[0].steps[0].partIds, ['esp32', 'bme280']);
+  imported.parts = imported.parts.filter(part => part.id !== 'bme280');
+  assert.ok(validate(imported).some(issue => issue.kind === 'error' && issue.text.includes('step') && issue.text.includes('missing part')));
+  const invalid = structuredClone(project);
+  invalid.steps[0].partIds = ['esp32', 'esp32'];
+  assert.throws(() => safeProject(invalid), /unique part IDs/);
+  invalid.steps[0].partIds = ['esp32'];
+  invalid.tools = [''];
+  assert.throws(() => safeProject(invalid), /Tools/);
+  const older = structuredClone(project);
+  delete older.tools; delete older.assumptions; delete older.steps[0].partIds;
+  assert.deepEqual(safeProject(older).steps[0].partIds, []);
+});
+
 test('local model output cannot mark estimates or reviews as verified', () => {
   const raw = makeProject(STARTERS[0]);
   raw.summary = 'Manufacturer fit validated in CAD';

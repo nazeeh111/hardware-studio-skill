@@ -224,6 +224,14 @@ a { color: inherit; }
 .step-card small { color: #768a30; font: 600 9px var(--mono); }
 .step-card strong { display: block; margin: 5px 0; font-size: 12px; }
 .step-card p { color: #6a796e; font-size: 11px; line-height: 1.5; margin: 0; }
+.build-prep { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.build-prep > div { border-top: 2px solid #365445; background: #eef3e9; padding: 15px; min-width: 0; }
+.build-prep span { color: #577044; font: 600 9px var(--mono); letter-spacing: .06em; }
+.build-prep ul { padding-left: 17px; margin: 10px 0 0; color: #334d3e; font-size: 11px; line-height: 1.55; }
+.build-prep p { color: #728171; font-size: 11px; margin: 10px 0 0; }
+.step-parts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.step-parts span { border: 1px solid #b9c9ae; background: #f0f4e9; color: #456044; font: 600 9px var(--mono); padding: 4px 6px; }
+.step-parts span.missing { border-color: #d3a892; background: #faece5; color: #9a5139; }
 .empty { background: #f5f7f0; border: 1px dashed #bbcabb; padding: 32px; text-align: center; color: #78877a; font-size: 11px; }
 .empty strong { display: block; color: var(--ink); font-size: 15px; margin-bottom: 5px; }
 
@@ -268,6 +276,10 @@ dialog::backdrop { background: #101d19b8; }
 .field input[type='checkbox'] { width: 16px; height: 16px; min-width: 16px; padding: 0; accent-color: #8aa43a; }
 .verify-label { display: flex; align-items: center; gap: 9px; line-height: 1.4; }
 .field textarea { min-height: 83px; resize: vertical; }
+.step-part-picker { border: 1px solid #cbd6c7; padding: 11px; display: flex; flex-wrap: wrap; gap: 8px; }
+.step-part-picker legend { color: #4a604f; font: 500 10px var(--mono); padding: 0 4px; }
+.step-part-picker label { display: flex; align-items: center; gap: 6px; border: 1px solid #d2ddcc; background: #f3f6ed; padding: 6px 8px; font-size: 10px; }
+.step-part-picker p { margin: 0; color: #718073; font-size: 11px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 23px; }
 .dialog-actions .button-danger { margin-right: auto; }
 .history-shell { padding: 24px; }
@@ -371,6 +383,7 @@ dialog::backdrop { background: #101d19b8; }
   .power-load b { grid-column: 2; grid-row: 2; text-align: right; }
   .power-load button { grid-column: 1; grid-row: 2; justify-self: start; }
   .power-actions { flex-wrap: wrap; }
+  .build-prep { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }

@@ -4,6 +4,18 @@ export const STORAGE_KEY = 'hardware-studio-projects-v1';
 export const REVISIONS_KEY = 'hardware-studio-revisions-v1';
 export const MAX_REFERENCE_DATA_URL = 250_000;
 
+function safeTextList(value, label) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.length > 30 || value.some(item => typeof item !== 'string' || !item.trim() || item.length > 160 || /[\r\n]/.test(item))) throw new Error(`${label} must contain up to 30 short text entries.`);
+  return value.map(item => item.trim());
+}
+
+function safeStepPartIds(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.length > 40 || value.some(id => typeof id !== 'string' || !id || id.length > 80) || new Set(value).size !== value.length) throw new Error('Step part links must be unique part IDs.');
+  return [...value];
+}
+
 export function safeReferenceImage(input) {
   if (input == null) return null;
   if (!input || typeof input !== 'object' || typeof input.name !== 'string' || typeof input.dataUrl !== 'string' ||
@@ -29,6 +41,9 @@ export function parseSavedWorkspace(raw) {
   saved.projects.forEach(project => {
     safeReferenceImage(project.referenceImage);
     if (project.traySpec != null) validateTraySpec(project.traySpec);
+    safeTextList(project.tools, 'Tools');
+    safeTextList(project.assumptions, 'Assumptions');
+    project.steps.forEach(step => safeStepPartIds(step.partIds));
   });
   return saved;
 }
@@ -50,6 +65,8 @@ export const STARTERS = [
     id: 'plant', name: 'Desk plant monitor', icon: '◌', tag: 'SENSING',
     prompt: 'A USB powered desk plant monitor with temperature, humidity, soil moisture and a small display.',
     summary: 'An ESP32 reads the room and soil, then shows the measurements on an I²C display. This is a concept design; choose exact modules and verify every pin and rating before wiring.',
+    tools: ['Multimeter', 'Wire preparation tools', 'Calipers for the chosen enclosure and boards'],
+    assumptions: ['Exact breakout modules, pinouts and supply ratings still need selection and review.', 'The enclosure must keep electronics protected from wet soil while exposing the room sensor.'],
     parts: [
       part('esp32', 'ESP32 DevKit board', 'Control', 1, 11, 'Choose a board with accessible 3.3 V, GND, GPIO21, GPIO22 and ADC1 GPIO34.', '3.3'),
       part('bme280', 'BME280 breakout', 'Sensor', 1, 8, 'Temperature and humidity sensor. Confirm breakout pinout and I²C address.', '3.3'),
@@ -67,18 +84,20 @@ export const STARTERS = [
       { from: 'usb', to: 'esp32', signal: 'USB power', voltage: '5 V', note: 'Power through the board USB connector, not a 3.3 V pin.' }
     ],
     steps: [
-      { phase: 'Prepare', title: 'Confirm exact modules', detail: 'Record datasheets, dimensions, connector orientation and voltage range for each purchased part.' },
-      { phase: 'Prepare', title: 'Plan enclosure openings', detail: 'Leave access for USB and airflow to the BME280; protect the controller from wet soil.' },
-      { phase: 'Wire', title: 'Connect the I²C bus', detail: 'With power disconnected, connect common ground, 3.3 V, SDA and SCL using verified module pinouts.' },
-      { phase: 'Wire', title: 'Connect the soil sensor', detail: 'Confirm its output is within the ADC input range, then connect to ADC1 GPIO34 and ground.' },
-      { phase: 'Bring up', title: 'Test one device at a time', detail: 'Power from USB, scan I²C addresses, compare room readings with a reference and calibrate soil readings in dry and wet conditions.' },
-      { phase: 'Assemble', title: 'Fit and strain-relieve', detail: 'Mount components, route cables away from water and check that no connector is under tension.' }
+      { phase: 'Prepare', title: 'Confirm exact modules', detail: 'Record datasheets, dimensions, connector orientation and voltage range for each purchased part.', partIds: ['esp32', 'bme280', 'soil', 'oled', 'usb'] },
+      { phase: 'Prepare', title: 'Plan enclosure openings', detail: 'Leave access for USB and airflow to the BME280; protect the controller from wet soil.', partIds: ['case', 'esp32', 'bme280', 'usb'] },
+      { phase: 'Wire', title: 'Connect the I²C bus', detail: 'With power disconnected, connect common ground, 3.3 V, SDA and SCL using verified module pinouts.', partIds: ['esp32', 'bme280', 'oled', 'wire'] },
+      { phase: 'Wire', title: 'Connect the soil sensor', detail: 'Confirm its output is within the ADC input range, then connect to ADC1 GPIO34 and ground.', partIds: ['soil', 'esp32', 'wire'] },
+      { phase: 'Bring up', title: 'Test one device at a time', detail: 'Power from USB, scan I²C addresses, compare room readings with a reference and calibrate soil readings in dry and wet conditions.', partIds: ['esp32', 'bme280', 'soil', 'oled', 'usb'] },
+      { phase: 'Assemble', title: 'Fit and strain-relieve', detail: 'Mount components, route cables away from water and check that no connector is under tension.', partIds: ['case', 'esp32', 'bme280', 'soil', 'oled', 'wire'] }
     ]
   },
   {
     id: 'light', name: 'USB ambient light', icon: '✳', tag: 'LIGHTING',
     prompt: 'A USB powered ambient desk light with a button and individually addressable LEDs.',
     summary: 'An ESP32 controls a short 5 V LED strip through a level shifter. The wiring and power budget need checks against the exact strip, board and supply.',
+    tools: ['Multimeter', 'Wire preparation tools', 'Calipers for the chosen strip and enclosure'],
+    assumptions: ['Exact LED strip, controller, level shifter and supply ratings need verification.', 'Maximum current and heat must be measured for the chosen operating brightness.'],
     parts: [
       part('esp32', 'ESP32 DevKit board', 'Control', 1, 11, 'Choose an exact board and verify its USB power path and output GPIO.', '3.3'),
       part('led', '5 V addressable LED strip, 30 LEDs', 'Lighting', 1, 14, 'Choose a strip with documented current per LED and a 5 V data interface.', '5'),
@@ -99,12 +118,12 @@ export const STARTERS = [
     ],
     powerRails: [{ id: 'rail-5v', name: '5 V shared input', voltageV: 5, supplyCurrentMa: 3000, marginPercent: 20, sourcePartId: 'usb', loads: [{ partId: 'led', currentMaEach: null }, { partId: 'esp32', currentMaEach: null }] }],
     steps: [
-      { phase: 'Prepare', title: 'Calculate power demand', detail: 'Use the chosen strip datasheet to compute maximum current. Compare with supply, cable and connector ratings.' },
-      { phase: 'Prepare', title: 'Measure the fit', detail: 'Measure strip width, bend radius, board size and connector clearance before making the enclosure.' },
-      { phase: 'Wire', title: 'Build the data path', detail: 'With power disconnected, wire GPIO to level shifter, series resistor and strip DIN. Tie grounds together.' },
-      { phase: 'Wire', title: 'Connect power', detail: 'Wire the strip directly to a suitable 5 V supply and the controller through its USB connector. Add the polarized input capacitor.' },
-      { phase: 'Bring up', title: 'Test at low brightness', detail: 'Start with a few LEDs and a current limit. Confirm data direction and measure supply voltage at the far end.' },
-      { phase: 'Assemble', title: 'Check heat and strain relief', detail: 'Run at expected brightness, inspect temperature and secure the cable entry.' }
+      { phase: 'Prepare', title: 'Calculate power demand', detail: 'Use the chosen strip datasheet to compute maximum current. Compare with supply, cable and connector ratings.', partIds: ['led', 'usb', 'esp32'] },
+      { phase: 'Prepare', title: 'Measure the fit', detail: 'Measure strip width, bend radius, board size and connector clearance before making the enclosure.', partIds: ['led', 'esp32', 'case'] },
+      { phase: 'Wire', title: 'Build the data path', detail: 'With power disconnected, wire GPIO to level shifter, series resistor and strip DIN. Tie grounds together.', partIds: ['esp32', 'shift', 'res', 'led'] },
+      { phase: 'Wire', title: 'Connect power', detail: 'Wire the strip directly to a suitable 5 V supply and the controller through its USB connector. Add the polarized input capacitor.', partIds: ['usb', 'led', 'esp32', 'cap'] },
+      { phase: 'Bring up', title: 'Test at low brightness', detail: 'Start with a few LEDs and a current limit. Confirm data direction and measure supply voltage at the far end.', partIds: ['usb', 'led', 'esp32', 'shift'] },
+      { phase: 'Assemble', title: 'Check heat and strain relief', detail: 'Run at expected brightness, inspect temperature and secure the cable entry.', partIds: ['led', 'case', 'usb'] }
     ]
   }
 ];
@@ -115,9 +134,9 @@ export function makeProject(starter, title) {
     id: crypto.randomUUID(), title: title || starter.name, brief: starter.prompt,
     summary: starter.summary, starterId: starter.id, createdAt: now, updatedAt: now,
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires), mechanicalConnections: structuredClone(starter.mechanicalConnections || []),
-    steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
+    steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, partIds: step.partIds || [], done: false })),
     powerRails: structuredClone(starter.powerRails || []),
-    notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, review: { electrical: false, mechanical: false, sourcing: false }
+    tools: structuredClone(starter.tools || []), assumptions: structuredClone(starter.assumptions || []), notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
 
@@ -125,7 +144,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null,
+    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], tools: [], assumptions: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null,
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -180,6 +199,9 @@ export function validate(project) {
     if (!ids.has(link.from) || !ids.has(link.to)) issues.push({ kind: 'error', text: `A ${link.label || 'mechanical'} relationship refers to a missing part.` });
     if (link.from === link.to && Number(project.parts.find(part => part.id === link.from)?.qty || 0) < 2) issues.push({ kind: 'error', text: 'A mechanical relationship uses one part at both ends without multiple units.' });
     if (!String(link.label || '').trim()) issues.push({ kind: 'error', text: 'A mechanical relationship needs a mounting or fit description.' });
+  }
+  for (const step of project.steps) {
+    for (const id of step.partIds || []) if (!ids.has(id)) issues.push({ kind: 'error', text: `Build step “${step.title || 'Untitled'}” refers to a missing part.` });
   }
   const unmappedPins = project.wires.filter(w => !String(w.fromPin || '').trim() || !String(w.toPin || '').trim()).length;
   if (unmappedPins) issues.push({ kind: 'todo', text: `${unmappedPins} connection${unmappedPins === 1 ? '' : 's'} need an exact pin or terminal at both ends.` });
@@ -241,6 +263,7 @@ export function safeProject(input) {
     brief: String(input.brief || '').slice(0, 5000), summary: String(input.summary || '').slice(0, 5000),
     starterId: 'imported', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
+    tools: safeTextList(input.tools, 'Tools'), assumptions: safeTextList(input.assumptions, 'Assumptions'),
     referenceImage: safeReferenceImage(input.referenceImage),
     traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
@@ -248,7 +271,7 @@ export function safeProject(input) {
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), fromPin: String(w.fromPin || '').slice(0, 100), to: String(w.to || ''), toPin: String(w.toPin || '').slice(0, 100), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     mechanicalConnections: (input.mechanicalConnections || []).map(link => ({ from: String(link.from || '').slice(0, 80), to: String(link.to || '').slice(0, 80), label: String(link.label || '').slice(0, 240), note: String(link.note || '').slice(0, 1000) })),
-    steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
+    steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), partIds: safeStepPartIds(s.partIds), done: Boolean(s.done) })),
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }
   };
@@ -277,7 +300,6 @@ export function localAiDraft(input, brief, model) {
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };
   if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');
-  if (validate(project).some(issue => issue.kind === 'error')) throw new Error('The local model returned broken part references or invalid quantities. Try another model.');
   const terms = project.parts.map(part => `${part.name} ${part.category}`).join(' ').toLowerCase();
   const expected = [
     { requested: /\btemp(?:erature)?\b|thermo/i, present: /therm|temp|bme\s?280|sht\d|dht\d|ds18|tmp\d|mcp9808/i, name: 'temperature sensor' },
@@ -299,5 +321,6 @@ export function localAiDraft(input, brief, model) {
     if (fiveVolt && !/\b(?:level\s*(?:shifter|converter|translator)|74(?:a)?hct(?:125|245)|logic\s*buffer)\b/i.test(terms)) missingHardware.push('logic-level interface');
     if (missingHardware.length) throw new Error(`The local model omitted a ${missingHardware.join(' and a ')} for the requested Pico and ${fiveVolt ? '5 V ' : ''}NeoPixel design. Review power and signal requirements before drafting again.`);
   }
+  if (validate(project).some(issue => issue.kind === 'error')) throw new Error('The local model returned broken part references or invalid quantities. Try another model.');
   return project;
 }

@@ -13,6 +13,7 @@ try {
   if (typeof project?.title !== 'string' || !project.title.trim()) issues.push('title is required.');
   if (project?.cadUrl && !/^https?:\/\//i.test(project.cadUrl)) issues.push('cadUrl must be HTTP(S).');
   if (project?.wiringUrl && !/^https?:\/\//i.test(project.wiringUrl)) issues.push('wiringUrl must be HTTP(S).');
+  for (const key of ['tools', 'assumptions']) if (project?.[key] != null && (!Array.isArray(project[key]) || project[key].length > 30 || project[key].some(item => typeof item !== 'string' || !item.trim() || item.length > 160 || /[\r\n]/.test(item)))) issues.push(`${key} must contain up to 30 short text entries.`);
   if (project?.traySpec != null) {
     try { validateTraySpec(project.traySpec); }
     catch (error) { issues.push(`traySpec: ${error.message}`); }
@@ -64,6 +65,10 @@ try {
   }
   for (const [i, step] of (Array.isArray(project?.steps) ? project.steps : []).entries()) {
     if (!step || typeof step !== 'object' || typeof step.title !== 'string' || !step.title.trim()) issues.push(`steps[${i}].title is required.`);
+    if (step?.partIds != null) {
+      if (!Array.isArray(step.partIds) || step.partIds.length > 40 || step.partIds.some(id => typeof id !== 'string' || !id || id.length > 80) || new Set(step.partIds).size !== step.partIds.length) issues.push(`steps[${i}].partIds must be unique short part IDs.`);
+      else for (const id of step.partIds) if (!ids.has(id)) issues.push(`steps[${i}] refers to a missing part: ${id}`);
+    }
   }
   if (issues.length) { for (const issue of issues) console.error(`ERROR ${issue}`); process.exit(1); }
   console.log(`Structure OK: ${project.parts.length} parts, ${project.wires.length} connections, ${project.steps.length} steps.`);

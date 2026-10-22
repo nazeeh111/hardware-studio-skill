@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=23';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=24';
 import { validateTraySpec } from './tray-spec.js?v=2';
 import { createZip } from './zip.js?v=1';
 
@@ -230,12 +230,15 @@ function exportPackage(p) {
   const title = String(p.title).replace(/[\r\n]+/g, ' ');
   const reference = safeReferenceImage(p.referenceImage);
   const traySpec = p.traySpec;
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const partNames = new Map(p.parts.map(part => [part.id, part.name]));
+  const buildPlan = `${title}\nBuild plan exported ${generatedAt}\n\nTOOLS AND CONSUMABLES\n${(p.tools || []).length ? p.tools.map(tool => `- ${tool}`).join('\n') : '(not recorded)'}\n\nASSUMPTIONS AND PREREQUISITES\n${(p.assumptions || []).length ? p.assumptions.map(item => `- ${item}`).join('\n') : '(not recorded)'}\n\nSTEPS\n${p.steps.map((step, index) => `${index + 1}. [${step.phase}] ${step.title}${step.done ? ' (checked in this browser)' : ''}\n   ${step.detail}\n   Parts: ${(step.partIds || []).map(id => partNames.get(id) || `Missing: ${id}`).join(', ') || '(not linked)'}`).join('\n\n')}\n\nThis is a planning record, not a verified build procedure.\n`;
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
     { name: 'project.json', data: JSON.stringify(p, null, 2) + '\n' },
     { name: 'bill-of-materials.csv', data: bomCsv(p) },
+    { name: 'build-plan.txt', data: buildPlan },
     { name: 'mounting.csv', data: mountingCsv(p) },
     { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
@@ -412,8 +415,10 @@ function renderAssembly(p) {
   return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + tray + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
 }
 function renderBuild(p) {
-  const rows = p.steps.map((step, i) => `<div class="step-card ${step.done ? 'done' : ''}"><input data-done-step="${i}" type="checkbox" ${step.done ? 'checked' : ''} aria-label="Mark ${html(step.title)} complete"><div><small>${html(step.phase.toUpperCase())} / ${String(i + 1).padStart(2, '0')}</small><strong>${html(step.title)}</strong><p>${html(step.detail)}</p></div><button class="text-link" data-edit-step="${i}" type="button">Edit</button></div>`).join('');
-  return panelHead('SEQUENCE / TEST', 'Build plan', 'Use the steps as a checklist after validating each operation against the exact parts and tools.', '<button id="add-step" class="small-button" type="button">＋ Add step</button>') + (rows ? `<div class="step-list">${rows}</div>` : `<div class="empty"><strong>No build steps yet</strong>Add preparation, wiring, bring-up and assembly steps.</div>`);
+  const names = new Map(p.parts.map(part => [part.id, part.name]));
+  const rows = p.steps.map((step, i) => `<div class="step-card ${step.done ? 'done' : ''}"><input data-done-step="${i}" type="checkbox" ${step.done ? 'checked' : ''} aria-label="Mark ${html(step.title)} complete"><div><small>${html(step.phase.toUpperCase())} / ${String(i + 1).padStart(2, '0')}</small><strong>${html(step.title)}</strong><p>${html(step.detail)}</p>${step.partIds?.length ? `<div class="step-parts">${step.partIds.map(id => `<span class="${names.has(id) ? '' : 'missing'}">${html(names.get(id) || `Missing: ${id}`)}</span>`).join('')}</div>` : ''}</div><button class="text-link" data-edit-step="${i}" type="button">Edit</button></div>`).join('');
+  const prep = `<div class="build-prep"><div><span>TOOLS / MATERIALS</span>${(p.tools || []).length ? `<ul>${p.tools.map(item => `<li>${html(item)}</li>`).join('')}</ul>` : '<p>List the tools and consumables needed for this build.</p>'}</div><div><span>ASSUMPTIONS / PREREQUISITES</span>${(p.assumptions || []).length ? `<ul>${p.assumptions.map(item => `<li>${html(item)}</li>`).join('')}</ul>` : '<p>Record required skills, setup and unresolved starting conditions.</p>'}</div></div>`;
+  return panelHead('SEQUENCE / TEST', 'Build plan', 'Use the steps as a checklist after validating each operation against the exact parts and tools.', '<div><button id="edit-prep" class="small-button" type="button">Edit preparation</button> <button id="add-step" class="small-button" type="button">＋ Add step</button></div>') + prep + (rows ? `<div class="step-list">${rows}</div>` : `<div class="empty"><strong>No build steps yet</strong>Add preparation, wiring, bring-up and assembly steps.</div>`);
 }
 function renderReview(p) {
   const issues = validate(p); const errors = issues.filter(i => i.kind === 'error').length;
@@ -425,15 +430,16 @@ function openEditor(kind, index = -1) {
   const p = current(); editor = { kind, index };
   const isNew = index < 0; const item = !isNew ? (kind === 'part' ? p.parts[index] : kind === 'wire' ? p.wires[index] : kind === 'mount' ? p.mechanicalConnections?.[index] : kind === 'step' ? p.steps[index] : p) : {};
   $('#dialog-kicker').textContent = kind.toUpperCase() + (isNew ? ' / NEW' : ' / EDIT');
-  $('#dialog-title').textContent = `${isNew ? 'Add' : 'Edit'} ${kind === 'wire' ? 'connection' : kind === 'mount' ? 'mounting relationship' : kind === 'title' ? 'project' : kind}`;
-  $('#delete-entry').hidden = isNew || kind === 'title';
+  $('#dialog-title').textContent = kind === 'prep' ? 'Edit preparation' : `${isNew ? 'Add' : 'Edit'} ${kind === 'wire' ? 'connection' : kind === 'mount' ? 'mounting relationship' : kind === 'title' ? 'project' : kind}`;
+  $('#delete-entry').hidden = isNew || kind === 'title' || kind === 'prep';
   $('#dialog-error').hidden = true;
   const choices = p.parts.map(part => [part.id, part.name]);
   let fields = '';
   if (kind === 'part') fields = field('name', 'Part name', item.name, { required: true, wide: true }) + field('category', 'Category', item.category || 'Other') + field('qty', 'Quantity', item.qty ?? 1, { type: 'number', min: 1, step: 1 }) + field('unitCost', 'Unit estimate (USD)', item.unitCost ?? 0, { type: 'number', min: 0, step: '.01' }) + field('voltage', 'Operating voltage', item.voltage || '') + field('sourceUrl', 'Supplier listing URL', item.sourceUrl || '', { type: 'url', wide: true }) + field('specUrl', 'Manufacturer specification or independent evidence URL', item.specUrl || '', { type: 'url', wide: true }) + field('detail', 'Specification, datasheet and open questions', item.detail || '', { type: 'textarea', wide: true }) + `<div class="field wide"><label class="verify-label"><input type="checkbox" name="verified"> I checked this exact part against the linked specification now</label></div>`;
   if (kind === 'wire') fields = field('from', 'From part', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('fromPin', 'From pin or terminal', item.fromPin || '') + field('to', 'To part', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('toPin', 'To pin or terminal', item.toPin || '') + field('signal', 'Signal or connection', item.signal || '', { required: true }) + field('voltage', 'Voltage / range', item.voltage || '') + field('note', 'Pinout source or verification note', item.note || '', { type: 'textarea', wide: true });
   if (kind === 'mount') fields = field('from', 'First part', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('to', 'Second part', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('label', 'Mounting or fit intent', item.label || '', { required: true, wide: true }) + field('note', 'Dimension, fastener or open check', item.note || '', { type: 'textarea', wide: true });
-  if (kind === 'step') fields = field('phase', 'Phase', item.phase || 'Build', { type: 'select', choices: [['Prepare', 'Prepare'], ['Wire', 'Wire'], ['Bring up', 'Bring up'], ['Assemble', 'Assemble'], ['Test', 'Test']] }) + field('title', 'Step title', item.title || '', { required: true }) + field('detail', 'Action and acceptance check', item.detail || '', { type: 'textarea', wide: true });
+  if (kind === 'step') fields = field('phase', 'Phase', item.phase || 'Build', { type: 'select', choices: [['Prepare', 'Prepare'], ['Fabricate', 'Fabricate'], ['Wire', 'Wire'], ['Bring up', 'Bring up'], ['Assemble', 'Assemble'], ['Test', 'Test']] }) + field('title', 'Step title', item.title || '', { required: true }) + field('detail', 'Action and acceptance check', item.detail || '', { type: 'textarea', wide: true }) + `<fieldset class="step-part-picker field wide"><legend>Parts used in this step</legend>${p.parts.length ? p.parts.map(part => `<label><input type="checkbox" name="stepPartId" value="${html(part.id)}" ${(item.partIds || []).includes(part.id) ? 'checked' : ''}> ${html(part.name)}</label>`).join('') : '<p>Add parts before linking them to a step.</p>'}</fieldset>`;
+  if (kind === 'prep') fields = field('tools', 'Tools and consumables, one per line', (p.tools || []).join('\n'), { type: 'textarea', wide: true }) + field('assumptions', 'Assumptions and prerequisites, one per line', (p.assumptions || []).join('\n'), { type: 'textarea', wide: true });
   if (kind === 'title') fields = field('title', 'Project title', p.title, { required: true, wide: true }) + field('brief', 'Design brief', p.brief, { type: 'textarea', wide: true }) + field('summary', 'Summary', p.summary, { type: 'textarea', wide: true }) + field('wiringUrl', 'Electrical plan and evidence URL', p.wiringUrl || '', { type: 'url', wide: true }) + field('cadUrl', 'Dimensioned CAD or verification package URL', p.cadUrl || '', { type: 'url', wide: true });
   $('#dialog-fields').innerHTML = fields; $('#editor-dialog').showModal();
 }
@@ -464,9 +470,15 @@ function saveEditor(event) {
     p.review.mechanical = false;
   }
   if (kind === 'step') {
-    const step = { id: index < 0 ? `step-${crypto.randomUUID().slice(0, 8)}` : p.steps[index].id, phase: String(form.get('phase')), title: String(form.get('title') || '').trim(), detail: String(form.get('detail') || '').trim(), done: index < 0 ? false : p.steps[index].done };
+    const step = { id: index < 0 ? `step-${crypto.randomUUID().slice(0, 8)}` : p.steps[index].id, phase: String(form.get('phase')), title: String(form.get('title') || '').trim(), detail: String(form.get('detail') || '').trim(), partIds: form.getAll('stepPartId').map(String), done: index < 0 ? false : p.steps[index].done };
     if (!step.title) return editorError('Give the step a title.');
     if (index < 0) p.steps.push(step); else p.steps[index] = step;
+  }
+  if (kind === 'prep') {
+    const lines = value => String(value || '').split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+    const tools = lines(form.get('tools')), assumptions = lines(form.get('assumptions'));
+    if ([tools, assumptions].some(items => items.length > 30 || items.some(item => item.length > 160))) return editorError('Use at most 30 entries per list and 160 characters per entry.');
+    p.tools = tools; p.assumptions = assumptions;
   }
   if (kind === 'title') {
     const title = String(form.get('title') || '').trim().slice(0, 100);
@@ -485,7 +497,7 @@ function deleteEntry() {
   if (!editor || editor.index < 0) return;
   const p = current(), { kind, index } = editor;
   if (!window.confirm(`Delete this ${kind} from the project?`)) return;
-  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.mechanicalConnections = (p.mechanicalConnections || []).filter(link => link.from !== id && link.to !== id); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
+  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.mechanicalConnections = (p.mechanicalConnections || []).filter(link => link.from !== id && link.to !== id); p.steps.forEach(step => { step.partIds = (step.partIds || []).filter(partId => partId !== id); }); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'mount') { p.mechanicalConnections.splice(index, 1); p.review.mechanical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
@@ -555,6 +567,7 @@ function handleClick(event) {
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
   else if (button.id === 'add-mount') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('mount'); }
   else if (button.id === 'add-step') openEditor('step');
+  else if (button.id === 'edit-prep') openEditor('prep');
   else if (button.id === 'close-dialog' || button.id === 'cancel-dialog') closeEditor();
   else if (button.id === 'delete-entry') deleteEntry();
 }
