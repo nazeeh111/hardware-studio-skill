@@ -517,7 +517,7 @@ function handleClick(event) {
   else if (button.id === 'remove-reference' && !draftController) { pendingReference = null; renderReferenceInput(); }
   else if (button.id === 'remove-project-reference') { const previous = p.referenceImage; p.referenceImage = null; if (save('Before removing visual reference')) { render(); showToast('Visual reference removed.'); } else p.referenceImage = previous; }
   else if (button.id === 'rename-project') openEditor('title', 0);
-  else if (button.id === 'history-project') openHistory();
+  else if (button.id === 'history-project') { if (syncCurrentTrayDraft(p)) openHistory(); }
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
   else if (button.id === 'history-export') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithTraySpec(p), null, 2), 'application/json'); showToast('Current project JSON downloaded.'); } catch { showToast('Tray draft could not be read. Export the tray spec separately from its workbench.'); } }
   else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
@@ -532,6 +532,7 @@ function handleClick(event) {
   }
   else if (button.id === 'import-project') $('#import-file').click();
   else if (button.id === 'delete-project') {
+    if (!syncCurrentTrayDraft(p)) return;
     if (!window.confirm(`Move “${p.title}” to Recently deleted? It can be recovered while this browser keeps its bounded history.`)) return;
     try { recordRevision(p, 'Deleted project'); }
     catch { return showToast('Project was not deleted because its recovery snapshot could not be saved. Export JSON first.'); }
