@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101820">
+  <meta name="description" content="A local-first workspace for planning and reviewing small hardware projects.">
+  <title>Hardware Studio — from idea to reviewed build plan</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="Hardware Studio home"><span class="brand-symbol">✳</span><span>HARDWARE<span class="brand-light">/STUDIO</span></span></div>
+      <div class="topbar-center"><span class="topbar-rule"></span><span>DESIGN WORKSPACE</span><span class="topbar-rule"></span></div>
+      <div class="topbar-right"><span class="offline-dot"></span><span>LOCAL ONLY</span><button id="export-project" class="button button-quiet" type="button">Export project <span aria-hidden="true">↗</span></button></div>
+    </header>
+    <div class="workspace">
+      <aside class="sidebar">
+        <div class="sidebar-top"><div class="eyebrow">YOUR WORKSPACE <span id="project-count">01</span></div><button id="new-project" class="button button-primary full" type="button"><span>＋</span> New project</button></div>
+        <div id="project-list" class="project-list" aria-label="Projects"></div>
+        <div class="sidebar-bottom"><div class="small-heading">BUILT FOR THE BENCH</div><p>Plan parts, connections and assembly together. Confirm the details before buying or powering anything.</p><span>NO ACCOUNT · NO API KEY</span></div>
+      </aside>
+      <main class="main">
+        <section class="intro">
+          <div class="intro-copy"><div class="eyebrow accent">01 / PROJECT BRIEF</div><h1>Make it <em>real.</em><br>Make it <em>right.</em></h1><p>Turn a hardware idea into an editable plan. Every part, wire and build step stays visible for review.</p></div>
+          <div class="brief-card"><label for="brief-input">WHAT ARE YOU MAKING?</label><textarea id="brief-input" rows="3" placeholder="Describe a plant monitor, ambient light or another build idea..."></textarea><div class="brief-actions"><span>Start from an editable template. Customize every detail.</span><button id="create-from-brief" class="button button-dark" type="button">Start design <span aria-hidden="true">↗</span></button></div></div>
+        </section>
+        <section class="starter-strip" aria-label="Starter designs"><span>START WITH</span><div id="starter-buttons"></div></section>
+        <section class="project-head"><div><div id="project-kicker" class="eyebrow">CURRENT DESIGN</div><h2 id="project-title"></h2><p id="project-summary"></p></div><div class="project-head-actions"><button id="rename-project" class="button button-outline" type="button">Rename</button><button id="import-project" class="button button-outline" type="button">Import JSON</button><button id="delete-project" class="button button-outline" type="button">Delete</button><input id="import-file" type="file" accept="application/json,.json" hidden></div></section>
+        <section id="stats" class="stats" aria-label="Project summary"></section>
+        <div class="content-grid"><section class="document"><div class="tabs" role="tablist" aria-label="Design views"><button data-tab="overview" role="tab" type="button">Overview</button><button data-tab="parts" role="tab" type="button">Parts</button><button data-tab="wiring" role="tab" type="button">Wiring</button><button data-tab="assembly" role="tab" type="button">Assembly</button><button data-tab="build" role="tab" type="button">Build</button></div><div id="panel" class="panel" role="tabpanel"></div></section><aside id="review-rail" class="review-rail"></aside></div>
+        <footer class="page-footer"><span>HARDWARE / STUDIO</span><span>Planning estimates are not purchase quotes or safety certification.</span></footer>
+      </main>
+    </div>
+  </div>
+  <dialog id="editor-dialog"><form id="editor-form" method="dialog"><div class="dialog-head"><div><div class="eyebrow accent" id="dialog-kicker"></div><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" type="button" aria-label="Close dialog">×</button></div><div id="dialog-fields" class="dialog-fields"></div><div class="dialog-actions"><button id="delete-entry" class="button button-danger" type="button" hidden>Delete</button><button id="cancel-dialog" class="button button-outline" type="button">Cancel</button><button id="save-entry" class="button button-dark" type="submit">Save changes</button></div></form></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
