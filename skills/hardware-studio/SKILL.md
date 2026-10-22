@@ -13,7 +13,7 @@ Verify decisive properties against original manufacturer datasheets and current 
 
 Use a schematic tool or other suitable format for actual electrical documentation. For geometry that must fit or be manufactured, make an editable dimensioned model and verify clearances. Use a conceptual illustration only to explain arrangement, labeled as such. Select local CAD or Blender by the artifact the user needs; neither is mandatory for a text-only design question. Physical energizing, fabrication and purchasing require the user's separate authority and a design review proportionate to the hazard.
 
-For a worked geometry package, the [Pico + NeoPixel tray example](https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray) retains parametric source, STEP readback, manufacturer-model fit checks, negative collision cases and a separately rendered Blender view. It is an example of the evidence chain, not a certified or fabrication-ready enclosure.
+For a worked package, the [Pico + NeoPixel tray example](https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray) retains parametric source, STEP readback, manufacturer-model fit checks, negative collision cases, a separately rendered Blender view and a source-backed provisional electrical path. Its power worksheet deliberately stays incomplete while supply and auxiliary current data are unknown. It is an example of the evidence chain, not a certified or fabrication-ready device.
 
 Deliver the editable sources and a plain-language build and test guide. Separate verified, estimated, inferred and untested items. If a constraint or source cannot be checked, make the next required check concrete instead of calling the design ready to build.
 

@@ -76,7 +76,7 @@ export function makeProject(starter, title) {
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
     powerRails: structuredClone(starter.powerRails || []),
-    notes: '', cadUrl: '', review: { electrical: false, mechanical: false, sourcing: false }
+    notes: '', cadUrl: '', wiringUrl: '', review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
 
@@ -84,7 +84,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], steps: [], powerRails: [], notes: '', cadUrl: '',
+    parts: [], wires: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '',
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -183,6 +183,7 @@ export function safeProject(input) {
     starterId: 'imported', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
+    wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), to: String(w.to || ''), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
@@ -198,6 +199,7 @@ export function localAiDraft(input, brief, model) {
   project.summary = `Local AI concept draft. Exact parts, pinouts, dimensions, prices and safety are unverified. ${project.summary}`.slice(0, 5000);
   project.notes = `Generated locally with ${String(model).slice(0, 80)}. Verify every part and connection against independent evidence before buying or building.\n\n${project.notes}`.slice(0, 10000);
   project.cadUrl = '';
+  project.wiringUrl = '';
   project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };

@@ -8,6 +8,7 @@ Use this format when handing a Codex-designed project to the browser app. The ap
   "brief": "A desk display for room temperature powered by USB.",
   "summary": "Concept design awaiting component and enclosure review.",
   "cadUrl": "",
+  "wiringUrl": "",
   "parts": [
     {
       "id": "controller",
@@ -54,6 +55,6 @@ The sample demonstrates the carrier only; it is deliberately incomplete as a bui
 
 `powerRails` is optional for older projects. Each rail's `sourcePartId` and load `partId` must match a part ID. `currentMaEach` is the peak current per unit in milliamps; the app multiplies it by that part's quantity. Use `null` when current or rated supply is unknown, and record the source and operating conditions in the project notes. A computed headroom covers only assigned loads, so check startup surges, voltage compatibility, wires, connectors and regulator heat separately.
 
-`cadUrl` is optional. Link the editable CAD source and its verification package there when one exists. The app shows it beside a conceptual component index; the link does not turn that drawing into dimensioned geometry. Imported URLs are restricted to HTTP(S), and imported review marks still reset.
+`cadUrl` and `wiringUrl` are optional. Link the editable CAD source and its verification package through `cadUrl`, and an electrical plan with its evidence and open checks through `wiringUrl`. The app shows the links beside conceptual drawings; those links do not turn the drawings into verified CAD or a checked schematic. Imported URLs are restricted to HTTP(S), and imported review marks still reset.
 
 The app accepts additional fields but does not use them. Keep full calculations, datasheet links and dimensioned CAD sources beside the JSON when they cannot be represented faithfully in these fields.

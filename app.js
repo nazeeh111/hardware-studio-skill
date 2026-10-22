@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from './core.js?v=11';
+import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from './core.js?v=12';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -136,7 +136,9 @@ function renderParts(p) {
   return panelHead('MATERIALS / BOM', 'Parts list', 'Costs are editable planning estimates. Open each part to record a current supplier and verify its specifications.', '<div><button id="add-part" class="small-button" type="button">＋ Add part</button> <button id="export-bom" class="small-button" type="button">Export CSV ↗</button></div>') + (p.parts.length ? `<div class="table-wrap"><table class="parts-table"><thead><tr><th>PART</th><th>TYPE</th><th>QTY</th><th>UNIT EST.</th><th>STATUS</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><strong>No parts yet</strong>Add the physical components required by your brief.</div>`);
 }
 function wiringSvg(p) {
-  const parts = p.parts.slice(0, 14), points = new Map();
+  const connected = new Set(p.wires.flatMap(wire => [wire.from, wire.to]));
+  const parts = connected.size ? p.parts.filter(part => connected.has(part.id)) : p.parts;
+  const points = new Map();
   const cols = window.innerWidth < 500 ? 1 : window.innerWidth < 750 ? 2 : 3;
   const stepX = cols === 3 ? 245 : 225;
   const width = cols === 3 ? 700 : cols === 2 ? 465 : 220;
@@ -149,7 +151,8 @@ function wiringSvg(p) {
 function renderWiring(p) {
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const rows = p.wires.map((w, i) => `<div class="wire-row"><b>${html(labels[w.from] || 'Missing part')}</b><span class="arrow">→</span><b>${html(labels[w.to] || 'Missing part')}</b><span>${html(w.signal)} · ${html(w.voltage)}</span><button class="text-link" data-edit-wire="${i}" type="button">Edit</button></div>`).join('');
-  return panelHead('ELECTRICAL / CONNECTIONS', 'Wiring map', 'A relationship diagram for planning. Confirm the exact connector, pin number, ground path and current capacity before assembly.', '<div><button id="add-wire" class="small-button" type="button">＋ Add connection</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + (p.parts.length ? wiringSvg(p) : `<div class="empty"><strong>Add parts first</strong>Wiring will appear when components are in the design.</div>`) + (rows ? `<div class="wire-list">${rows}</div>` : '');
+  const evidence = safeUrl(p.wiringUrl) ? `<div class="notice">Attached electrical work: <a href="${html(safeUrl(p.wiringUrl))}" target="_blank" rel="noopener noreferrer">Open wiring plan and evidence ↗</a>. Confirm its open checks before connecting power.</div>` : '';
+  return panelHead('ELECTRICAL / CONNECTIONS', 'Wiring map', 'A relationship diagram for planning. Confirm the exact connector, pin number, ground path and current capacity before assembly.', '<div><button id="add-wire" class="small-button" type="button">＋ Add connection</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + (p.parts.length ? wiringSvg(p) : `<div class="empty"><strong>Add parts first</strong>Wiring will appear when components are in the design.</div>`) + (rows ? `<div class="wire-list">${rows}</div>` : '');
 }
 function renderPower(p) {
   const cards = (p.powerRails || []).map((rail, railIndex) => {
@@ -220,7 +223,7 @@ function openEditor(kind, index = -1) {
   if (kind === 'part') fields = field('name', 'Part name', item.name, { required: true, wide: true }) + field('category', 'Category', item.category || 'Other') + field('qty', 'Quantity', item.qty ?? 1, { type: 'number', min: 1, step: 1 }) + field('unitCost', 'Unit estimate (USD)', item.unitCost ?? 0, { type: 'number', min: 0, step: '.01' }) + field('voltage', 'Operating voltage', item.voltage || '') + field('sourceUrl', 'Supplier listing URL', item.sourceUrl || '', { type: 'url', wide: true }) + field('specUrl', 'Manufacturer specification or independent evidence URL', item.specUrl || '', { type: 'url', wide: true }) + field('detail', 'Specification, datasheet and open questions', item.detail || '', { type: 'textarea', wide: true }) + `<div class="field wide"><label class="verify-label"><input type="checkbox" name="verified"> I checked this exact part against the linked specification now</label></div>`;
   if (kind === 'wire') fields = field('from', 'From', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('to', 'To', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('signal', 'Signal or connection', item.signal || '', { required: true }) + field('voltage', 'Voltage / range', item.voltage || '') + field('note', 'Pinout or verification note', item.note || '', { type: 'textarea', wide: true });
   if (kind === 'step') fields = field('phase', 'Phase', item.phase || 'Build', { type: 'select', choices: [['Prepare', 'Prepare'], ['Wire', 'Wire'], ['Bring up', 'Bring up'], ['Assemble', 'Assemble'], ['Test', 'Test']] }) + field('title', 'Step title', item.title || '', { required: true }) + field('detail', 'Action and acceptance check', item.detail || '', { type: 'textarea', wide: true });
-  if (kind === 'title') fields = field('title', 'Project title', p.title, { required: true, wide: true }) + field('brief', 'Design brief', p.brief, { type: 'textarea', wide: true }) + field('summary', 'Summary', p.summary, { type: 'textarea', wide: true }) + field('cadUrl', 'Dimensioned CAD or verification package URL', p.cadUrl || '', { type: 'url', wide: true });
+  if (kind === 'title') fields = field('title', 'Project title', p.title, { required: true, wide: true }) + field('brief', 'Design brief', p.brief, { type: 'textarea', wide: true }) + field('summary', 'Summary', p.summary, { type: 'textarea', wide: true }) + field('wiringUrl', 'Electrical plan and evidence URL', p.wiringUrl || '', { type: 'url', wide: true }) + field('cadUrl', 'Dimensioned CAD or verification package URL', p.cadUrl || '', { type: 'url', wide: true });
   $('#dialog-fields').innerHTML = fields; $('#editor-dialog').showModal();
 }
 function closeEditor() { $('#editor-dialog').close(); editor = null; }
@@ -246,7 +249,17 @@ function saveEditor(event) {
     if (!step.title) return editorError('Give the step a title.');
     if (index < 0) p.steps.push(step); else p.steps[index] = step;
   }
-  if (kind === 'title') { const title = String(form.get('title') || '').trim().slice(0, 100), cadUrl = String(form.get('cadUrl') || '').trim(); if (!title) return editorError('Give the project a title.'); if (cadUrl && !/^https?:\/\//i.test(cadUrl)) return editorError('CAD URL must start with https:// or http://.'); if (cadUrl !== (p.cadUrl || '')) p.review.mechanical = false; p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; }
+  if (kind === 'title') {
+    const title = String(form.get('title') || '').trim().slice(0, 100);
+    const cadUrl = String(form.get('cadUrl') || '').trim();
+    const wiringUrl = String(form.get('wiringUrl') || '').trim();
+    if (!title) return editorError('Give the project a title.');
+    if (cadUrl && !/^https?:\/\//i.test(cadUrl)) return editorError('CAD URL must start with https:// or http://.');
+    if (wiringUrl && !/^https?:\/\//i.test(wiringUrl)) return editorError('Electrical plan URL must start with https:// or http://.');
+    if (cadUrl !== (p.cadUrl || '')) p.review.mechanical = false;
+    if (wiringUrl !== (p.wiringUrl || '')) p.review.electrical = false;
+    p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; p.wiringUrl = wiringUrl;
+  }
   closeEditor(); save(); render(); showToast('Saved locally.');
 }
 function deleteEntry() {

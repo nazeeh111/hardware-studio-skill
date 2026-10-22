@@ -30,7 +30,7 @@
   "envelopes": {
     "pico_step_mm": [52.3, 21.0, 3.73],
     "stick_step_mm": [50.8, 10.16, 2.6],
-    "stick_published_mm": [51.1, 10.2, 3.2]
+    "stick_published_mm": [51.1, 10.22, 3.2]
   },
   "acceptance": {
     "dimension_tolerance_mm": 0.03,

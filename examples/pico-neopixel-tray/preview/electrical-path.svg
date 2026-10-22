@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Provisional Pico to NeoPixel electrical path</title>
+  <desc id="desc">Pico GP2 sends 3.3 volt data to a SN74AHCT125N buffer, then through a 470 ohm resistor to NeoPixel DIN. A selected 5 volt source must branch separately to Pico USB, the buffer and the Stick with common ground. Input capacitors and measured current remain open checks.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M1 1L7 4.5L1 8" fill="none" stroke="#255b50" stroke-width="1.5"/></marker>
+    <style>
+      .label{font:700 15px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1.5px;fill:#43645c}.tiny{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px;fill:#617c71}.body{font:15px system-ui,-apple-system,sans-serif;fill:#284e45}.heading{font:600 25px system-ui,-apple-system,sans-serif;fill:#103e35}.hero{font:600 35px system-ui,-apple-system,sans-serif;fill:#103e35}.number{font:700 14px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#326354}.white{fill:#f4f1e8}
+    </style>
+  </defs>
+  <rect width="1200" height="760" fill="#f4f1e8"/>
+  <path d="M0 0H1200V12H0Z" fill="#123f36"/>
+  <text x="55" y="54" class="label">H + HARDWARE / STUDIO</text>
+  <text x="55" y="97" class="hero">One rail. Two logic levels.</text>
+  <text x="929" y="55" class="tiny">ELECTRICAL / 001</text>
+  <rect x="900" y="70" width="245" height="32" rx="16" fill="#e4da6c"/>
+  <text x="922" y="91" class="tiny" style="fill:#153e36;font-weight:700">PROVISIONAL • UNBUILT</text>
+  <line x1="55" y1="118" x2="1145" y2="118" stroke="#b7c6b7"/>
+
+  <rect x="55" y="152" width="248" height="210" rx="12" fill="#fffefa" stroke="#b3c8bd" stroke-width="2"/>
+  <text x="77" y="180" class="number">01 / CONTROLLER</text>
+  <text x="77" y="222" class="heading">Raspberry Pi Pico</text>
+  <text x="77" y="253" class="body">GP2 • 3.3 V data</text>
+  <line x1="77" y1="272" x2="281" y2="272" stroke="#d1ddd3"/>
+  <text x="77" y="302" class="body">Power via micro-USB</text>
+  <text x="77" y="326" class="tiny">No 5 V on GPIO</text>
+
+  <rect x="360" y="152" width="285" height="210" rx="12" fill="#fffefa" stroke="#b3c8bd" stroke-width="2"/>
+  <text x="383" y="180" class="number">02 / LEVEL SHIFT</text>
+  <text x="383" y="222" class="heading">SN74AHCT125N</text>
+  <text x="383" y="253" class="body">1A pin 2 → 1Y pin 3</text>
+  <line x1="383" y1="272" x2="620" y2="272" stroke="#d1ddd3"/>
+  <text x="383" y="302" class="body">VCC 14 • GND 7</text>
+  <text x="383" y="326" class="tiny">1OE pin 1 held low</text>
+
+  <rect x="702" y="152" width="155" height="210" rx="12" fill="#fffefa" stroke="#b3c8bd" stroke-width="2"/>
+  <text x="723" y="180" class="number">03 / SERIES</text>
+  <text x="723" y="226" class="heading">470 Ω</text>
+  <text x="723" y="257" class="body">resistor</text>
+  <line x1="723" y1="272" x2="835" y2="272" stroke="#d1ddd3"/>
+  <text x="723" y="302" class="tiny">Near DIN</text>
+
+  <rect x="914" y="152" width="231" height="210" rx="12" fill="#123f36"/>
+  <text x="936" y="180" class="label" style="fill:#c4d5bd">04 / EIGHT PIXELS</text>
+  <text x="936" y="222" class="heading white">NeoPixel Stick</text>
+  <text x="936" y="253" class="body white">DIN • 5VDC • GND</text>
+  <line x1="936" y1="272" x2="1123" y2="272" stroke="#65887d"/>
+  <text x="936" y="302" class="body white">Up to 480 mA*</text>
+  <text x="936" y="326" class="tiny" style="fill:#c4d5bd">DOUT unconnected</text>
+
+  <path d="M304 247H350M646 247H692M858 247H904" fill="none" stroke="#255b50" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="310" y="232" class="tiny">3.3 V</text>
+  <text x="652" y="232" class="tiny">5 V DATA</text>
+  <text x="861" y="232" class="tiny">DIN</text>
+
+  <text x="55" y="416" class="label">POWER DISTRIBUTION / SELECT &amp; RATE BEFORE BUILD</text>
+  <path d="M179 362V469M503 362V469M1029 362V469M179 469H1029" fill="none" stroke="#c6a937" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="179" cy="469" r="6" fill="#c6a937"/><circle cx="503" cy="469" r="6" fill="#c6a937"/><circle cx="1029" cy="469" r="6" fill="#c6a937"/>
+  <text x="111" y="452" class="tiny">USB BRANCH</text>
+  <text x="445" y="452" class="tiny">VCC 14</text>
+  <text x="961" y="452" class="tiny">5VDC</text>
+
+  <rect x="55" y="533" width="290" height="145" rx="12" fill="#e1e8da" stroke="#b3c8bd"/>
+  <text x="77" y="560" class="number">05 / SOURCE • OPEN</text>
+  <text x="77" y="599" class="heading">Regulated 5 V</text>
+  <text x="77" y="630" class="body">Source, cable &amp; branches TBD</text>
+  <text x="77" y="653" class="tiny">Common ground required</text>
+  <path d="M200 533V469" fill="none" stroke="#c6a937" stroke-width="4"/>
+
+  <rect x="405" y="533" width="306" height="145" rx="12" fill="#fffefa" stroke="#b3c8bd"/>
+  <text x="427" y="560" class="number">06 / IC BYPASS</text>
+  <text x="427" y="600" class="heading">0.1 µF ceramic</text>
+  <text x="427" y="630" class="body">Across VCC 14 / GND 7</text>
+  <text x="427" y="653" class="tiny">Close to shifter</text>
+  <path d="M558 533V469" fill="none" stroke="#c6a937" stroke-width="3"/>
+
+  <rect x="766" y="533" width="379" height="145" rx="12" fill="#fffefa" stroke="#b3c8bd"/>
+  <text x="788" y="560" class="number">07 / LED INPUT BUFFER</text>
+  <text x="788" y="600" class="heading">1000 µF polarized</text>
+  <text x="788" y="630" class="body">Across Stick 5VDC / GND</text>
+  <text x="788" y="653" class="tiny">At least 6.3 V; verify polarity</text>
+  <path d="M955 533V469" fill="none" stroke="#c6a937" stroke-width="3"/>
+
+  <line x1="55" y1="709" x2="1145" y2="709" stroke="#b7c6b7"/>
+  <text x="55" y="735" class="tiny">* 8 × 60 mA FULL-WHITE ESTIMATE • SUPPLY / CONTROLLER / SHIFTER CURRENT UNKNOWN • NO BENCH VERIFICATION</text>
+</svg>

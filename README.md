@@ -8,7 +8,7 @@ An original, local-first hardware design workspace informed by a public study of
 
 [View the narrow layout](assets/studio-narrow.png).
 
-For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, and a fit report checked against two original manufacturer STEP models. It is a mechanical prototype with documented open checks.
+For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path with an incomplete power worksheet. It remains a prototype with documented open checks.
 
 ## Run
 

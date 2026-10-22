@@ -2,25 +2,25 @@
 
 ![Isometric render of the original tray](preview/tray-isometric.jpg)
 
-This example closes one mechanical gap in Hardware Studio: it supplies an editable, dimensioned **66 × 45 × 14 mm** open tray for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426. The [top layout](preview/layout.svg) marks both board envelopes and six locator pins. The [app project](project.json) can be imported to inspect its parts and open checks. The [original STEP](generated/v1/tray.step), [STL](generated/v1/tray.stl), [OpenCascade source](model.py), and [Blender scene](preview/tray-scene.blend) are included.
+This example closes one mechanical gap in Hardware Studio: it supplies an editable, dimensioned **66 × 45 × 14 mm** open tray for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426. The [top layout](preview/layout.svg) marks both board envelopes and six locator pins. A separate [provisional electrical plan](electrical-plan.md) maps the power and data path with its open checks. The [app project](project.json) can be imported to inspect the combined parts, connections and incomplete power worksheet. The [original STEP](generated/v1/tray.step), [STL](generated/v1/tray.stl), [OpenCascade source](model.py), and [Blender scene](preview/tray-scene.blend) are included.
 
-This is a mechanical prototype, not a complete desk light or fabrication release. It has no cover, diffuser, verified electrical design, cable plug model, retention fasteners, printed fit test, or measured production components. The tray geometry is original; the manufacturer CAD files used for checking are **linked but not redistributed**.
+This is a mechanical prototype with a provisional wiring plan, not a complete desk light or fabrication release. It has no cover, diffuser, verified electrical assembly, auxiliary-electronics placement, cable plug model, retention fasteners, printed fit test, or measured production components. The tray geometry is original; the manufacturer CAD files used for checking are **linked but not redistributed**.
 
 ## Source evidence, checked 22 October 2026
 
 | Part | Original source | Observed geometry | Scope |
 |---|---|---|---|
 | Raspberry Pi Pico Rev3 | [Raspberry Pi Pico datasheet](https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf) and [official STEP ZIP](https://datasheets.raspberrypi.com/pico/Pico-R3-step.zip) | Datasheet: 51 × 21 × 1 mm PCB and four 2.1 mm holes. Imported STEP, including connector/component overhang: 52.3 × 21.0 × 3.73 mm. Hole centers in source axes: (4.8, −49), (16.2, −49), (4.8, −2), (16.2, −2) mm. | CAD geometry, not a physical board measurement. |
-| Adafruit NeoPixel Stick #1426 | [NeoPixel guide](https://learn.adafruit.com/adafruit-neopixel-uberguide/downloads) and [official CAD STEP at commit c128bce](https://github.com/adafruit/Adafruit_CAD_Parts/blob/c128bceb1f96b6ea8b68f250bda986ba85da24ea/1426%208x%20NeoPixel%20Stick/1426%208x%20NeoPixel%20Stick.step) | Published outline: 51.1 × 10.2 mm. Imported STEP: 50.8 × 10.16 × 2.6 mm, with 1.1 mm radius mounting holes at (12.7, 8.128) and (38.1, 8.128) mm. The tray check uses the **larger published envelope**. | The 0.3 mm length difference is retained, not silently treated as agreement. |
+| Adafruit NeoPixel Stick #1426 | [Product dimensions](https://www.adafruit.com/product/1426) and [official CAD STEP at commit c128bce](https://github.com/adafruit/Adafruit_CAD_Parts/blob/c128bceb1f96b6ea8b68f250bda986ba85da24ea/1426%208x%20NeoPixel%20Stick/1426%208x%20NeoPixel%20Stick.step) | Published dimensions: 51.1 × 10.22 × 3.19 mm. Imported STEP: 50.8 × 10.16 × 2.6 mm, with 1.1 mm radius mounting holes at (12.7, 8.128) and (38.1, 8.128) mm. The tray check uses the larger published length and width and rounds height up to **3.2 mm**. | The model/published differences are retained, not silently treated as agreement. |
 
 The checked reference files had SHA-256 `ea5c693afee3de73e9fcaab1892a5ed44bf789438b9b1e5906e9c4f9859cab8b` (Pico STEP) and `d3066e01e96644b0990469cf4450ab909ef0c8b034a12bd8151320fa33f98522` (Adafruit STEP). The Adafruit Git blob SHA was `7d01cfa7a4bb1495964542b31d05b5a4b06ebad4`. Check the hashes again when using newer files.
 
 ## What the geometry check established
 
-The tray has 2.5 mm nominal walls and floor, an open USB-side notch, bosses at the manufacturer model's mounting-hole centers, and 1.6 mm diameter locator pins. Those pins have nominal radial clearances of 0.25 mm in Pico's 2.1 mm holes and 0.30 mm in the Stick's 2.2 mm holes. The [fresh-process fit report](checks/v3/fit-report.json) reopened the exported tray STEP and both manufacturer STEP files. It found:
+The tray has 2.5 mm nominal walls and floor, an open USB-side notch, bosses at the manufacturer model's mounting-hole centers, and 1.6 mm diameter locator pins. Those pins have nominal radial clearances of 0.25 mm in Pico's 2.1 mm holes and 0.30 mm in the Stick's 2.2 mm holes. The [fresh-process fit report](checks/v4/fit-report.json) reopened the exported tray STEP and both manufacturer STEP files. It found:
 
 - A valid, one-solid tray with 66 × 45 × 14 mm overall bounds.
-- Zero modeled intersection with either board or between the boards. The closest Pico envelope edge is 1.5 mm from the cavity wall; the **published** Stick envelope stays at least 3.8 mm from a wall.
+- Zero modeled intersection with either board or between the boards. The closest Pico envelope edge is 1.5 mm from the cavity wall; the **published** Stick envelope stays at least 3.78 mm from a wall.
 - The USB wall notch covers the official Pico STEP connector's Y/Z envelope; it has not been checked against a mating cable plug.
 - A shifted Pico produced 69.30 mm³ of wall interference. Enlarged locator pins produced 5.78 mm³ and 2.66 mm³ of modeled interference with Pico and Stick. A revised 49 mm wide tray with the Stick moved 4 mm still had zero modeled overlap.
 

@@ -1,0 +1,168 @@
+{
+  "scope": "same-kernel STEP readback and manufacturer-model geometric fit; no physical or second-CAD-system test",
+  "units": "mm",
+  "tray_bounds": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      66.0,
+      45.0,
+      14.0
+    ],
+    "span_mm": [
+      66.0,
+      45.0,
+      14.0
+    ]
+  },
+  "source_files_sha256": {
+    "tray": "6dddb76dc3a123e8fa801a9535d71c8c12671024fbf98457200f944d6f24bc85",
+    "pico": "ea5c693afee3de73e9fcaab1892a5ed44bf789438b9b1e5906e9c4f9859cab8b",
+    "stick": "d3066e01e96644b0990469cf4450ab909ef0c8b034a12bd8151320fa33f98522"
+  },
+  "source_model_holes_mm": {
+    "pico": [
+      [
+        4.8,
+        -49.0
+      ],
+      [
+        4.8,
+        -2.0
+      ],
+      [
+        16.2,
+        -49.0
+      ],
+      [
+        16.2,
+        -2.0
+      ]
+    ],
+    "stick": [
+      [
+        12.7,
+        8.128
+      ],
+      [
+        38.1,
+        8.128
+      ]
+    ]
+  },
+  "nominal_locator_radial_clearance_mm": {
+    "pico": 0.25,
+    "stick": 0.30000000000000004
+  },
+  "mount_centers_mm": {
+    "pico": [
+      [
+        11.0,
+        8.8
+      ],
+      [
+        11.0,
+        20.2
+      ],
+      [
+        58.0,
+        8.8
+      ],
+      [
+        58.0,
+        20.2
+      ]
+    ],
+    "stick": [
+      [
+        20.299999999999997,
+        36.628
+      ],
+      [
+        45.7,
+        36.628
+      ]
+    ]
+  },
+  "placed_envelopes_mm": {
+    "pico": {
+      "min_mm": [
+        7.6999999999999975,
+        3.999999999999996,
+        8.0
+      ],
+      "max_mm": [
+        60.0,
+        25.0,
+        11.730000000000002
+      ],
+      "span_mm": [
+        52.300000000000004,
+        21.000000000000004,
+        3.730000000000002
+      ]
+    },
+    "stick": {
+      "min_mm": [
+        7.6,
+        28.499999999999996,
+        8.0
+      ],
+      "max_mm": [
+        58.4,
+        38.66,
+        10.6
+      ],
+      "span_mm": [
+        50.8,
+        10.16,
+        2.5999999999999996
+      ]
+    },
+    "published_stick": {
+      "min_mm": [
+        7.6,
+        28.499999999999996,
+        8.0
+      ],
+      "max_mm": [
+        58.7,
+        38.72,
+        11.2
+      ]
+    }
+  },
+  "usb_model_overhang_mm": {
+    "min_mm": [
+      7.6999999999999975,
+      10.5,
+      8.789999999999994
+    ],
+    "max_mm": [
+      13.299999999999997,
+      18.500000000000004,
+      11.730000000000002
+    ]
+  },
+  "notch_covers_modeled_usb_connector_envelope": true,
+  "minimum_wall_clearance_mm": {
+    "pico": 1.499999999999996,
+    "stick_published": 3.780000000000001
+  },
+  "nominal_intersection_mm3": {
+    "pico": 0.0,
+    "stick": 0.0,
+    "between_boards": 0.0
+  },
+  "known_interference_mm3": {
+    "pico_shifted_into_wall_mm3": 69.29799190662334,
+    "oversize_locator_pico_mm3": 5.780530482605197,
+    "oversize_locator_stick_mm3": 2.6577873849369595
+  },
+  "revised_width_mm": 49.0,
+  "revised_stick_intersection_mm3": 0.0,
+  "all_assertions_passed": true
+}

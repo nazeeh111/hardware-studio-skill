@@ -28,6 +28,7 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   const p = makeProject(STARTERS[0]);
   p.parts[0].sourceUrl = 'javascript:alert(1)';
   p.cadUrl = 'javascript:alert(1)';
+  p.wiringUrl = 'javascript:alert(1)';
   p.parts[0].specUrl = 'https://example.com/spec';
   p.parts[0].checkedAt = new Date().toISOString();
   p.parts[0].verified = true;
@@ -35,6 +36,7 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   const imported = safeProject(p);
   assert.equal(imported.parts[0].sourceUrl, '');
   assert.equal(imported.cadUrl, '');
+  assert.equal(imported.wiringUrl, '');
   assert.equal(imported.starterId, 'imported');
   assert.equal(imported.parts[0].specUrl, 'https://example.com/spec');
   assert.equal(imported.parts[0].verified, false);
@@ -48,6 +50,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.parts[0].sourceUrl = 'https://example.com/unchecked';
   raw.parts[0].verified = true;
   raw.cadUrl = 'https://example.com/unverified-cad';
+  raw.wiringUrl = 'https://example.com/unverified-wiring';
   raw.review = { electrical: true, mechanical: true, sourcing: true };
   const draft = localAiDraft(raw, 'USB plant monitor', 'qwen3:4b');
   assert.equal(draft.starterId, 'ai');
@@ -55,6 +58,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.parts[0].sourceUrl, '');
   assert.equal(draft.parts[0].verified, false);
   assert.equal(draft.cadUrl, '');
+  assert.equal(draft.wiringUrl, '');
   assert.equal(draft.review.electrical, false);
   assert.match(draft.summary, /unverified/);
 });
