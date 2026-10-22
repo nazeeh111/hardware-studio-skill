@@ -1,0 +1,55 @@
+{
+  "units": "mm",
+  "model": "original analytic B-rep tray",
+  "source_design_sha256": "14fe35b78dd8f6420ed8a50f4af0be2103cad3ed50617bdfeb6981ac7022db83",
+  "bounds": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      66.0,
+      45.0,
+      14.0
+    ],
+    "span_mm": [
+      66.0,
+      45.0,
+      14.0
+    ]
+  },
+  "volume_mm3": 13556.364475159604,
+  "is_valid": true,
+  "mount_centers_mm": {
+    "pico": [
+      [
+        11.0,
+        8.8
+      ],
+      [
+        11.0,
+        20.2
+      ],
+      [
+        58.0,
+        8.8
+      ],
+      [
+        58.0,
+        20.2
+      ]
+    ],
+    "stick": [
+      [
+        20.299999999999997,
+        36.628
+      ],
+      [
+        45.7,
+        36.628
+      ]
+    ]
+  },
+  "vendor_models_included": false
+}

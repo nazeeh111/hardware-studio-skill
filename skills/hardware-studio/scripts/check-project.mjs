@@ -10,6 +10,7 @@ try {
   if (!project || typeof project !== 'object') issues.push('Project must be a JSON object.');
   for (const field of ['parts', 'wires', 'steps']) if (!Array.isArray(project?.[field])) issues.push(`${field} must be an array.`);
   if (typeof project?.title !== 'string' || !project.title.trim()) issues.push('title is required.');
+  if (project?.cadUrl && !/^https?:\/\//i.test(project.cadUrl)) issues.push('cadUrl must be HTTP(S).');
   const ids = new Set();
   for (const [i, part] of (Array.isArray(project?.parts) ? project.parts : []).entries()) {
     if (!part || typeof part !== 'object') { issues.push(`parts[${i}] must be an object.`); continue; }

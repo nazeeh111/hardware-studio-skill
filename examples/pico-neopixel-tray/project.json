@@ -1,0 +1,59 @@
+{
+  "title": "Pico + NeoPixel prototype tray",
+  "brief": "An open, dimensioned prototype tray for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426, with USB cable access.",
+  "summary": "Original 66 × 45 × 14 mm tray. Geometry was checked against manufacturer STEP models; full electronics, cable fit, fastening and physical print fit remain open.",
+  "cadUrl": "https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray",
+  "starterId": "imported",
+  "parts": [
+    {
+      "id": "pico-r3",
+      "name": "Raspberry Pi Pico Rev3",
+      "category": "Controller",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Official STEP envelope including micro-USB overhang: 52.3 × 21.0 × 3.73 mm. Board specification says 51 × 21 × 1 mm PCB. Four 2.1 mm mounting holes. No physical board was measured.",
+      "voltage": "USB 5 V input; board logic 3.3 V",
+      "sourceUrl": "https://www.raspberrypi.com/products/raspberry-pi-pico/",
+      "specUrl": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "neopixel-1426",
+      "name": "Adafruit NeoPixel Stick #1426, 8 RGB pixels",
+      "category": "Lighting",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Manufacturer guide gives 51.1 × 10.2 mm. Manufacturer STEP envelope measures 50.8 × 10.16 × 2.6 mm; this tray uses the larger published envelope. Two 2.2 mm modelled mounting holes. Electrical behavior and thermal conditions were not checked.",
+      "voltage": "5 V nominal; confirm exact product revision",
+      "sourceUrl": "https://www.adafruit.com/product/1426",
+      "specUrl": "https://learn.adafruit.com/adafruit-neopixel-uberguide/downloads",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "tray",
+      "name": "Original two-board prototype tray",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Editable OpenCascade source and STEP are in examples/pico-neopixel-tray. Open tray with six locator pins and a USB-side notch. Not released for fabrication until cable, fastening, tolerance and print-process checks pass.",
+      "voltage": "",
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "powerRails": [],
+  "steps": [
+    { "phase": "Prepare", "title": "Confirm source model revisions", "detail": "Download the Raspberry Pi and Adafruit STEP files named in the example README and compare their hashes with the fit report.", "done": false },
+    { "phase": "Prepare", "title": "Check mechanical dimensions", "detail": "Run the verification script, then measure the exact boards and connector on physical samples before committing to a print.", "done": false },
+    { "phase": "Prepare", "title": "Resolve the missing electronics", "detail": "Select the logic-level interface, power path, cable, strain relief and LED diffuser. Document their fit and electrical ratings separately.", "done": false },
+    { "phase": "Test", "title": "Print a fit coupon", "detail": "Use the intended material and printer to test locator-pin diameter, wall thickness and board-hole engagement before printing the full tray.", "done": false },
+    { "phase": "Test", "title": "Dry-fit unpowered parts", "detail": "Check board insertion and removal, USB plug access, cable bend, wire clearance and retention without connecting power.", "done": false }
+  ],
+  "notes": "This project records a mechanical prototype only. The STEP fit report found zero modeled overlap and at least 1.5 mm clearance from the Pico envelope to a cavity wall. The supplied boards, USB cable, printed material and electrical system were not physically tested. All costs are unknown, not $0 quotes.",
+  "review": { "electrical": false, "mechanical": false, "sourcing": false }
+}

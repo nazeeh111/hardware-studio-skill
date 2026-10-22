@@ -1,0 +1,41 @@
+{
+  "units": "mm",
+  "model_status": "dimensioned prototype; not fabrication-cleared",
+  "tray": {
+    "length": 66.0,
+    "width": 45.0,
+    "height": 14.0,
+    "wall": 2.5,
+    "floor": 2.5,
+    "usb_notch_y": [7.0, 22.0],
+    "usb_notch_z_min": 3.0
+  },
+  "mounts": {
+    "boss_top_z": 8.0,
+    "locator_height": 1.2,
+    "locator_radius": 0.8,
+    "pico_boss_radius": 2.2,
+    "stick_boss_radius": 1.7
+  },
+  "placements": {
+    "pico": { "x_offset": 60.0, "y_offset": 4.0, "z_offset": 8.5 },
+    "stick": { "x_offset": 7.6, "y_offset": 28.5, "z_offset": 8.0 }
+  },
+  "source_model_holes": {
+    "pico_xy_z": [[4.8, -49.0], [16.2, -49.0], [4.8, -2.0], [16.2, -2.0]],
+    "stick_xy": [[12.7, 8.128], [38.1, 8.128]],
+    "pico_hole_radius": 1.05,
+    "stick_hole_radius": 1.1
+  },
+  "envelopes": {
+    "pico_step_mm": [52.3, 21.0, 3.73],
+    "stick_step_mm": [50.8, 10.16, 2.6],
+    "stick_published_mm": [51.1, 10.2, 3.2]
+  },
+  "acceptance": {
+    "dimension_tolerance_mm": 0.03,
+    "overlap_limit_mm3": 0.01,
+    "negative_overlap_min_mm3": 1.0,
+    "min_envelope_wall_clearance_mm": 1.0
+  }
+}

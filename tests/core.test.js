@@ -27,12 +27,15 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   assert.throws(() => safeProject({ parts: [], wires: [] }), /not a Hardware Studio project/);
   const p = makeProject(STARTERS[0]);
   p.parts[0].sourceUrl = 'javascript:alert(1)';
+  p.cadUrl = 'javascript:alert(1)';
   p.parts[0].specUrl = 'https://example.com/spec';
   p.parts[0].checkedAt = new Date().toISOString();
   p.parts[0].verified = true;
   p.review = { electrical: true, mechanical: true, sourcing: true };
   const imported = safeProject(p);
   assert.equal(imported.parts[0].sourceUrl, '');
+  assert.equal(imported.cadUrl, '');
+  assert.equal(imported.starterId, 'imported');
   assert.equal(imported.parts[0].specUrl, 'https://example.com/spec');
   assert.equal(imported.parts[0].verified, false);
   assert.equal(imported.parts[0].checkedAt, '');
@@ -44,12 +47,14 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.parts[0].unitCost = 999;
   raw.parts[0].sourceUrl = 'https://example.com/unchecked';
   raw.parts[0].verified = true;
+  raw.cadUrl = 'https://example.com/unverified-cad';
   raw.review = { electrical: true, mechanical: true, sourcing: true };
   const draft = localAiDraft(raw, 'USB plant monitor', 'qwen3:4b');
   assert.equal(draft.starterId, 'ai');
   assert.equal(draft.parts[0].unitCost, 0);
   assert.equal(draft.parts[0].sourceUrl, '');
   assert.equal(draft.parts[0].verified, false);
+  assert.equal(draft.cadUrl, '');
   assert.equal(draft.review.electrical, false);
   assert.match(draft.summary, /unverified/);
 });
@@ -70,6 +75,12 @@ test('local model output missing the requested temperature sensor is rejected', 
 test('unpriced AI parts export as blank costs', () => {
   const draft = localAiDraft(makeProject(STARTERS[0]), 'A plant monitor', 'qwen3:4b');
   assert.match(bomCsv(draft), /"ESP32 DevKit board","Control","1","",""/);
+});
+
+test('unknown zero costs stay blank for imported custom projects', () => {
+  const p = safeProject(makeProject(STARTERS[0]));
+  p.parts[0].unitCost = 0;
+  assert.match(bomCsv(p), /"ESP32 DevKit board","Control","1","",""/);
 });
 
 test('power budget multiplies part quantities and distinguishes incomplete, low margin and overload', () => {

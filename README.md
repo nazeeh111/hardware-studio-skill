@@ -8,6 +8,8 @@ An original, local-first hardware design workspace informed by a public study of
 
 [View the narrow layout](assets/studio-narrow.png).
 
+For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, and a fit report checked against two original manufacturer STEP models. It is a mechanical prototype with documented open checks.
+
 ## Run
 
 From this folder:
@@ -29,13 +31,14 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections and power loads. A checked part records a specification link and check date; imported check marks reset for review.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG.
+- Attach a link to a separate dimensioned CAD and verification package; the Assembly view keeps that evidence distinct from its conceptual drawing.
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
 
 ## Limits that matter
 
-This app does **not** produce a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. Diagrams show relationships and part inventory. The power worksheet covers only the loads assigned to each rail and does not check voltage compatibility, startup surges, cable or connector ratings, or regulator heat. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
+The browser app does **not** generate a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. The separate CAD example is manually authored and dimensioned, but has not passed a physical fit or fabrication review. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. App diagrams show relationships and part inventory. The power worksheet covers only the loads assigned to each rail and does not check voltage compatibility, startup surges, cable or connector ratings, or regulator heat. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
 
 The [Blueprint analysis](./BLUEPRINT_ANALYSIS.md) separates directly observed public behavior from Blueprint's own statements and unknown implementation details. The [hardware design skill](./skills/hardware-studio/SKILL.md) guides Codex through a more rigorous end-to-end design workflow and can use appropriate local CAD tools when a dimensioned model is requested.
 
