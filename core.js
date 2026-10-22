@@ -274,5 +274,13 @@ export function localAiDraft(input, brief, model) {
   ];
   const missing = expected.filter(check => check.requested.test(brief) && !check.present.test(terms)).map(check => check.name);
   if (missing.length) throw new Error(`The local model omitted a requested ${missing.join(' and ')}. Try another model or use a manual project.`);
+  // A common model failure is a Pico-to-NeoPixel drawing with no LED supply.
+  // A named 5 V design also needs a deliberate signal interface.
+  if (/\b(?:pico|rp2040)\b/i.test(brief) && /\b(?:neopixel|ws2812)\b/i.test(brief)) {
+    const missingHardware = [];
+    if (!/\b(?:power\s*(?:supply|source|adapter)|5\s?v\s*(?:supply|adapter)|battery|regulated\s*5\s?v)\b/i.test(terms)) missingHardware.push('rated LED power source');
+    if (/\b5\s?v\b/i.test(`${brief} ${terms}`) && !/\b(?:level\s*(?:shifter|converter|translator)|74(?:a)?hct(?:125|245)|logic\s*buffer)\b/i.test(terms)) missingHardware.push('logic-level interface');
+    if (missingHardware.length) throw new Error(`The local model omitted a ${missingHardware.join(' and a ')} for the requested Pico and 5 V NeoPixel design. Review power and signal requirements before drafting again.`);
+  }
   return project;
 }

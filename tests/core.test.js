@@ -82,6 +82,25 @@ test('local model output missing the requested temperature sensor is rejected', 
   assert.throws(() => localAiDraft(raw, 'A temperature display', 'qwen3:4b'), /requested temperature sensor/);
 });
 
+test('local model cannot present a Pico and 5 V NeoPixel draft without LED power and level shifting', () => {
+  const raw = makeProject(STARTERS[1]);
+  raw.parts = [
+    { id: 'pico', name: 'Raspberry Pi Pico', category: 'Control', qty: 1, unitCost: 0 },
+    { id: 'pixels', name: 'NeoPixel stick', category: 'Light', qty: 1, unitCost: 0 },
+    { id: 'usb', name: 'USB cable', category: 'Other', qty: 1, unitCost: 0 }
+  ];
+  raw.wires = [{ id: 'data', from: 'pico', to: 'pixels', label: 'data' }];
+  raw.steps = [{ id: 'a', text: 'Mount controller' }, { id: 'b', text: 'Wire pixels' }, { id: 'c', text: 'Test' }];
+  raw.powerRails = [];
+  const brief = 'Build a Raspberry Pi Pico and 5 V NeoPixel tray';
+  assert.throws(() => localAiDraft(raw, brief, 'local-fast:latest'), /rated LED power source and a logic-level interface/);
+  assert.throws(() => localAiDraft(raw, 'Build a Raspberry Pi Pico and NeoPixel tray', 'local-fast:latest'), /rated LED power source/);
+  raw.parts.push({ id: 'supply', name: 'Rated 5 V power supply', category: 'Power', qty: 1, unitCost: 0 });
+  assert.throws(() => localAiDraft(raw, brief, 'local-fast:latest'), /logic-level interface/);
+  raw.parts.push({ id: 'shift', name: '74AHCT125 logic buffer', category: 'Interface', qty: 1, unitCost: 0 });
+  assert.equal(localAiDraft(raw, brief, 'local-fast:latest').parts.length, 5);
+});
+
 test('unpriced AI parts export as blank costs', () => {
   const draft = localAiDraft(makeProject(STARTERS[0]), 'A plant monitor', 'qwen3:4b');
   assert.match(bomCsv(draft), /"ESP32 DevKit board","Control","1","",""/);

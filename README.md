@@ -10,6 +10,8 @@ An original, local-first hardware design workspace informed by a public study of
 
 For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path with an incomplete power worksheet. It remains a prototype with documented open checks.
 
+To create a new rectangular tray, use the [parametric tray generator](tools/tray-generator/README.md) with a millimeter JSON specification. It exports fresh STEP, STL and a dimensioned layout, then reopens the exports in a separate process to check their integrity. Component fit and fabrication checks still need separate evidence.
+
 ## Run
 
 From this folder:
@@ -27,7 +29,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 ## What works
 
 - Start from the filled plant monitor or ambient-light designs, or create a blank concept from any brief. The **Create concept** button records the brief and optional image without claiming automatic design; choose a starter explicitly to use its example parts and wiring.
-- Optionally draft an arbitrary low-voltage concept with a local Ollama model. The model output must pass structural checks; the app clears any claimed prices, supplier links and verification marks, then shows the proposed parts for review before adding it to the workspace.
+- Optionally draft an arbitrary low-voltage concept with a local Ollama model. The model output must pass structural checks; the app clears any claimed prices, supplier links and verification marks, then shows the proposed parts for review before adding it to the workspace. A Pico/RP2040 plus NeoPixel brief requires an explicit LED power source; a named 5 V version also requires a logic-level interface. This gate catches one observed omission and is not an electrical design review.
 - Add a JPEG, PNG or WebP sketch or photo to a brief. The browser redraws it as a JPEG under 250 KB, stripping original image metadata, and keeps it with the project in local storage and exports. A local vision model can use it as reference; its interpretation, measurements and hidden details remain unverified.
 - Add, edit and remove parts, connections and build steps. Connections can record exact pins or terminals at both ends; missing endpoints remain visible review items. Removing a part also removes its associated connections and power loads. A checked part records a specification link and check date; imported check marks reset for review.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
@@ -41,7 +43,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 
 ## Limits that matter
 
-The browser app does **not** generate a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. The separate CAD example is manually authored and dimensioned, but has not passed a physical fit or fabrication review. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. App diagrams show relationships and part inventory. The power worksheet covers only the loads assigned to each rail and does not check voltage compatibility, startup surges, cable or connector ratings, or regulator heat. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
+The browser app does **not** generate a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. The separate tray generator produces a limited class of parametric CAD; its output does not establish physical fit or fabrication readiness. The Pico example has separate manufacturer-model checks but still has no physical fit or fabrication review. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. App diagrams show relationships and part inventory. The power worksheet covers only the loads assigned to each rail and does not check voltage compatibility, startup surges, cable or connector ratings, or regulator heat. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
 
 The [Blueprint analysis](./BLUEPRINT_ANALYSIS.md) separates directly observed public behavior from Blueprint's own statements and unknown implementation details. The [hardware design skill](./skills/hardware-studio/SKILL.md) guides Codex through a more rigorous end-to-end design workflow and can use appropriate local CAD tools when a dimensioned model is requested.
 
