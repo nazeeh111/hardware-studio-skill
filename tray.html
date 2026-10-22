@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Tray workbench — Hardware Studio</title>
-  <link rel="stylesheet" href="./tray.css?v=1">
+  <link rel="stylesheet" href="./tray.css?v=2">
 </head>
 <body>
   <header class="bar"><a class="brand" href="./index.html"><span class="mark">H<span>+</span></span> HARDWARE <em>/ STUDIO</em></a><span class="edition">MECHANICAL WORKBENCH / 001</span><a class="back" href="./index.html">← Return to studio</a></header>
@@ -34,12 +34,13 @@
         <div id="preview" class="preview" aria-live="polite"></div>
         <p id="status" class="status" role="status">Checking geometry…</p>
         <div class="drawing-key"><span><i class="swatch shell-color"></i> Shell</span><span><i class="swatch boss-color"></i> Boss / locator</span><span><i class="swatch opening-color"></i> Opening</span></div>
-        <div class="actions"><button id="download" class="primary" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
-        <div class="handoff"><span>04 / GENERATE &amp; CHECK</span><p>Run the free local OpenCascade generator with the downloaded JSON. It writes STEP, STL, a dimensioned drawing, and readback reports.</p><code>python tools/tray-generator/generate.py --spec your-tray.json --out new-tray-package</code><a href="https://github.com/nazeeh111/hardware-studio-skill/tree/main/tools/tray-generator" target="_blank" rel="noopener noreferrer">Generator, setup, and limits ↗</a></div>
+        <div class="actions"><button id="generate-cad" class="primary" type="button" disabled>Generate STEP/STL package ↗</button><button id="download" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
+        <p id="cad-status" class="cad-status" role="status">Checking for the local CAD runtime…</p>
+        <div class="handoff"><span>04 / GENERATE &amp; CHECK</span><p>The local OpenCascade server builds STEP, STL, a dimensioned drawing, and readback reports. The public Pages version can prepare a spec but cannot run local CAD.</p><code>python tools/tray-generator/server.py --port 4174</code><a href="https://github.com/nazeeh111/hardware-studio-skill/tree/main/tools/tray-generator" target="_blank" rel="noopener noreferrer">Generator, setup, and limits ↗</a></div>
       </aside>
     </section>
     <footer>HARDWARE / STUDIO <span>Modeled geometry is not physical fit or fabrication approval.</span></footer>
   </main>
-  <script type="module" src="./tray-workbench.js?v=5"></script>
+  <script type="module" src="./tray-workbench.js?v=7"></script>
 </body>
 </html>

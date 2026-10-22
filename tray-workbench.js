@@ -8,6 +8,24 @@ const idField = (label, key, value) => `<label class="wide-field">${label}<input
 const num = 'type="number" step="0.1"';
 let draft = null;
 let storageKey = '';
+let cadAvailable = false;
+let cadBusy = false;
+
+function updateCadButton() {
+  $('#generate-cad').disabled = !draft || !cadAvailable || cadBusy;
+  $('#download').disabled = !draft;
+}
+
+async function detectCadService() {
+  try {
+    const response = await fetch('./api/health', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
+    const status = await response.json();
+    cadAvailable = response.ok && status.ok === true && status.schema === schema;
+  } catch { cadAvailable = false; }
+  $('#cad-status').textContent = cadAvailable ? 'Local OpenCascade runtime ready. CAD builds stay on this computer.' : 'Local CAD runtime unavailable here. Download the spec, then start the free local server shown below.';
+  $('#cad-status').classList.toggle('error', !cadAvailable);
+  updateCadButton();
+}
 
 function mountRow(mount, index) {
   const type = mount.holeRadius != null ? 'through-hole' : mount.locatorRadius != null ? 'locator' : 'plain';
@@ -55,12 +73,12 @@ function show() {
     $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
     $('#status').classList.remove('error');
     $('#status-chip').textContent = 'SPEC READY'; $('#status-chip').classList.remove('invalid');
-    $('#download').disabled = false;
+    updateCadButton();
   } catch (error) {
     draft = null; $('#preview').innerHTML = '<div class="placeholder">Adjust dimensions to see the scaled plan.</div>';
     $('#status').textContent = error.message; $('#status').classList.add('error');
     $('#status-chip').textContent = 'CHECK INPUT'; $('#status-chip').classList.add('invalid');
-    $('#download').disabled = true;
+    updateCadButton();
   }
 }
 function populate(spec) {
@@ -87,6 +105,7 @@ function initialize() {
   let initial = { schema, title: `${projectTitle} tray study`, units: 'mm', outer: { length: 80, width: 55, height: 18 }, wall: 2.5, floor: 2.5, mounts: [], cutouts: [] };
   try { const saved = localStorage.getItem(storageKey); if (saved) initial = validateTraySpec(JSON.parse(saved)); } catch { /* Start from defaults if a draft is unavailable. */ }
   populate(initial);
+  void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());
   $('#tray-form').addEventListener('input', show);
   $('#tray-form').addEventListener('change', event => { if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
@@ -107,6 +126,34 @@ function initialize() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(draft, null, 2) + '\n'], { type: 'application/json' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = file; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
+  });
+  $('#generate-cad').addEventListener('click', async () => {
+    if (!draft || !cadAvailable || cadBusy) return;
+    const spec = draft;
+    cadBusy = true; updateCadButton();
+    $('#cad-status').textContent = 'Generating and reopening STEP/STL locally. This may take a minute…';
+    $('#cad-status').classList.remove('error');
+    try {
+      const response = await fetch('./api/tray', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(spec), signal: AbortSignal.timeout(130000)
+      });
+      if (!response.ok) {
+        let detail = 'CAD generation failed.';
+        try { detail = (await response.json()).error || detail; } catch { /* Keep the generic error. */ }
+        throw new Error(detail);
+      }
+      if (!response.headers.get('Content-Type')?.startsWith('application/zip')) throw new Error('The local service did not return a CAD package.');
+      const zip = await response.blob();
+      const slug = spec.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'tray';
+      const url = URL.createObjectURL(zip);
+      const anchor = document.createElement('a'); anchor.href = url; anchor.download = `${slug}-cad.zip`; anchor.click();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      $('#cad-status').textContent = 'CAD package downloaded. Inspect verification.json; exact part fit and fabrication remain untested.';
+    } catch (error) {
+      $('#cad-status').textContent = error.name === 'TimeoutError' ? 'CAD generation timed out. Check the local server terminal.' : error.message;
+      $('#cad-status').classList.add('error');
+    } finally { cadBusy = false; updateCadButton(); }
   });
   $('#load-example').addEventListener('click', async () => {
     try { const response = await fetch('./tools/tray-generator/examples/pico-neopixel-tray.json'); if (!response.ok) throw new Error('Example unavailable.'); populate(validateTraySpec(await response.json())); }
