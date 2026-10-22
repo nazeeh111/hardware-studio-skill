@@ -17,6 +17,8 @@ Use this format when handing a Codex-designed project to the browser app. The ap
       "detail": "Select a board with documented I2C pins; add the manufacturer datasheet URL and revision here.",
       "voltage": "unknown",
       "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
       "verified": false
     }
   ],
@@ -47,7 +49,7 @@ Use this format when handing a Codex-designed project to the browser app. The ap
 }
 ```
 
-The sample demonstrates the carrier only; it is deliberately incomplete as a build plan. For a real deliverable, include every physical part and required connection, pin and voltage notes, a stepwise bring-up sequence, exact source URLs and dates where verified, and unresolved decisions. Do not mark `verified` or `review` true on a generated draft. If a price is unknown, use `0` and explain in `detail` that it is unpriced; do not present the zero as a quote.
+The sample demonstrates the carrier only; it is deliberately incomplete as a build plan. For a real deliverable, include every physical part and required connection, pin and voltage notes, a stepwise bring-up sequence, exact source URLs and dates where verified, and unresolved decisions. Do not mark `verified` or `review` true on a generated draft. If a price is unknown, use `0` and explain in `detail` that it is unpriced; do not present the zero as a quote. `sourceUrl` is a supplier listing; `specUrl` is the exact specification or independent evidence used for part review. A checked part needs both `specUrl` and an ISO `checkedAt` timestamp. The app resets those check marks when importing a file.
 
 `powerRails` is optional for older projects. Each rail's `sourcePartId` and load `partId` must match a part ID. `currentMaEach` is the peak current per unit in milliamps; the app multiplies it by that part's quantity. Use `null` when current or rated supply is unknown, and record the source and operating conditions in the project notes. A computed headroom covers only assigned loads, so check startup surges, voltage compatibility, wires, connectors and regulator heat separately.
 

@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget } from './core.js?v=6';
+import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from './core.js?v=7';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -95,6 +95,7 @@ function showToast(message) {
   const el = $('#toast'); el.textContent = message; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
 }
+function editorError(message) { const el = $('#dialog-error'); el.textContent = message; el.hidden = false; }
 function current() { return projects.find(p => p.id === currentId) || projects[0]; }
 function save() {
   const p = current(); if (p) p.updatedAt = new Date().toISOString();
@@ -131,7 +132,7 @@ function renderOverview(p) {
     `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div><div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
 }
 function renderParts(p) {
-  const rows = p.parts.map((part, i) => `<tr><td><div class="part-name">${html(part.name)}</div><div class="part-detail">${html(part.detail)}</div>${safeUrl(part.sourceUrl) ? `<a class="source-link" href="${html(safeUrl(part.sourceUrl))}" target="_blank" rel="noopener noreferrer">Source ↗</a>` : ''}</td><td><span class="badge">${html(part.category)}</span></td><td>${html(part.qty)}</td><td>${p.starterId === 'ai' && Number(part.unitCost) === 0 ? '—' : money(part.unitCost)}</td><td><span class="badge ${part.verified ? '' : 'warn'}">${part.verified ? 'Checked' : 'Review'}</span></td><td><button class="text-link" data-edit-part="${i}" type="button">Edit</button></td></tr>`).join('');
+  const rows = p.parts.map((part, i) => { const checked = partReviewRecorded(part); return `<tr><td><div class="part-name">${html(part.name)}</div><div class="part-detail">${html(part.detail)}</div>${safeUrl(part.sourceUrl) ? `<a class="source-link" href="${html(safeUrl(part.sourceUrl))}" target="_blank" rel="noopener noreferrer">Supplier ↗</a>` : ''}${safeUrl(part.specUrl) ? ` <a class="source-link" href="${html(safeUrl(part.specUrl))}" target="_blank" rel="noopener noreferrer">Specification ↗</a>` : ''}</td><td><span class="badge">${html(part.category)}</span></td><td>${html(part.qty)}</td><td>${p.starterId === 'ai' && Number(part.unitCost) === 0 ? '—' : money(part.unitCost)}</td><td><span class="badge ${checked ? '' : 'warn'}">${checked ? `Checked ${html(part.checkedAt.slice(0, 10))}` : part.verified ? 'Evidence missing' : 'Review'}</span></td><td><button class="text-link" data-edit-part="${i}" type="button">Edit</button></td></tr>`; }).join('');
   return panelHead('MATERIALS / BOM', 'Parts list', 'Costs are editable planning estimates. Open each part to record a current supplier and verify its specifications.', '<div><button id="add-part" class="small-button" type="button">＋ Add part</button> <button id="export-bom" class="small-button" type="button">Export CSV ↗</button></div>') + (p.parts.length ? `<div class="table-wrap"><table class="parts-table"><thead><tr><th>PART</th><th>TYPE</th><th>QTY</th><th>UNIT EST.</th><th>STATUS</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><strong>No parts yet</strong>Add the physical components required by your brief.</div>`);
 }
 function wiringSvg(p) {
@@ -211,9 +212,10 @@ function openEditor(kind, index = -1) {
   $('#dialog-kicker').textContent = kind.toUpperCase() + (isNew ? ' / NEW' : ' / EDIT');
   $('#dialog-title').textContent = `${isNew ? 'Add' : 'Edit'} ${kind === 'wire' ? 'connection' : kind === 'title' ? 'project' : kind}`;
   $('#delete-entry').hidden = isNew || kind === 'title';
+  $('#dialog-error').hidden = true;
   const choices = p.parts.map(part => [part.id, part.name]);
   let fields = '';
-  if (kind === 'part') fields = field('name', 'Part name', item.name, { required: true, wide: true }) + field('category', 'Category', item.category || 'Other') + field('qty', 'Quantity', item.qty ?? 1, { type: 'number', min: 1, step: 1 }) + field('unitCost', 'Unit estimate (USD)', item.unitCost ?? 0, { type: 'number', min: 0, step: '.01' }) + field('voltage', 'Operating voltage', item.voltage || '') + field('sourceUrl', 'Supplier listing URL', item.sourceUrl || '', { type: 'url', wide: true }) + field('detail', 'Specification, datasheet and open questions', item.detail || '', { type: 'textarea', wide: true }) + `<div class="field wide"><label class="verify-label"><input type="checkbox" name="verified" ${item.verified ? 'checked' : ''}> I checked this exact part against an independent source</label></div>`;
+  if (kind === 'part') fields = field('name', 'Part name', item.name, { required: true, wide: true }) + field('category', 'Category', item.category || 'Other') + field('qty', 'Quantity', item.qty ?? 1, { type: 'number', min: 1, step: 1 }) + field('unitCost', 'Unit estimate (USD)', item.unitCost ?? 0, { type: 'number', min: 0, step: '.01' }) + field('voltage', 'Operating voltage', item.voltage || '') + field('sourceUrl', 'Supplier listing URL', item.sourceUrl || '', { type: 'url', wide: true }) + field('specUrl', 'Manufacturer specification or independent evidence URL', item.specUrl || '', { type: 'url', wide: true }) + field('detail', 'Specification, datasheet and open questions', item.detail || '', { type: 'textarea', wide: true }) + `<div class="field wide"><label class="verify-label"><input type="checkbox" name="verified"> I checked this exact part against the linked specification now</label></div>`;
   if (kind === 'wire') fields = field('from', 'From', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('to', 'To', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('signal', 'Signal or connection', item.signal || '', { required: true }) + field('voltage', 'Voltage / range', item.voltage || '') + field('note', 'Pinout or verification note', item.note || '', { type: 'textarea', wide: true });
   if (kind === 'step') fields = field('phase', 'Phase', item.phase || 'Build', { type: 'select', choices: [['Prepare', 'Prepare'], ['Wire', 'Wire'], ['Bring up', 'Bring up'], ['Assemble', 'Assemble'], ['Test', 'Test']] }) + field('title', 'Step title', item.title || '', { required: true }) + field('detail', 'Action and acceptance check', item.detail || '', { type: 'textarea', wide: true });
   if (kind === 'title') fields = field('title', 'Project title', p.title, { required: true, wide: true }) + field('brief', 'Design brief', p.brief, { type: 'textarea', wide: true }) + field('summary', 'Summary', p.summary, { type: 'textarea', wide: true });
@@ -224,23 +226,25 @@ function saveEditor(event) {
   event.preventDefault(); if (!editor) return;
   const p = current(); const form = new FormData($('#editor-form')); const { kind, index } = editor;
   if (kind === 'part') {
-    const newPart = { id: index < 0 ? `part-${crypto.randomUUID().slice(0, 8)}` : p.parts[index].id, name: String(form.get('name') || '').trim(), category: String(form.get('category') || 'Other').trim(), qty: Number(form.get('qty')), unitCost: Number(form.get('unitCost')), voltage: String(form.get('voltage') || '').trim(), sourceUrl: String(form.get('sourceUrl') || '').trim(), detail: String(form.get('detail') || '').trim(), verified: form.has('verified') };
-    if (!newPart.name || newPart.qty <= 0 || newPart.unitCost < 0 || !Number.isFinite(newPart.unitCost)) return showToast('Enter a name, positive quantity and valid cost.');
-    if (newPart.sourceUrl && !/^https?:\/\//i.test(newPart.sourceUrl)) return showToast('Source URL must start with https:// or http://.');
+    const newPart = { id: index < 0 ? `part-${crypto.randomUUID().slice(0, 8)}` : p.parts[index].id, name: String(form.get('name') || '').trim(), category: String(form.get('category') || 'Other').trim(), qty: Number(form.get('qty')), unitCost: Number(form.get('unitCost')), voltage: String(form.get('voltage') || '').trim(), sourceUrl: String(form.get('sourceUrl') || '').trim(), specUrl: String(form.get('specUrl') || '').trim(), detail: String(form.get('detail') || '').trim(), verified: form.has('verified'), checkedAt: form.has('verified') ? new Date().toISOString() : '' };
+    if (!newPart.name || newPart.qty <= 0 || newPart.unitCost < 0 || !Number.isFinite(newPart.unitCost)) return editorError('Enter a name, positive quantity and valid cost.');
+    if (newPart.sourceUrl && !/^https?:\/\//i.test(newPart.sourceUrl)) return editorError('Supplier URL must start with https:// or http://.');
+    if (newPart.specUrl && !/^https?:\/\//i.test(newPart.specUrl)) return editorError('Specification URL must start with https:// or http://.');
+    if (newPart.verified && !newPart.specUrl) return editorError('Link the exact specification before marking this part checked.');
     if (index < 0) p.parts.push(newPart); else p.parts[index] = newPart;
     p.review.sourcing = false; p.review.electrical = false; p.review.mechanical = false;
   }
   if (kind === 'wire') {
     const wire = { from: String(form.get('from')), to: String(form.get('to')), signal: String(form.get('signal') || '').trim(), voltage: String(form.get('voltage') || '').trim(), note: String(form.get('note') || '').trim() };
-    if (!wire.from || !wire.to || wire.from === wire.to || !wire.signal) return showToast('Choose two different parts and name the connection.');
+    if (!wire.from || !wire.to || wire.from === wire.to || !wire.signal) return editorError('Choose two different parts and name the connection.');
     if (index < 0) p.wires.push(wire); else p.wires[index] = wire; p.review.electrical = false;
   }
   if (kind === 'step') {
     const step = { id: index < 0 ? `step-${crypto.randomUUID().slice(0, 8)}` : p.steps[index].id, phase: String(form.get('phase')), title: String(form.get('title') || '').trim(), detail: String(form.get('detail') || '').trim(), done: index < 0 ? false : p.steps[index].done };
-    if (!step.title) return showToast('Give the step a title.');
+    if (!step.title) return editorError('Give the step a title.');
     if (index < 0) p.steps.push(step); else p.steps[index] = step;
   }
-  if (kind === 'title') { p.title = String(form.get('title') || '').trim().slice(0, 100); p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); if (!p.title) return showToast('Give the project a title.'); }
+  if (kind === 'title') { const title = String(form.get('title') || '').trim().slice(0, 100); if (!title) return editorError('Give the project a title.'); p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); }
   closeEditor(); save(); render(); showToast('Saved locally.');
 }
 function deleteEntry() {

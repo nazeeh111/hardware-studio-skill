@@ -1,7 +1,7 @@
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
 
 const part = (id, name, category, qty, unitCost, detail, voltage = '') => ({
-  id, name, category, qty, unitCost, detail, voltage, sourceUrl: '', verified: false
+  id, name, category, qty, unitCost, detail, voltage, sourceUrl: '', specUrl: '', checkedAt: '', verified: false
 });
 
 export const STARTERS = [
@@ -116,6 +116,10 @@ export function powerBudget(project, rail) {
   return { loads, knownDemandMa, supplyMa, complete, headroomMa, headroomPercent, status };
 }
 
+export function partReviewRecorded(part) {
+  return Boolean(part.verified && /^https?:\/\//i.test(String(part.specUrl || '')) && typeof part.checkedAt === 'string' && Number.isFinite(Date.parse(part.checkedAt)));
+}
+
 export function validate(project) {
   const issues = [];
   const ids = new Set();
@@ -125,6 +129,7 @@ export function validate(project) {
     ids.add(p.id);
     if (!Number.isFinite(Number(p.qty)) || Number(p.qty) <= 0) issues.push({ kind: 'error', text: `${p.name || 'Part'} needs a positive quantity.` });
     if (!Number.isFinite(Number(p.unitCost)) || Number(p.unitCost) < 0) issues.push({ kind: 'error', text: `${p.name || 'Part'} has an invalid cost estimate.` });
+    if (p.verified && !partReviewRecorded(p)) issues.push({ kind: 'error', text: `${p.name || 'Part'} is marked checked without a specification source and check date.` });
   }
   for (const w of project.wires) {
     if (!ids.has(w.from) || !ids.has(w.to)) issues.push({ kind: 'error', text: `A ${w.signal || 'wire'} connection refers to a missing part.` });
@@ -162,8 +167,8 @@ export function validate(project) {
 const csvCell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
 export function bomCsv(project) {
   return [
-    ['Name', 'Category', 'Quantity', 'Unit estimate USD', 'Subtotal estimate USD', 'Source URL', 'Verified', 'Detail'].map(csvCell).join(','),
-    ...project.parts.map(p => { const unknown = project.starterId === 'ai' && Number(p.unitCost) === 0; return [p.name, p.category, p.qty, unknown ? '' : p.unitCost, unknown ? '' : (Number(p.qty) * Number(p.unitCost)).toFixed(2), p.sourceUrl, p.verified ? 'yes' : 'no', p.detail].map(csvCell).join(','); })
+    ['Name', 'Category', 'Quantity', 'Unit estimate USD', 'Subtotal estimate USD', 'Supplier URL', 'Specification URL', 'Checked at', 'Verified', 'Detail'].map(csvCell).join(','),
+    ...project.parts.map(p => { const unknown = project.starterId === 'ai' && Number(p.unitCost) === 0; return [p.name, p.category, p.qty, unknown ? '' : p.unitCost, unknown ? '' : (Number(p.qty) * Number(p.unitCost)).toFixed(2), p.sourceUrl, p.specUrl || '', p.checkedAt || '', partReviewRecorded(p) ? 'yes' : 'no', p.detail].map(csvCell).join(','); })
   ].join('\r\n') + '\r\n';
 }
 
@@ -177,7 +182,7 @@ export function safeProject(input) {
     brief: String(input.brief || '').slice(0, 5000), summary: String(input.summary || '').slice(0, 5000),
     starterId: String(input.starterId || 'imported'), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
-    parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', verified: Boolean(p.verified) })),
+    parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), to: String(w.to || ''), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
@@ -191,7 +196,7 @@ export function localAiDraft(input, brief, model) {
   project.starterId = 'ai';
   project.summary = `Local AI concept draft. Exact parts, pinouts, dimensions, prices and safety are unverified. ${project.summary}`.slice(0, 5000);
   project.notes = `Generated locally with ${String(model).slice(0, 80)}. Verify every part and connection against independent evidence before buying or building.\n\n${project.notes}`.slice(0, 10000);
-  project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', verified: false }));
+  project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };
   if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');

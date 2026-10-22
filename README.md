@@ -26,7 +26,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 
 - Start from a plant monitor or ambient-light design, or make a blank concept. A brief mentioning plant/soil/garden/greenhouse or light/lamp/LED picks the respective starter. Other briefs create an editable blank project. This is a rule-based route, not arbitrary AI design.
 - Optionally draft an arbitrary low-voltage concept with a local Ollama model. The model output must pass structural checks; the app clears any claimed prices, supplier links and verification marks, then shows the proposed parts for review before adding it to the workspace.
-- Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections.
+- Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections and power loads. A checked part records a specification link and check date; imported check marks reset for review.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG.
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.

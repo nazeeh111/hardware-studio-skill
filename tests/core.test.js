@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -27,9 +27,15 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   assert.throws(() => safeProject({ parts: [], wires: [] }), /not a Hardware Studio project/);
   const p = makeProject(STARTERS[0]);
   p.parts[0].sourceUrl = 'javascript:alert(1)';
+  p.parts[0].specUrl = 'https://example.com/spec';
+  p.parts[0].checkedAt = new Date().toISOString();
+  p.parts[0].verified = true;
   p.review = { electrical: true, mechanical: true, sourcing: true };
   const imported = safeProject(p);
   assert.equal(imported.parts[0].sourceUrl, '');
+  assert.equal(imported.parts[0].specUrl, 'https://example.com/spec');
+  assert.equal(imported.parts[0].verified, false);
+  assert.equal(imported.parts[0].checkedAt, '');
   assert.deepEqual(imported.review, { electrical: false, mechanical: false, sourcing: false });
 });
 
@@ -97,4 +103,16 @@ test('invalid power rail shape is rejected during import', () => {
   const p = makeProject(STARTERS[0]);
   p.powerRails = [{ name: 'bad', loads: null }];
   assert.throws(() => safeProject(p), /invalid load list/);
+});
+
+test('a checked part needs a specification link and a check date', () => {
+  const p = makeProject(STARTERS[0]);
+  const item = p.parts[0];
+  item.verified = true;
+  assert.equal(partReviewRecorded(item), false);
+  assert.ok(validate(p).some(issue => issue.kind === 'error' && issue.text.includes('check date')));
+  item.specUrl = 'https://example.com/datasheet';
+  item.checkedAt = '2026-10-22T18:00:00.000Z';
+  assert.equal(partReviewRecorded(item), true);
+  assert.match(bomCsv(p), /"https:\/\/example.com\/datasheet","2026-10-22T18:00:00.000Z","yes"/);
 });

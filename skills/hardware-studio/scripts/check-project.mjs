@@ -20,6 +20,8 @@ try {
     if (!Number.isInteger(part.qty) || part.qty < 1) issues.push(`parts[${i}].qty must be a positive integer.`);
     if (typeof part.unitCost !== 'number' || !Number.isFinite(part.unitCost) || part.unitCost < 0) issues.push(`parts[${i}].unitCost must be a nonnegative number.`);
     if (part.sourceUrl && !/^https?:\/\//i.test(part.sourceUrl)) issues.push(`parts[${i}].sourceUrl must be HTTP(S).`);
+    if (part.specUrl && !/^https?:\/\//i.test(part.specUrl)) issues.push(`parts[${i}].specUrl must be HTTP(S).`);
+    if (part.verified && (!/^https?:\/\//i.test(String(part.specUrl || '')) || typeof part.checkedAt !== 'string' || !Number.isFinite(Date.parse(part.checkedAt)))) issues.push(`parts[${i}] cannot be marked verified without a specification URL and check date.`);
   }
   for (const [i, wire] of (Array.isArray(project?.wires) ? project.wires : []).entries()) {
     if (!wire || typeof wire !== 'object') { issues.push(`wires[${i}] must be an object.`); continue; }
