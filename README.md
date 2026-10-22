@@ -20,14 +20,15 @@ python3 -m http.server 4173
 
 Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects and recent revisions stay in that browser's local storage. Export JSON regularly for a durable copy; clearing browser data removes local projects and history. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
 
-Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. If Ollama is unavailable, the editor and starter designs still work. The brief goes only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
+Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. Add a sketch or photo if useful; image drafting requires a model marked **vision** in the selector. If Ollama is unavailable, the editor and starter designs still work. The brief and optional resized image go only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
 
 For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Ollama's default local-origin access. The public GitHub Pages version works without Ollama; its AI control stays hidden unless your Ollama installation explicitly allows that site's origin.
 
 ## What works
 
-- Start from a plant monitor or ambient-light design, or make a blank concept. A brief mentioning plant/soil/garden/greenhouse or light/lamp/LED picks the respective starter. Other briefs create an editable blank project. This is a rule-based route, not arbitrary AI design.
+- Start from the filled plant monitor or ambient-light designs, or create a blank concept from any brief. The **Create concept** button records the brief and optional image without claiming automatic design; choose a starter explicitly to use its example parts and wiring.
 - Optionally draft an arbitrary low-voltage concept with a local Ollama model. The model output must pass structural checks; the app clears any claimed prices, supplier links and verification marks, then shows the proposed parts for review before adding it to the workspace.
+- Add a JPEG, PNG or WebP sketch or photo to a brief. The browser redraws it as a JPEG under 250 KB, stripping original image metadata, and keeps it with the project in local storage and exports. A local vision model can use it as reference; its interpretation, measurements and hidden details remain unverified.
 - Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections and power loads. A checked part records a specification link and check date; imported check marks reset for review.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG.
@@ -35,7 +36,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
-- Export a ZIP with project JSON, bill of materials CSV, conceptual wiring and assembly SVGs, current review findings, and a short README. Linked electrical or CAD evidence stays external; this export does not claim to include verified manufacturing files.
+- Export a ZIP with project JSON, bill of materials CSV, conceptual wiring and assembly SVGs, current review findings, a short README and the resized visual reference when present. Linked electrical or CAD evidence stays external; this export does not claim to include verified manufacturing files.
 - Open **History** to restore a recent edit or recover a deleted project while its local snapshot remains. The app retains up to 12 earlier states per project within a shared 2 MB history limit; restoration saves the current state first and resets verification and completed-step marks. Deletion is cancelled when its recovery snapshot cannot be stored. If saved workspace data becomes unreadable, the app preserves its original bytes and offers a download before allowing a fresh workspace.
 
 ## Limits that matter

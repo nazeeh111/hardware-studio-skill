@@ -9,6 +9,7 @@ Use this format when handing a Codex-designed project to the browser app. The ap
   "summary": "Concept design awaiting component and enclosure review.",
   "cadUrl": "",
   "wiringUrl": "",
+  "referenceImage": null,
   "parts": [
     {
       "id": "controller",
@@ -56,5 +57,7 @@ The sample demonstrates the carrier only; it is deliberately incomplete as a bui
 `powerRails` is optional for older projects. Each rail's `sourcePartId` and load `partId` must match a part ID. `currentMaEach` is the peak current per unit in milliamps; the app multiplies it by that part's quantity. Use `null` when current or rated supply is unknown, and record the source and operating conditions in the project notes. A computed headroom covers only assigned loads, so check startup surges, voltage compatibility, wires, connectors and regulator heat separately.
 
 `cadUrl` and `wiringUrl` are optional. Link the editable CAD source and its verification package through `cadUrl`, and an electrical plan with its evidence and open checks through `wiringUrl`. The app shows the links beside conceptual drawings; those links do not turn the drawings into verified CAD or a checked schematic. Imported URLs are restricted to HTTP(S), and imported review marks still reset.
+
+`referenceImage` is optional. The browser app can add a local sketch or photo to a brief and stores a resized JPEG in this field as `{ "name": "sketch.png", "dataUrl": "data:image/jpeg;base64,..." }`. The field is capped at 250 KB of encoded text. Keep it `null` in hand-authored project files unless you have an actual image; do not manufacture a visual reference from a description. The ZIP export includes it as `reference.jpg` when present. A picture does not establish exact dimensions, part numbers or electrical ratings.
 
 The app accepts additional fields but does not use them. Keep full calculations, datasheet links and dimensioned CAD sources beside the JSON when they cannot be represented faithfully in these fields.

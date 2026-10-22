@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -46,6 +46,8 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
 
 test('local model output cannot mark estimates or reviews as verified', () => {
   const raw = makeProject(STARTERS[0]);
+  raw.summary = 'Manufacturer fit validated in CAD';
+  raw.notes = 'Exact fit and pinouts confirmed by the model';
   raw.parts[0].unitCost = 999;
   raw.parts[0].sourceUrl = 'https://example.com/unchecked';
   raw.parts[0].verified = true;
@@ -61,6 +63,8 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.wiringUrl, '');
   assert.equal(draft.review.electrical, false);
   assert.match(draft.summary, /unverified/);
+  assert.doesNotMatch(draft.summary, /validated in CAD/);
+  assert.match(draft.notes, /MODEL NOTES \/ UNVERIFIED/);
 });
 
 test('local model output with broken references is rejected', () => {
@@ -158,4 +162,15 @@ test('unreadable workspace bytes are rejected before startup can save over them'
   assert.throws(() => parseSavedWorkspace('{"projects":[]}'), /Invalid saved workspace/);
   const project = makeProject(STARTERS[0]);
   assert.equal(parseSavedWorkspace(JSON.stringify({ projects: [project], currentId: project.id })).currentId, project.id);
+});
+
+test('local visual reference survives import while unsafe image payloads are rejected', () => {
+  const p = makeProject(STARTERS[0]);
+  p.referenceImage = { name: 'bench sketch.png', dataUrl: 'data:image/jpeg;base64,/9j/2Q==' };
+  const imported = safeProject(p);
+  assert.deepEqual(imported.referenceImage, p.referenceImage);
+  assert.deepEqual(safeReferenceImage(imported.referenceImage), p.referenceImage);
+  p.referenceImage.dataUrl = 'data:image/svg+xml;base64,PHN2Zz4=';
+  assert.throws(() => safeProject(p), /small JPEG/);
+  assert.throws(() => parseSavedWorkspace(JSON.stringify({ projects: [p], currentId: p.id })), /small JPEG/);
 });

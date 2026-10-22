@@ -1,5 +1,16 @@
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
 export const REVISIONS_KEY = 'hardware-studio-revisions-v1';
+export const MAX_REFERENCE_DATA_URL = 250_000;
+
+export function safeReferenceImage(input) {
+  if (input == null) return null;
+  if (!input || typeof input !== 'object' || typeof input.name !== 'string' || typeof input.dataUrl !== 'string' ||
+      input.name.length > 120 || input.dataUrl.length > MAX_REFERENCE_DATA_URL ||
+      !/^data:image\/jpeg;base64,\/9j\/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input.dataUrl)) {
+    throw new Error('The reference image must be a small JPEG saved by this app.');
+  }
+  return { name: input.name, dataUrl: input.dataUrl };
+}
 
 export function projectContentChanged(before, after) {
   const withoutTimestamp = project => { const { updatedAt, ...content } = project; return JSON.stringify(content); };
@@ -12,6 +23,7 @@ export function parseSavedWorkspace(raw) {
     !project || typeof project.id !== 'string' || !Array.isArray(project.parts) || !Array.isArray(project.wires) || !Array.isArray(project.steps) ||
     project.parts.some(part => !part || typeof part !== 'object') || project.wires.some(wire => !wire || typeof wire !== 'object') || project.steps.some(step => !step || typeof step !== 'object') ||
     (project.powerRails != null && (!Array.isArray(project.powerRails) || project.powerRails.some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.some(load => !load || typeof load !== 'object')))))) throw new Error('Invalid saved workspace');
+  saved.projects.forEach(project => safeReferenceImage(project.referenceImage));
   return saved;
 }
 
@@ -91,7 +103,7 @@ export function makeProject(starter, title) {
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
     powerRails: structuredClone(starter.powerRails || []),
-    notes: '', cadUrl: '', wiringUrl: '', review: { electrical: false, mechanical: false, sourcing: false }
+    notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
 
@@ -99,7 +111,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '',
+    parts: [], wires: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null,
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -197,6 +209,7 @@ export function safeProject(input) {
     brief: String(input.brief || '').slice(0, 5000), summary: String(input.summary || '').slice(0, 5000),
     starterId: 'imported', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
+    referenceImage: safeReferenceImage(input.referenceImage),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
@@ -220,8 +233,8 @@ export function localAiDraft(input, brief, model) {
   const project = safeProject(input);
   project.brief = String(brief).slice(0, 5000);
   project.starterId = 'ai';
-  project.summary = `Local AI concept draft. Exact parts, pinouts, dimensions, prices and safety are unverified. ${project.summary}`.slice(0, 5000);
-  project.notes = `Generated locally with ${String(model).slice(0, 80)}. Verify every part and connection against independent evidence before buying or building.\n\n${project.notes}`.slice(0, 10000);
+  project.summary = 'Local AI concept draft. Proposed parts, connections, dimensions, sources and safety claims are unverified. Review the project record before use.';
+  project.notes = `Generated locally with ${String(model).slice(0, 80)}. The model text below is unverified, including any measurements, source claims or assertions of testing. Check each claim against independent evidence before buying or building.\n\nMODEL NOTES / UNVERIFIED\n${project.notes}`.slice(0, 10000);
   project.cadUrl = '';
   project.wiringUrl = '';
   project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));

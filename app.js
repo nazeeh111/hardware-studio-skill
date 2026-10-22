@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=15';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=16';
 import { createZip } from './zip.js?v=1';
 
 const $ = selector => document.querySelector(selector);
@@ -12,6 +12,8 @@ let editor = null;
 let toastTimer;
 let draftController = null;
 let pendingDraft = null;
+let pendingReference = null;
+let modelCapabilities = new Map();
 let unreadableSavedData = null;
 let storageUnavailable = false;
 const OLLAMA_URL = 'http://127.0.0.1:11434';
@@ -34,16 +36,45 @@ async function detectLocalModels() {
     if (!response.ok) throw new Error('Local model list unavailable');
     const data = await response.json();
     const names = (data.models || []).map(model => model.name).filter(name => typeof name === 'string');
+    modelCapabilities = new Map((data.models || []).filter(model => typeof model.name === 'string').map(model => [model.name, new Set(model.capabilities || [])]));
     if (!names.length) throw new Error('No local models installed');
     const select = $('#local-model');
-    select.innerHTML = names.map(name => `<option value="${html(name)}">${html(name)}</option>`).join('');
+    select.innerHTML = names.map(name => `<option value="${html(name)}">${html(name)}${modelCapabilities.get(name)?.has('vision') ? ' · vision' : ''}</option>`).join('');
     select.value = names.includes('local-fast:latest') ? 'local-fast:latest' : names.includes('qwen3:4b') ? 'qwen3:4b' : names[0];
     select.hidden = false;
     $('#draft-local').hidden = false;
     $('#local-ai-status').textContent = 'Optional local model draft. No paid API.';
   } catch {
-    $('#local-ai-status').textContent = 'Use a starter or create a blank, editable concept.';
+    $('#local-ai-status').textContent = 'Create a blank concept or choose a filled starter below.';
   } finally { clearTimeout(timer); }
+}
+
+async function prepareReferenceImage(file) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 8_000_000) throw new Error('Choose a JPEG, PNG or WebP image under 8 MB.');
+  const bitmap = await createImageBitmap(file);
+  try {
+    if (bitmap.width * bitmap.height > 20_000_000) throw new Error('Image dimensions are too large. Choose one under 20 megapixels.');
+    let limit = 1200;
+    for (let attempt = 0; attempt < 7; attempt++) {
+      const factor = Math.min(1, limit / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(bitmap.width * factor));
+      canvas.height = Math.max(1, Math.round(bitmap.height * factor));
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', .76);
+      if (dataUrl.length <= MAX_REFERENCE_DATA_URL) return safeReferenceImage({ name: file.name.slice(0, 120), dataUrl });
+      limit = Math.round(limit * .75);
+    }
+    throw new Error('This image could not be reduced enough for local storage.');
+  } finally { bitmap.close(); }
+}
+
+function renderReferenceInput() {
+  const preview = $('#reference-preview');
+  preview.hidden = !pendingReference;
+  preview.innerHTML = pendingReference ? `<img src="${html(pendingReference.dataUrl)}" alt="Selected visual reference"><span>${html(pendingReference.name)} · saved with project</span><button id="remove-reference" type="button" aria-label="Remove reference image">×</button>` : '';
 }
 
 async function draftWithLocalAi() {
@@ -52,37 +83,53 @@ async function draftWithLocalAi() {
   if (!brief) return showToast('Describe the build before drafting with local AI.');
   const model = $('#local-model').value;
   if (!model) return showToast('Choose a local model.');
+  if (pendingReference && !modelCapabilities.get(model)?.has('vision')) return showToast('Choose a model marked vision to interpret this image.');
+  const reference = pendingReference;
   const button = $('#draft-local');
+  let failure = '';
   draftController = new AbortController();
   const controller = draftController;
   const timer = setTimeout(() => controller.abort(), 300000);
   button.textContent = 'Cancel local draft';
   $('#create-from-brief').disabled = true;
   $('#local-model').disabled = true;
+  $('#choose-reference').disabled = true;
+  $('#reference-file').disabled = true;
+  if ($('#remove-reference')) $('#remove-reference').disabled = true;
   $('#local-ai-status').textContent = 'Drafting on this computer. This can take a few minutes.';
   try {
     const response = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
         model, stream: false, format: LOCAL_AI_SCHEMA, think: false, keep_alive: '1m',
+        ...(reference ? { images: [reference.dataUrl.split(',')[1]] } : {}),
         options: { temperature: 0.1, num_predict: 2400 },
         system: 'You draft conceptual low-voltage hobby hardware plans. Every requested sensing, display, input, or actuation function needs a dedicated physical part; a controller alone does not measure temperature or humidity. Include power conversion, cables and enclosure parts where needed. Do not claim that parts, pinouts, prices, sourcing, dimensions, wiring, or safety are verified. Use unique short part IDs and ensure each wire refers to existing part IDs. For hazardous or regulated projects, return no actionable wiring or build instructions.',
-        prompt: `Create a concise editable concept record for: ${brief}\nBefore writing JSON, mentally check each requested function against the physical parts list. Use 3–10 parts, 1–15 connections, and 3–10 preparation/build/test steps. Only include connections you can explain; put uncertainty in notes. Use zero for unknown cost, empty strings for unknown supplier URLs, and false for verified. Return only the JSON object matching this schema: ${JSON.stringify(LOCAL_AI_SCHEMA)}`
+        prompt: `Create a concise editable concept record for: ${brief}${reference ? '\nUse the attached image as a visual reference. Distinguish visible features from uncertain or hidden details. Do not infer exact dimensions, part numbers, pins, ratings or materials from appearance alone.' : ''}\nBefore writing JSON, mentally check each requested function against the physical parts list. Use 3–10 parts, 1–15 connections, and 3–10 preparation/build/test steps. Only include connections you can explain; put uncertainty in notes. Use zero for unknown cost, empty strings for unknown supplier URLs, and false for verified. Return only the JSON object matching this schema: ${JSON.stringify(LOCAL_AI_SCHEMA)}`
       })
     });
-    if (!response.ok) throw new Error(`Local model request failed (${response.status}).`);
+    if (!response.ok) {
+      let detail = '';
+      try { detail = String((await response.json()).error || '').slice(0, 220); } catch { /* Ollama did not return a JSON error. */ }
+      throw new Error(`Local model request failed (${response.status})${detail ? `: ${detail}` : '.'}`);
+    }
     const result = await response.json();
     const draft = localAiDraft(JSON.parse(result.response), brief, model);
+    draft.referenceImage = reference;
     showDraftPreview(draft);
   } catch (error) {
-    showToast(controller.signal.aborted ? 'Local draft cancelled or timed out.' : error.message || 'Local model could not produce a usable draft.');
+    failure = controller.signal.aborted ? 'Local draft cancelled or timed out.' : /llama-server binary not found/i.test(error.message || '') ? 'Ollama cannot start this model: llama-server is missing. Repair the local Ollama installation.' : error.message || 'Local model could not produce a usable draft.';
+    showToast(failure);
   } finally {
     clearTimeout(timer);
     draftController = null;
     button.innerHTML = 'Draft with local AI <span aria-hidden="true">✧</span>';
     $('#create-from-brief').disabled = false;
     $('#local-model').disabled = false;
-    $('#local-ai-status').textContent = 'Optional local model draft. No paid API.';
+    $('#choose-reference').disabled = false;
+    $('#reference-file').disabled = false;
+    if ($('#remove-reference')) $('#remove-reference').disabled = false;
+    $('#local-ai-status').textContent = failure || 'Optional local model draft. No paid API.';
   }
 }
 
@@ -90,7 +137,7 @@ function showDraftPreview(draft) {
   pendingDraft = draft;
   $('#draft-title').textContent = draft.title;
   $('#draft-summary').textContent = draft.summary;
-  $('#draft-preview-grid').innerHTML = `<div><h3>PARTS / ${draft.parts.length}</h3><ul>${draft.parts.map(part => `<li>${html(part.name)} · ${html(part.category)}</li>`).join('')}</ul></div><div><h3>BUILD RECORD</h3><ul><li>${draft.wires.length} proposed connections</li><li>${draft.steps.length} preparation and build steps</li><li>Prices and supplier links cleared</li><li>All verification marks reset</li></ul></div>`;
+  $('#draft-preview-grid').innerHTML = `<div><h3>PARTS / ${draft.parts.length}</h3><ul>${draft.parts.map(part => `<li>${html(part.name)} · ${html(part.category)}</li>`).join('')}</ul></div><div><h3>BUILD RECORD</h3><ul><li>${draft.wires.length} proposed connections</li><li>${draft.steps.length} preparation and build steps</li><li>Prices and supplier links cleared</li><li>All verification marks reset</li>${draft.referenceImage ? '<li>Visual interpretation remains unverified</li>' : ''}</ul></div>`;
   $('#draft-dialog').showModal();
 }
 
@@ -148,7 +195,8 @@ function exportPackage(p) {
   const issues = validate(p);
   const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
   const title = String(p.title).replace(/[\r\n]+/g, ' ');
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const reference = safeReferenceImage(p.referenceImage);
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
@@ -156,7 +204,8 @@ function exportPackage(p) {
     { name: 'bill-of-materials.csv', data: bomCsv(p) },
     { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
-    { name: 'review.txt', data: report }
+    { name: 'review.txt', data: report },
+    ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : [])
   ]);
   download(`${filename(p)}-package.zip`, archive, 'application/zip');
   showToast('Project package downloaded. Diagrams are conceptual and checks remain open.');
@@ -203,7 +252,12 @@ function recoverDeletedProject(id) {
   if (!save('Recover deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; return; }
   $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Project recovered. Verification and step marks were reset.');
 }
-function addProject(p) { projects.unshift(p); currentId = p.id; activeTab = 'overview'; const saved = save('Before creating project'); render(); if (saved) showToast('Project created. Review the design before building.'); }
+function addProject(p) {
+  const priorProjects = projects, priorId = currentId;
+  projects = [p, ...projects]; currentId = p.id; activeTab = 'overview';
+  if (!save('Before creating project')) { projects = priorProjects; currentId = priorId; render(); return false; }
+  render(); showToast('Project created. Review the design before building.'); return true;
+}
 
 function render() {
   const p = current(); if (!p) return;
@@ -223,8 +277,9 @@ function render() {
 
 function panelHead(kicker, title, description, actions = '') { return `<div class="panel-head"><div><div class="eyebrow accent">${kicker}</div><h3>${title}</h3><p>${description}</p></div>${actions}</div>`; }
 function renderOverview(p) {
+  const reference = safeReferenceImage(p.referenceImage);
   return panelHead('DESIGN RECORD', 'Working concept', 'Keep the goal, open decisions and review status in one place.') +
-    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div><div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
+    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div>${reference ? `<div class="project-reference"><div><span class="eyebrow accent">VISUAL REFERENCE / UNVERIFIED</span><p>${html(reference.name)} · Sketches and photos do not establish dimensions or electrical details.</p><button id="remove-project-reference" class="text-link" type="button">Remove image</button></div><img src="${html(reference.dataUrl)}" alt="Project visual reference"></div>` : ''}<div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
 }
 function renderParts(p) {
   const rows = p.parts.map((part, i) => { const checked = partReviewRecorded(part); return `<tr><td><div class="part-name">${html(part.name)}</div><div class="part-detail">${html(part.detail)}</div>${safeUrl(part.sourceUrl) ? `<a class="source-link" href="${html(safeUrl(part.sourceUrl))}" target="_blank" rel="noopener noreferrer">Supplier ↗</a>` : ''}${safeUrl(part.specUrl) ? ` <a class="source-link" href="${html(safeUrl(part.specUrl))}" target="_blank" rel="noopener noreferrer">Specification ↗</a>` : ''}</td><td><span class="badge">${html(part.category)}</span></td><td>${html(part.qty)}</td><td>${Number(part.unitCost) === 0 ? '—' : money(part.unitCost)}</td><td><span class="badge ${checked ? '' : 'warn'}">${checked ? `Checked ${html(part.checkedAt.slice(0, 10))}` : part.verified ? 'Evidence missing' : 'Review'}</span></td><td><button class="text-link" data-edit-part="${i}" type="button">Edit</button></td></tr>`; }).join('');
@@ -378,15 +433,18 @@ function handleClick(event) {
   else if (button.id === 'new-project') addProject(blankProject());
   else if (button.id === 'create-from-brief') {
     const brief = $('#brief-input').value.trim(); if (!brief) return showToast('Describe your idea first.');
-    const starter = /plant|soil|garden|greenhouse/i.test(brief) ? STARTERS[0] : /light|lamp|led|glow/i.test(brief) ? STARTERS[1] : null;
-    const title = brief.split(/[.!?]/)[0].slice(0, 55);
-    const next = starter ? makeProject(starter, title) : blankProject(title); next.brief = brief;
-    if (!starter) next.summary = 'Custom concept. Add the parts, connections and build steps. No automatic design was generated for this idea.';
-    addProject(next); $('#brief-input').value = '';
+    const firstSentence = brief.split(/[.!?]/)[0];
+    const title = firstSentence.length > 80 ? firstSentence.slice(0, 80).replace(/\s+\S*$/, '') : firstSentence;
+    const next = blankProject(title); next.brief = brief; next.referenceImage = pendingReference;
+    next.summary = 'Custom concept. Add the parts, connections and build steps. No automatic design was generated for this idea.';
+    if (addProject(next)) { $('#brief-input').value = ''; pendingReference = null; renderReferenceInput(); }
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
-  else if (button.id === 'accept-draft' && pendingDraft) { const draft = pendingDraft; pendingDraft = null; $('#draft-dialog').close(); addProject(draft); $('#brief-input').value = ''; }
+  else if (button.id === 'choose-reference') $('#reference-file').click();
+  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; pendingReference = null; renderReferenceInput(); } }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
+  else if (button.id === 'remove-reference' && !draftController) { pendingReference = null; renderReferenceInput(); }
+  else if (button.id === 'remove-project-reference') { const previous = p.referenceImage; p.referenceImage = null; if (save('Before removing visual reference')) { render(); showToast('Visual reference removed.'); } else p.referenceImage = previous; }
   else if (button.id === 'rename-project') openEditor('title', 0);
   else if (button.id === 'history-project') openHistory();
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
@@ -429,6 +487,11 @@ function handleClick(event) {
 }
 function handleChange(event) {
   const p = current(); const target = event.target;
+  if (target.id === 'reference-file') {
+    const file = target.files?.[0]; target.value = ''; if (!file || draftController) return;
+    prepareReferenceImage(file).then(reference => { pendingReference = reference; renderReferenceInput(); showToast('Visual reference ready and kept on this device.'); }).catch(error => showToast(error.message || 'Could not read that image.'));
+    return;
+  }
   if (target.dataset.railField) {
     const rail = p.powerRails?.[Number(target.dataset.railIndex)]; if (!rail) return;
     const key = target.dataset.railField;

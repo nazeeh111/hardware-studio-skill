@@ -85,7 +85,20 @@ a { color: inherit; }
 .brief-card { grid-area: form; position: relative; z-index: 1; display: grid; grid-template-columns: 178px minmax(0, 1fr) 208px; align-items: center; gap: 14px; background: var(--paper-light); color: var(--ink); padding: 13px 14px 13px 19px; border-left: 4px solid var(--signal); }
 .brief-card label { align-self: start; margin-top: 6px; font: 600 10px/1.6 var(--mono); letter-spacing: .02em; }
 .brief-card label span { color: #8a9a82; }
+.brief-entry { min-width: 0; }
 .brief-card textarea { border: 0; border-left: 1px solid var(--line); padding: 8px 14px; min-height: 66px; width: 100%; color: var(--ink); outline: 0; resize: vertical; background: transparent; font-size: 15px; line-height: 1.4; }
+.reference-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 7px 10px; padding: 5px 14px 0; border-left: 1px solid var(--line); }
+.reference-controls > span { font: 500 9px/1.3 var(--mono); color: #687769; }
+.reference-controls .reference-button { margin: 0; padding: 5px 8px; border: 1px solid #9fac9f; background: #eef1e7; color: var(--ink); font: 600 9px var(--mono); cursor: pointer; }
+.reference-controls .reference-button:hover { border-color: var(--ink); }
+.reference-controls .reference-button:focus-visible { outline: 2px solid var(--signal-dark); outline-offset: 2px; }
+.reference-controls .reference-button:disabled { opacity: .5; cursor: default; }
+#reference-preview { display: flex; align-items: center; gap: 7px; min-width: 0; border: 1px solid #bcc9b9; background: #fff; padding: 3px 5px; }
+#reference-preview[hidden] { display: none; }
+#reference-preview img { width: 31px; height: 31px; object-fit: cover; }
+#reference-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; font: 500 9px var(--mono); }
+#reference-preview button { border: 0; background: transparent; color: var(--rust); font-size: 18px; cursor: pointer; }
+#reference-preview button:disabled { opacity: .3; cursor: default; }
 .brief-card textarea:focus-visible, .overview-card textarea:focus-visible { outline: 2px solid #829a22; outline-offset: 2px; }
 .brief-card textarea::placeholder { color: #8f998c; }
 .brief-actions { display: flex; align-items: stretch; flex-direction: column; justify-content: center; gap: 7px; }
@@ -106,6 +119,9 @@ a { color: inherit; }
 .project-head p { max-width: 760px; color: var(--muted); line-height: 1.45; font-size: 12px; margin: 0; }
 .project-head-actions { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
 .project-head-actions .button { min-height: 34px; font-size: 10px; }
+.project-reference { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 13px 0; padding: 15px; background: #e9eee4; border: 1px solid var(--line); }
+.project-reference p { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.project-reference img { max-width: 180px; max-height: 125px; object-fit: contain; border: 1px solid #b8c6b3; background: #fff; }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--paper-light); border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
 .stat { position: relative; padding: 16px 17px 15px; border-right: 1px solid var(--line); min-width: 0; }
 .stat:last-child { border-right: 0; }
@@ -289,6 +305,8 @@ dialog::backdrop { background: #101d19b8; }
   .brief-card { grid-template-columns: 1fr; gap: 5px; padding: 14px; }
   .brief-card label { margin: 0; }
   .brief-card textarea { border: 0; border-top: 1px solid var(--line); padding: 8px 0; min-height: 65px; }
+  .reference-controls { border: 0; padding: 5px 0; }
+  .project-reference { align-items: flex-start; flex-direction: column; }
   .brief-actions { flex-direction: column; align-items: stretch; }
   .brief-actions span { max-width: none; }
   .project-head { align-items: start; flex-direction: column; }
