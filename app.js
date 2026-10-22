@@ -1,4 +1,5 @@
 import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=21';
+import { validateTraySpec } from './tray-spec.js?v=2';
 import { createZip } from './zip.js?v=1';
 
 const $ = selector => document.querySelector(selector);
@@ -190,13 +191,20 @@ function download(name, contents, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
+function traySpecForProject(p) {
+  let raw;
+  try { raw = localStorage.getItem(`hardware-studio-tray-${p.id}`); }
+  catch { return null; }
+  return raw ? validateTraySpec(JSON.parse(raw)) : null;
+}
 function exportPackage(p) {
   const generatedAt = new Date().toISOString();
   const issues = validate(p);
   const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
   const title = String(p.title).replace(/[\r\n]+/g, ' ');
   const reference = safeReferenceImage(p.referenceImage);
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const traySpec = traySpecForProject(p);
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
@@ -206,6 +214,7 @@ function exportPackage(p) {
     { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
     { name: 'review.txt', data: report },
+    ...(traySpec ? [{ name: 'tray-spec.json', data: JSON.stringify(traySpec, null, 2) + '\n' }] : []),
     ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : [])
   ]);
   download(`${filename(p)}-package.zip`, archive, 'application/zip');
@@ -352,7 +361,8 @@ function renderAssembly(p) {
   const next = evidence ? 'Next check: compare the linked CAD with physical parts, then test mounting, access, cable fit, thermal clearance and wire routing. Revise the model when hardware changes.' : 'Next check: measure the actual components, create a dimensioned model, then test mounting, access, motion, thermal clearance and wire routing. Revise the model when hardware changes.';
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const mounts = (p.mechanicalConnections || []).map((link, index) => `<div class="mount-row"><div><strong>${html(labels[link.from] || 'Missing part')} → ${html(labels[link.to] || 'Missing part')}</strong><span>${html(link.label)}</span>${link.note ? `<small>${html(link.note)}</small>` : ''}</div><button class="text-link" data-edit-mount="${index}" type="button">Edit</button></div>`).join('');
-  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} For a rectangular tray, <a href="https://github.com/nazeeh111/hardware-studio-skill/tree/main/tools/tray-generator" target="_blank" rel="noopener noreferrer">generate an editable STEP/STL package from a measured JSON spec ↗</a>.</p>`;
+  const trayWorkbench = `./tray.html?project=${encodeURIComponent(p.id)}&title=${encodeURIComponent(p.title)}`;
+  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
 }
 function renderBuild(p) {
   const rows = p.steps.map((step, i) => `<div class="step-card ${step.done ? 'done' : ''}"><input data-done-step="${i}" type="checkbox" ${step.done ? 'checked' : ''} aria-label="Mark ${html(step.title)} complete"><div><small>${html(step.phase.toUpperCase())} / ${String(i + 1).padStart(2, '0')}</small><strong>${html(step.title)}</strong><p>${html(step.detail)}</p></div><button class="text-link" data-edit-step="${i}" type="button">Edit</button></div>`).join('');

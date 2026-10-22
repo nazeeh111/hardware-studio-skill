@@ -12,6 +12,8 @@ For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pic
 
 To create a new rectangular tray, use the [parametric tray generator](tools/tray-generator/README.md) with a millimeter JSON specification. It exports fresh STEP, STL and a dimensioned layout, then reopens the exports in a separate process to check their integrity. Component fit and fabrication checks still need separate evidence.
 
+The [tray workbench](tray.html) provides a scaled browser plan and controls for dimensions, bosses, locators, through-holes and edge openings. It saves a valid draft in this browser for the selected project and downloads a JSON spec for the local generator. A project ZIP includes the saved tray spec as a separate file; project JSON alone does not. Keep the downloaded spec with the generated CAD package. The browser preview is not a fit check, and GitHub Pages cannot execute the Python generator.
+
 ## Run
 
 From this folder:
@@ -35,6 +37,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG. Record separate mounting and fit relationships between physical parts; those notes remain unverified until checked against dimensioned CAD and actual hardware.
 - Attach a link to a separate dimensioned CAD and verification package; the Assembly view keeps that evidence distinct from its conceptual drawing.
+- Open a project-specific tray workbench from Assembly to create and download an editable millimeter spec. Its scaled plan helps place features; the local generator produces STEP/STL after the spec is downloaded.
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Tray workbench — Hardware Studio</title>
+  <link rel="stylesheet" href="./tray.css?v=1">
+</head>
+<body>
+  <header class="bar"><a class="brand" href="./index.html"><span class="mark">H<span>+</span></span> HARDWARE <em>/ STUDIO</em></a><span class="edition">MECHANICAL WORKBENCH / 001</span><a class="back" href="./index.html">← Return to studio</a></header>
+  <main class="shell">
+    <section class="intro"><div><span class="eyebrow">01 / PARAMETRIC STUDY</span><h1>Shape a tray<br><em>with measured intent.</em></h1><p>Set the envelope, place mounting bosses, and carve edge openings. This page makes the input for the CAD generator. Verify the exported STEP against exact hardware before fabrication.</p></div><div class="intro-side"><span>OUTPUT CHAIN</span><strong>SPEC → STEP → FIT CHECK</strong><small>The drawing below is a scaled plan, not a checked fit.</small></div></section>
+    <section class="workspace">
+      <div class="editor">
+        <div class="section-head"><span>01</span><div><h2>Envelope</h2><p>Outer dimensions and shell thickness in millimeters.</p></div></div>
+        <form id="tray-form" novalidate>
+          <label class="wide">Study name<input id="title" name="title" maxlength="100" required></label>
+          <div class="measure-grid">
+            <label>Length / X<input name="length" type="number" min="1" max="500" step="0.1" value="80" required><small>mm</small></label>
+            <label>Width / Y<input name="width" type="number" min="1" max="500" step="0.1" value="55" required><small>mm</small></label>
+            <label>Height / Z<input name="height" type="number" min="1" max="500" step="0.1" value="18" required><small>mm</small></label>
+            <label>Wall<input name="wall" type="number" min="0.1" max="20" step="0.1" value="2.5" required><small>mm</small></label>
+            <label>Floor<input name="floor" type="number" min="0.1" max="20" step="0.1" value="2.5" required><small>mm</small></label>
+          </div>
+          <div class="section-head sub"><span>02</span><div><h2>Mounting points</h2><p>Coordinates are measured from the outer front-left corner. Boss top is measured from the bottom.</p></div></div>
+          <div id="mounts" class="rows"></div><button id="add-mount" class="small-action" type="button">＋ Add boss</button>
+          <div class="section-head sub"><span>03</span><div><h2>Edge openings</h2><p>Start and end run along the named wall; bottom and top run upward.</p></div></div>
+          <div id="cutouts" class="rows"></div><button id="add-cutout" class="small-action" type="button">＋ Add opening</button>
+        </form>
+      </div>
+      <aside class="output">
+        <div class="output-head"><span class="eyebrow">LIVE / TOP VIEW</span><span id="status-chip">CHECKING</span></div>
+        <div id="preview" class="preview" aria-live="polite"></div>
+        <p id="status" class="status" role="status">Checking geometry…</p>
+        <div class="drawing-key"><span><i class="swatch shell-color"></i> Shell</span><span><i class="swatch boss-color"></i> Boss / locator</span><span><i class="swatch opening-color"></i> Opening</span></div>
+        <div class="actions"><button id="download" class="primary" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
+        <div class="handoff"><span>04 / GENERATE &amp; CHECK</span><p>Run the free local OpenCascade generator with the downloaded JSON. It writes STEP, STL, a dimensioned drawing, and readback reports.</p><code>python tools/tray-generator/generate.py --spec your-tray.json --out new-tray-package</code><a href="https://github.com/nazeeh111/hardware-studio-skill/tree/main/tools/tray-generator" target="_blank" rel="noopener noreferrer">Generator, setup, and limits ↗</a></div>
+      </aside>
+    </section>
+    <footer>HARDWARE / STUDIO <span>Modeled geometry is not physical fit or fabrication approval.</span></footer>
+  </main>
+  <script type="module" src="./tray-workbench.js?v=5"></script>
+</body>
+</html>
