@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101820">
+  <meta name="theme-color" content="#14211f">
   <meta name="description" content="A local-first workspace for planning and reviewing small hardware projects.">
   <title>Hardware Studio — from idea to reviewed build plan</title>
   <link rel="stylesheet" href="./styles.css">
@@ -11,22 +11,23 @@
 <body>
   <div class="app-shell">
     <header class="topbar">
-      <div class="brand" aria-label="Hardware Studio home"><span class="brand-symbol">✳</span><span>HARDWARE<span class="brand-light">/STUDIO</span></span></div>
-      <div class="topbar-center"><span class="topbar-rule"></span><span>DESIGN WORKSPACE</span><span class="topbar-rule"></span></div>
-      <div class="topbar-right"><span class="offline-dot"></span><span>LOCAL ONLY</span><button id="export-project" class="button button-quiet" type="button">Export project <span aria-hidden="true">↗</span></button></div>
+      <div class="brand" aria-label="Hardware Studio home"><span class="brand-symbol">H<span>+</span></span><span>HARDWARE<span class="brand-light"> / STUDIO</span></span></div>
+      <div class="topbar-center"><span class="topbar-rule"></span><span>DESIGN SYSTEM / 001</span><span class="topbar-rule"></span></div>
+      <div class="topbar-right"><span class="offline-dot"></span><span>STORED ON THIS DEVICE</span><button id="export-project" class="button button-quiet" type="button">Export project <span aria-hidden="true">↗</span></button></div>
     </header>
     <div class="workspace">
       <aside class="sidebar">
-        <div class="sidebar-top"><div class="eyebrow">YOUR WORKSPACE <span id="project-count">01</span></div><button id="new-project" class="button button-primary full" type="button"><span>＋</span> New project</button></div>
+        <div class="sidebar-top"><div class="eyebrow">PROJECT INDEX <span id="project-count">01</span></div><button id="new-project" class="button button-primary full" type="button"><span>＋</span> New project <span class="button-end">↗</span></button></div>
         <div id="project-list" class="project-list" aria-label="Projects"></div>
-        <div class="sidebar-bottom"><div class="small-heading">BUILT FOR THE BENCH</div><p>Plan parts, connections and assembly together. Confirm the details before buying or powering anything.</p><span>NO ACCOUNT · NO API KEY</span></div>
+        <div class="sidebar-bottom"><div class="small-heading">WORKFLOW / 001—004</div><p>Define the job.<br>Map the system.<br>Check the details.<br>Build with evidence.</p><span>LOCAL FILES · OPEN PROCESS</span></div>
       </aside>
       <main class="main">
-        <section class="intro">
-          <div class="intro-copy"><div class="eyebrow accent">01 / PROJECT BRIEF</div><h1>Make it <em>real.</em><br>Make it <em>right.</em></h1><p>Turn a hardware idea into an editable plan. Every part, wire and build step stays visible for review.</p></div>
-          <div class="brief-card"><label for="brief-input">WHAT ARE YOU MAKING?</label><textarea id="brief-input" rows="3" placeholder="Describe a plant monitor, ambient light or another build idea..."></textarea><div class="brief-actions"><span>Start from an editable template. Customize every detail.</span><button id="create-from-brief" class="button button-dark" type="button">Start design <span aria-hidden="true">↗</span></button></div></div>
+        <section class="intro" aria-labelledby="intro-title">
+          <div class="intro-copy"><div class="eyebrow accent"><span class="eyebrow-mark"></span> FROM CONCEPT TO COMPONENT</div><h1 id="intro-title">Ideas, with<br><em>tolerances.</em></h1><p>Parts, pins, fit and build steps in one place. Make the assumptions visible before anything goes on the bench.</p></div>
+          <div class="hero-graphic" aria-hidden="true"><svg viewBox="0 0 340 214" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30 38h280M30 176h280M48 20v174M292 20v174" stroke="#5c7770" stroke-width=".6" stroke-dasharray="2 5"/><path d="M85 47v-17m28 17v-17m28 17v-17m28 17v-17m28 17v-17m28 17v-17M85 162v17m28-17v17m28-17v17m28-17v17m28-17v17m28-17v17" stroke="#d6ed72" stroke-width="3"/><rect x="72" y="46" width="166" height="116" rx="7" fill="#22332e" stroke="#9cb5a4" stroke-width="1.5"/><rect x="89" y="63" width="85" height="65" rx="3" fill="#152421" stroke="#63897b"/><path d="M95 70h36M95 79h47M95 88h26M95 97h41M95 106h32M95 115h49" stroke="#43675d" stroke-width="2"/><rect x="188" y="64" width="32" height="25" rx="2" fill="#d6ed72"/><path d="M196 71h16m-16 5h13m-13 5h9" stroke="#304031" stroke-width="2"/><circle cx="204" cy="118" r="14" stroke="#7ea492"/><circle cx="204" cy="118" r="5" fill="#d6ed72"/><path d="M238 79h30v54h-30M50 76h22M50 136h22" stroke="#d6ed72" stroke-width="2"/><circle cx="268" cy="79" r="3" fill="#d6ed72"/><circle cx="268" cy="133" r="3" fill="#d6ed72"/><path d="M72 105H50M238 105h30" stroke="#7ea492"/><text x="58" y="13" fill="#a7c1af" font-size="8" font-family="monospace" letter-spacing="2">SYSTEM / BOARD 01</text><text x="224" y="205" fill="#a7c1af" font-size="8" font-family="monospace" letter-spacing="1">FIG. 01 / CONCEPT</text><path d="M57 185h25m186 0h25M57 181v8m236-8v8" stroke="#8fa99a" stroke-width=".7"/><text x="133" y="188" fill="#8fa99a" font-size="8" font-family="monospace">NOT TO SCALE</text></svg></div>
+          <div class="brief-card"><label for="brief-input"><span>01</span> / DESCRIBE YOUR BUILD</label><textarea id="brief-input" rows="2" placeholder="What are you building? Include the function, power and size constraints..."></textarea><div class="brief-actions"><span>Use a starter or create a blank, editable concept.</span><button id="create-from-brief" class="button button-dark" type="button">Start design <span aria-hidden="true">↗</span></button></div></div>
         </section>
-        <section class="starter-strip" aria-label="Starter designs"><span>START WITH</span><div id="starter-buttons"></div></section>
+        <section class="starter-strip" aria-label="Starter designs"><span>QUICK START <b>↘</b></span><div id="starter-buttons"></div></section>
         <section class="project-head"><div><div id="project-kicker" class="eyebrow">CURRENT DESIGN</div><h2 id="project-title"></h2><p id="project-summary"></p></div><div class="project-head-actions"><button id="rename-project" class="button button-outline" type="button">Rename</button><button id="import-project" class="button button-outline" type="button">Import JSON</button><button id="delete-project" class="button button-outline" type="button">Delete</button><input id="import-file" type="file" accept="application/json,.json" hidden></div></section>
         <section id="stats" class="stats" aria-label="Project summary"></section>
         <div class="content-grid"><section class="document"><div class="tabs" role="tablist" aria-label="Design views"><button data-tab="overview" role="tab" type="button">Overview</button><button data-tab="parts" role="tab" type="button">Parts</button><button data-tab="wiring" role="tab" type="button">Wiring</button><button data-tab="assembly" role="tab" type="button">Assembly</button><button data-tab="build" role="tab" type="button">Build</button></div><div id="panel" class="panel" role="tabpanel"></div></section><aside id="review-rail" class="review-rail"></aside></div>

@@ -17,7 +17,7 @@ Open `http://localhost:4173` in a browser. No installation, account, paid API or
 - Start from a plant monitor or ambient-light design, or make a blank concept. A brief mentioning plant/soil/garden/greenhouse or light/lamp/LED picks the respective starter. Other briefs create an editable blank project. This is a rule-based route, not arbitrary AI design.
 - Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
-- View and export a connection diagram and a conceptual exploded parts layout as SVG.
+- View and export a connection diagram and a conceptual component index as SVG.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
 
