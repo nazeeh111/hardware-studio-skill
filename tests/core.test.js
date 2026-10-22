@@ -51,6 +51,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.parts[0].unitCost = 999;
   raw.parts[0].sourceUrl = 'https://example.com/unchecked';
   raw.parts[0].verified = true;
+  raw.steps[0].done = true;
   raw.cadUrl = 'https://example.com/unverified-cad';
   raw.wiringUrl = 'https://example.com/unverified-wiring';
   raw.review = { electrical: true, mechanical: true, sourcing: true };
@@ -59,6 +60,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.parts[0].unitCost, 0);
   assert.equal(draft.parts[0].sourceUrl, '');
   assert.equal(draft.parts[0].verified, false);
+  assert.equal(draft.steps[0].done, false);
   assert.equal(draft.cadUrl, '');
   assert.equal(draft.wiringUrl, '');
   assert.equal(draft.review.electrical, false);

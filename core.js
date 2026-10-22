@@ -238,6 +238,7 @@ export function localAiDraft(input, brief, model) {
   project.cadUrl = '';
   project.wiringUrl = '';
   project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
+  project.steps = project.steps.map(step => ({ ...step, done: false }));
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };
   if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');

@@ -74,7 +74,7 @@ async function prepareReferenceImage(file) {
 function renderReferenceInput() {
   const preview = $('#reference-preview');
   preview.hidden = !pendingReference;
-  preview.innerHTML = pendingReference ? `<img src="${html(pendingReference.dataUrl)}" alt="Selected visual reference"><span>${html(pendingReference.name)} · saved with project</span><button id="remove-reference" type="button" aria-label="Remove reference image">×</button>` : '';
+  preview.innerHTML = pendingReference ? `<img src="${html(pendingReference.dataUrl)}" alt="Selected visual reference"><span>${html(pendingReference.name)} · ready to save</span><button id="remove-reference" type="button" aria-label="Remove reference image">×</button>` : '';
 }
 
 async function draftWithLocalAi() {
