@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=13';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=14';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -143,10 +143,17 @@ function download(name, contents, type) {
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
 function openHistory() {
-  const p = current(); let entries;
-  try { entries = readRevisions().filter(entry => entry.projectId === p.id).reverse(); }
-  catch { $('#history-list').innerHTML = '<div class="history-empty">Revision history could not be read. Export the current JSON before making more changes.</div>'; $('#history-dialog').showModal(); return; }
+  const p = current(); let allEntries;
+  try { allEntries = readRevisions(); }
+  catch { $('#history-list').innerHTML = '<div class="history-empty">Revision history could not be read. Export the current JSON before making more changes.</div>'; $('#history-trash').innerHTML = ''; $('#history-dialog').showModal(); return; }
+  const entries = allEntries.filter(entry => entry.projectId === p.id).reverse();
   $('#history-list').innerHTML = entries.length ? entries.map(entry => `<div class="history-entry"><div><strong>${html(entry.reason)}</strong><small>${html(new Date(entry.at).toLocaleString())} · ${html(entry.snapshot.parts?.length ?? '?')} parts · ${html(entry.snapshot.wires?.length ?? '?')} connections</small></div><button class="button button-outline" type="button" data-restore-revision="${html(entry.id)}">Restore</button></div>`).join('') : '<div class="history-empty">No earlier edits recorded for this project yet.</div>';
+  const activeIds = new Set(projects.map(item => item.id)), seen = new Set();
+  const deleted = allEntries.slice().reverse().filter(entry => {
+    if (entry.reason !== 'Deleted project' || activeIds.has(entry.projectId) || seen.has(entry.projectId)) return false;
+    seen.add(entry.projectId); return true;
+  });
+  $('#history-trash').innerHTML = deleted.length ? `<div class="history-section-title">RECENTLY DELETED</div><div class="history-list">${deleted.map(entry => `<div class="history-entry"><div><strong>${html(entry.snapshot.title || 'Untitled project')}</strong><small>${html(new Date(entry.at).toLocaleString())} · ${html(entry.snapshot.parts?.length ?? '?')} parts</small></div><button class="button button-outline" type="button" data-recover-project="${html(entry.id)}">Recover</button></div>`).join('')}</div>` : '';
   $('#history-dialog').showModal();
 }
 function restoreRevision(id) {
@@ -163,6 +170,19 @@ function restoreRevision(id) {
   projects[index] = restored;
   if (!save('Restored revision', { skipRevision: true })) { projects[index] = p; return; }
   $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Older state restored. Verification marks were reset.');
+}
+function recoverDeletedProject(id) {
+  let entry;
+  try { entry = readRevisions().find(item => item.id === id && item.reason === 'Deleted project' && !projects.some(project => project.id === item.projectId)); }
+  catch { return showToast('Deleted-project history could not be read.'); }
+  if (!entry) return showToast('That deleted project is no longer available.');
+  let recovered;
+  try { recovered = restoreProjectFromRevision(entry.snapshot, entry.snapshot); }
+  catch { return showToast('This saved project is invalid and was not recovered.'); }
+  const priorProjects = projects, priorId = currentId;
+  projects = [recovered, ...projects]; currentId = recovered.id;
+  if (!save('Recover deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; return; }
+  $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Project recovered. Verification and step marks were reset.');
 }
 function addProject(p) { projects.unshift(p); currentId = p.id; activeTab = 'overview'; const saved = save('Before creating project'); render(); if (saved) showToast('Project created. Review the design before building.'); }
 
@@ -353,6 +373,7 @@ function handleClick(event) {
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
   else if (button.id === 'history-export') { download(`${filename(p)}.json`, JSON.stringify(p, null, 2), 'application/json'); showToast('Current project JSON downloaded.'); }
   else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
+  else if (button.dataset.recoverProject) recoverDeletedProject(button.dataset.recoverProject);
   else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = false; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
   else if (button.id === 'start-clean' && unreadableSavedData !== null && !$('#start-clean').disabled) {
     if (!window.confirm('Replace the unreadable workspace only after keeping its downloaded backup?')) return;
@@ -362,7 +383,17 @@ function handleClick(event) {
     unreadableSavedData = null; projects = [fresh]; currentId = fresh.id; activeTab = 'overview'; $('#recovery-dialog').close(); render(); showToast('New workspace started. Keep the downloaded original for recovery.');
   }
   else if (button.id === 'import-project') $('#import-file').click();
-  else if (button.id === 'delete-project') { if (!window.confirm(`Delete “${p.title}” from local storage? Export it first if you need a copy.`)) return; projects = projects.filter(x => x.id !== p.id); if (!projects.length) projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; activeTab = 'overview'; save(); render(); showToast('Project deleted from this browser.'); }
+  else if (button.id === 'delete-project') {
+    if (!window.confirm(`Move “${p.title}” to Recently deleted? It can be recovered while this browser keeps its bounded history.`)) return;
+    try { recordRevision(p, 'Deleted project'); }
+    catch { return showToast('Project was not deleted because its recovery snapshot could not be saved. Export JSON first.'); }
+    const priorProjects = projects, priorId = currentId;
+    projects = projects.filter(item => item.id !== p.id);
+    if (!projects.length) projects = [makeProject(STARTERS[0])];
+    currentId = projects[0].id; activeTab = 'overview';
+    if (!save('Deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; render(); return; }
+    render(); showToast('Project moved to Recently deleted. Open History to recover it.');
+  }
   else if (button.id === 'export-project') { download(`${filename(p)}.json`, JSON.stringify(p, null, 2), 'application/json'); showToast('Project JSON downloaded.'); }
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-diagram') { const svg = $('#panel svg'); if (svg) { download(`${filename(p)}-${activeTab}.svg`, new XMLSerializer().serializeToString(svg), 'image/svg+xml'); showToast('Diagram downloaded.'); } }

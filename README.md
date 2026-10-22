@@ -35,7 +35,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
-- Open **History** to restore a recent edit. The app retains up to 12 earlier states per project within a shared 2 MB history limit; restoration saves the current state first and resets verification and completed-step marks. If saved workspace data becomes unreadable, the app preserves its original bytes and offers a download before allowing a fresh workspace.
+- Open **History** to restore a recent edit or recover a deleted project while its local snapshot remains. The app retains up to 12 earlier states per project within a shared 2 MB history limit; restoration saves the current state first and resets verification and completed-step marks. Deletion is cancelled when its recovery snapshot cannot be stored. If saved workspace data becomes unreadable, the app preserves its original bytes and offers a download before allowing a fresh workspace.
 
 ## Limits that matter
 
