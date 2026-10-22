@@ -69,3 +69,4 @@ The sample demonstrates the carrier only; it is deliberately incomplete as a bui
 The app accepts additional fields but does not use them. Keep full calculations, datasheet links and dimensioned CAD sources beside the JSON when they cannot be represented faithfully in these fields.
 
 The browser tray workbench stores its valid draft with the local project as optional `traySpec`, and the project ZIP includes the same geometry as `tray-spec.json`. Project JSON imports retain this field while resetting mechanical review. Download the spec directly from the workbench or use the repository's tray generator to make STEP/STL; check component fit separately and record the resulting evidence URL in `cadUrl` when published.
+The skill checker validates `traySpec` against the same input rules as the browser editor. This only checks that the requested geometry is internally well formed; it does not compare it to manufacturer models or a physical assembly.

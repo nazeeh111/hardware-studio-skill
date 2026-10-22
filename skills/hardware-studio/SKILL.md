@@ -25,5 +25,6 @@ To generate STEP/STL from the browser on this Mac, run `sh tools/tray-generator/
 Deliver the editable sources and a plain-language build and test guide. Separate verified, estimated, inferred and untested items. If a constraint or source cannot be checked, make the next required check concrete instead of calling the design ready to build.
 
 When the user wants an interactive project, produce a Hardware Studio JSON file using [the project format](references/project-format.md). Validate its structural links with `node scripts/check-project.mjs /absolute/path/to/project.json` from this skill folder, then direct the user to import the file in the [Hardware Studio app](https://github.com/nazeeh111/hardware-studio-skill). That checker verifies data shape and cross-references; it does not validate electrical or mechanical engineering.
+If the JSON includes a tray spec, the checker also applies the app's tray input rules. Passing those rules means the requested shape can be submitted to the generator, not that any real component fits.
 
 For the public product pattern that inspired this workflow, read [Blueprint observations](references/blueprint-observations.md) only when comparing features or interpreting that website. It is not an API or an engineering standard.
