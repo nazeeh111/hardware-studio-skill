@@ -2,6 +2,8 @@
 
 An original, local-first hardware design workspace informed by a public study of [Blueprint.io](https://www.blueprint.io/). It helps turn a small electronics idea into an editable project brief, parts list, connection map, conceptual assembly view, build sequence, and review record. It does not copy Blueprint's code, graphics, brand, private data, or generated project packages.
 
+**[Open the live app](https://nazeeh111.github.io/hardware-studio-skill/)** · [Read the design analysis](./BLUEPRINT_ANALYSIS.md) · [Use the Codex skill](./skills/hardware-studio/SKILL.md)
+
 ![Hardware Studio desktop interface](assets/studio-desktop.png)
 
 [View the narrow layout](assets/studio-narrow.png).
@@ -17,6 +19,8 @@ python3 -m http.server 4173
 Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects stay in the browser's local storage. Export JSON regularly if the work matters. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
 
 Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. If Ollama is unavailable, the editor and starter designs still work. The brief goes only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
+
+For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Ollama's default local-origin access. The public GitHub Pages version works without Ollama; its AI control stays hidden unless your Ollama installation explicitly allows that site's origin.
 
 ## What works
 
