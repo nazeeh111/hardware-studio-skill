@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -64,4 +64,37 @@ test('local model output missing the requested temperature sensor is rejected', 
 test('unpriced AI parts export as blank costs', () => {
   const draft = localAiDraft(makeProject(STARTERS[0]), 'A plant monitor', 'qwen3:4b');
   assert.match(bomCsv(draft), /"ESP32 DevKit board","Control","1","",""/);
+});
+
+test('power budget multiplies part quantities and distinguishes incomplete, low margin and overload', () => {
+  const p = makeProject(STARTERS[1]);
+  const rail = p.powerRails[0];
+  assert.equal(powerBudget(p, rail).status, 'incomplete');
+  p.parts.find(part => part.id === 'led').qty = 2;
+  rail.loads[0].currentMaEach = 1100;
+  rail.loads[1].currentMaEach = 200;
+  assert.equal(powerBudget(p, rail).knownDemandMa, 2400);
+  assert.equal(powerBudget(p, rail).status, 'within-margin');
+  rail.loads[0].currentMaEach = 1200;
+  assert.equal(powerBudget(p, rail).status, 'below-margin');
+  rail.loads[0].currentMaEach = 1500;
+  assert.equal(powerBudget(p, rail).status, 'overload');
+  assert.ok(validate(p).some(issue => issue.kind === 'error' && issue.text.includes('exceeds its recorded supply')));
+});
+
+test('power rail import preserves the worksheet but resets review marks', () => {
+  const p = makeProject(STARTERS[1]);
+  p.powerRails[0].loads[0].currentMaEach = 1000;
+  p.review.electrical = true;
+  const imported = safeProject(p);
+  assert.equal(imported.powerRails[0].loads[0].currentMaEach, 1000);
+  assert.equal(imported.review.electrical, false);
+  imported.powerRails[0].loads[0].partId = 'missing';
+  assert.ok(validate(imported).some(issue => issue.kind === 'error' && issue.text.includes('missing part')));
+});
+
+test('invalid power rail shape is rejected during import', () => {
+  const p = makeProject(STARTERS[0]);
+  p.powerRails = [{ name: 'bad', loads: null }];
+  assert.throws(() => safeProject(p), /invalid load list/);
 });

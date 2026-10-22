@@ -56,6 +56,7 @@ export const STARTERS = [
       { from: 'usb', to: 'esp32', signal: 'USB power', voltage: '5 V', note: 'Power via the ESP32 USB connector.' },
       { from: 'button', to: 'esp32', signal: 'GPIO27 to GND', voltage: '3.3 V logic', note: 'Enable pull-up in firmware.' }
     ],
+    powerRails: [{ id: 'rail-5v', name: '5 V shared input', voltageV: 5, supplyCurrentMa: 3000, marginPercent: 20, sourcePartId: 'usb', loads: [{ partId: 'led', currentMaEach: null }, { partId: 'esp32', currentMaEach: null }] }],
     steps: [
       { phase: 'Prepare', title: 'Calculate power demand', detail: 'Use the chosen strip datasheet to compute maximum current. Compare with supply, cable and connector ratings.' },
       { phase: 'Prepare', title: 'Measure the fit', detail: 'Measure strip width, bend radius, board size and connector clearance before making the enclosure.' },
@@ -74,6 +75,7 @@ export function makeProject(starter, title) {
     summary: starter.summary, starterId: starter.id, createdAt: now, updatedAt: now,
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
+    powerRails: structuredClone(starter.powerRails || []),
     notes: '', review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -82,7 +84,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], steps: [], notes: '',
+    parts: [], wires: [], steps: [], powerRails: [], notes: '',
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -95,6 +97,23 @@ export function stats(project) {
     wires: project.wires.length,
     completed: project.steps.filter(s => s.done).length
   };
+}
+
+export function powerBudget(project, rail) {
+  const parts = new Map(project.parts.map(part => [part.id, part]));
+  const loads = (rail.loads || []).map(load => {
+    const part = parts.get(load.partId);
+    const current = load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach);
+    return { part, currentMaEach: current, totalMa: part && Number.isFinite(current) && current >= 0 ? current * Number(part.qty) : null };
+  });
+  const knownDemandMa = loads.reduce((sum, load) => sum + (load.totalMa || 0), 0);
+  const supplyMa = rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa);
+  const complete = loads.length > 0 && loads.every(load => load.totalMa != null) && Number.isFinite(supplyMa) && supplyMa > 0;
+  const marginPercent = Number(rail.marginPercent ?? 20);
+  const headroomMa = complete ? supplyMa - knownDemandMa : null;
+  const headroomPercent = complete ? headroomMa / supplyMa * 100 : null;
+  const status = !complete ? 'incomplete' : headroomMa < 0 ? 'overload' : headroomPercent < marginPercent ? 'below-margin' : 'within-margin';
+  return { loads, knownDemandMa, supplyMa, complete, headroomMa, headroomPercent, status };
 }
 
 export function validate(project) {
@@ -110,6 +129,24 @@ export function validate(project) {
   for (const w of project.wires) {
     if (!ids.has(w.from) || !ids.has(w.to)) issues.push({ kind: 'error', text: `A ${w.signal || 'wire'} connection refers to a missing part.` });
     if (w.from === w.to) issues.push({ kind: 'error', text: 'A connection points to the same part at both ends.' });
+  }
+  for (const rail of project.powerRails || []) {
+    const name = rail.name || 'Unnamed rail';
+    if (!Number.isFinite(Number(rail.voltageV)) || Number(rail.voltageV) <= 0) issues.push({ kind: 'error', text: `${name} needs a positive rail voltage.` });
+    if (rail.supplyCurrentMa != null && (!Number.isFinite(Number(rail.supplyCurrentMa)) || Number(rail.supplyCurrentMa) <= 0)) issues.push({ kind: 'error', text: `${name} has an invalid supply rating.` });
+    if (!Number.isFinite(Number(rail.marginPercent)) || Number(rail.marginPercent) < 0 || Number(rail.marginPercent) >= 100) issues.push({ kind: 'error', text: `${name} needs a margin target from 0 to 99%.` });
+    if (rail.sourcePartId && !ids.has(rail.sourcePartId)) issues.push({ kind: 'error', text: `${name} refers to a missing supply part.` });
+    const used = new Set();
+    for (const load of rail.loads || []) {
+      if (!ids.has(load.partId)) issues.push({ kind: 'error', text: `${name} has a load linked to a missing part.` });
+      if (used.has(load.partId)) issues.push({ kind: 'error', text: `${name} counts a part twice.` });
+      used.add(load.partId);
+      if (load.currentMaEach != null && (!Number.isFinite(Number(load.currentMaEach)) || Number(load.currentMaEach) < 0)) issues.push({ kind: 'error', text: `${name} has an invalid load current.` });
+    }
+    const budget = powerBudget(project, rail);
+    if (budget.status === 'incomplete') issues.push({ kind: 'todo', text: `${name} needs a supply rating and current for every assigned load.` });
+    if (budget.status === 'overload') issues.push({ kind: 'error', text: `${name} exceeds its recorded supply rating by ${Math.abs(budget.headroomMa).toFixed(0)} mA.` });
+    if (budget.status === 'below-margin') issues.push({ kind: 'review', text: `${name} is below its chosen ${Number(rail.marginPercent)}% headroom target.` });
   }
   if (!project.parts.length) issues.push({ kind: 'todo', text: 'Add parts before calling this a design.' });
   if (!project.wires.length) issues.push({ kind: 'todo', text: 'Add and verify the electrical connections.' });
@@ -132,7 +169,9 @@ export function bomCsv(project) {
 
 export function safeProject(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('This file is not a Hardware Studio project.');
-  if (input.parts.length > 200 || input.wires.length > 500 || input.steps.length > 200) throw new Error('This project exceeds the local editor limits.');
+  if (input.parts.length > 200 || input.wires.length > 500 || input.steps.length > 200 || (input.powerRails || []).length > 20) throw new Error('This project exceeds the local editor limits.');
+  if (input.powerRails != null && !Array.isArray(input.powerRails)) throw new Error('Power rails must be an array.');
+  if ((input.powerRails || []).some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.length > 200)) throw new Error('A power rail has an invalid load list.');
   return {
     id: crypto.randomUUID(), title: String(input.title || 'Imported concept').slice(0, 100),
     brief: String(input.brief || '').slice(0, 5000), summary: String(input.summary || '').slice(0, 5000),
@@ -141,6 +180,7 @@ export function safeProject(input) {
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', verified: Boolean(p.verified) })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), to: String(w.to || ''), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
+    powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -152,6 +192,7 @@ export function localAiDraft(input, brief, model) {
   project.summary = `Local AI concept draft. Exact parts, pinouts, dimensions, prices and safety are unverified. ${project.summary}`.slice(0, 5000);
   project.notes = `Generated locally with ${String(model).slice(0, 80)}. Verify every part and connection against independent evidence before buying or building.\n\n${project.notes}`.slice(0, 10000);
   project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', verified: false }));
+  project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };
   if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');
   if (validate(project).some(issue => issue.kind === 'error')) throw new Error('The local model returned broken part references or invalid quantities. Try another model.');

@@ -27,6 +27,24 @@ try {
     if (wire.from === wire.to) issues.push(`wires[${i}] loops to the same part.`);
     if (typeof wire.signal !== 'string' || !wire.signal.trim()) issues.push(`wires[${i}].signal is required.`);
   }
+  if (project?.powerRails != null && !Array.isArray(project.powerRails)) issues.push('powerRails must be an array when supplied.');
+  for (const [i, rail] of (Array.isArray(project?.powerRails) ? project.powerRails : []).entries()) {
+    if (!rail || typeof rail !== 'object') { issues.push(`powerRails[${i}] must be an object.`); continue; }
+    if (typeof rail.name !== 'string' || !rail.name.trim()) issues.push(`powerRails[${i}].name is required.`);
+    if (typeof rail.voltageV !== 'number' || !Number.isFinite(rail.voltageV) || rail.voltageV <= 0) issues.push(`powerRails[${i}].voltageV must be positive.`);
+    if (rail.supplyCurrentMa != null && (typeof rail.supplyCurrentMa !== 'number' || !Number.isFinite(rail.supplyCurrentMa) || rail.supplyCurrentMa <= 0)) issues.push(`powerRails[${i}].supplyCurrentMa must be positive or null.`);
+    if (typeof rail.marginPercent !== 'number' || !Number.isFinite(rail.marginPercent) || rail.marginPercent < 0 || rail.marginPercent >= 100) issues.push(`powerRails[${i}].marginPercent must be from 0 to below 100.`);
+    if (rail.sourcePartId && !ids.has(rail.sourcePartId)) issues.push(`powerRails[${i}] refers to a missing supply part.`);
+    if (!Array.isArray(rail.loads)) { issues.push(`powerRails[${i}].loads must be an array.`); continue; }
+    const assigned = new Set();
+    for (const [j, load] of rail.loads.entries()) {
+      if (!load || typeof load !== 'object') { issues.push(`powerRails[${i}].loads[${j}] must be an object.`); continue; }
+      if (!ids.has(load.partId)) issues.push(`powerRails[${i}].loads[${j}] refers to a missing part.`);
+      if (assigned.has(load.partId)) issues.push(`powerRails[${i}] counts ${load.partId} twice.`);
+      assigned.add(load.partId);
+      if (load.currentMaEach != null && (typeof load.currentMaEach !== 'number' || !Number.isFinite(load.currentMaEach) || load.currentMaEach < 0)) issues.push(`powerRails[${i}].loads[${j}].currentMaEach must be nonnegative or null.`);
+    }
+  }
   for (const [i, step] of (Array.isArray(project?.steps) ? project.steps : []).entries()) {
     if (!step || typeof step !== 'object' || typeof step.title !== 'string' || !step.title.trim()) issues.push(`steps[${i}].title is required.`);
   }

@@ -21,6 +21,19 @@ Use this format when handing a Codex-designed project to the browser app. The ap
     }
   ],
   "wires": [],
+  "powerRails": [
+    {
+      "id": "rail-5v",
+      "name": "USB 5 V input",
+      "voltageV": 5,
+      "supplyCurrentMa": null,
+      "marginPercent": 20,
+      "sourcePartId": "",
+      "loads": [
+        { "partId": "controller", "currentMaEach": null }
+      ]
+    }
+  ],
   "steps": [
     {
       "phase": "Prepare",
@@ -35,5 +48,7 @@ Use this format when handing a Codex-designed project to the browser app. The ap
 ```
 
 The sample demonstrates the carrier only; it is deliberately incomplete as a build plan. For a real deliverable, include every physical part and required connection, pin and voltage notes, a stepwise bring-up sequence, exact source URLs and dates where verified, and unresolved decisions. Do not mark `verified` or `review` true on a generated draft. If a price is unknown, use `0` and explain in `detail` that it is unpriced; do not present the zero as a quote.
+
+`powerRails` is optional for older projects. Each rail's `sourcePartId` and load `partId` must match a part ID. `currentMaEach` is the peak current per unit in milliamps; the app multiplies it by that part's quantity. Use `null` when current or rated supply is unknown, and record the source and operating conditions in the project notes. A computed headroom covers only assigned loads, so check startup surges, voltage compatibility, wires, connectors and regulator heat separately.
 
 The app accepts additional fields but does not use them. Keep full calculations, datasheet links and dimensioned CAD sources beside the JSON when they cannot be represented faithfully in these fields.

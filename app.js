@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft } from './core.js?v=4';
+import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget } from './core.js?v=6';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -120,7 +120,7 @@ function render() {
   const costLabel = p.starterId === 'ai' && p.parts.some(part => Number(part.unitCost) === 0) ? 'UNPRICED' : money(st.estimate);
   $('#stats').innerHTML = [[st.distinctParts, 'DISTINCT PARTS'], [st.wires, 'CONNECTIONS'], [costLabel, 'COST ESTIMATE'], [`${st.completed}/${p.steps.length}`, 'STEPS DONE']].map(([value, label]) => `<div class="stat"><strong>${html(value)}</strong><span>${label}</span></div>`).join('');
   for (const tab of document.querySelectorAll('[data-tab]')) tab.setAttribute('aria-selected', String(tab.dataset.tab === activeTab));
-  const panels = { overview: renderOverview, parts: renderParts, wiring: renderWiring, assembly: renderAssembly, build: renderBuild };
+  const panels = { overview: renderOverview, parts: renderParts, wiring: renderWiring, power: renderPower, assembly: renderAssembly, build: renderBuild };
   $('#panel').innerHTML = panels[activeTab](p);
   renderReview(p);
 }
@@ -149,6 +149,25 @@ function renderWiring(p) {
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const rows = p.wires.map((w, i) => `<div class="wire-row"><b>${html(labels[w.from] || 'Missing part')}</b><span class="arrow">→</span><b>${html(labels[w.to] || 'Missing part')}</b><span>${html(w.signal)} · ${html(w.voltage)}</span><button class="text-link" data-edit-wire="${i}" type="button">Edit</button></div>`).join('');
   return panelHead('ELECTRICAL / CONNECTIONS', 'Wiring map', 'A relationship diagram for planning. Confirm the exact connector, pin number, ground path and current capacity before assembly.', '<div><button id="add-wire" class="small-button" type="button">＋ Add connection</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + (p.parts.length ? wiringSvg(p) : `<div class="empty"><strong>Add parts first</strong>Wiring will appear when components are in the design.</div>`) + (rows ? `<div class="wire-list">${rows}</div>` : '');
+}
+function renderPower(p) {
+  const cards = (p.powerRails || []).map((rail, railIndex) => {
+    const budget = powerBudget(p, rail);
+    const sourceChoices = [['', 'Choose a supply part'], ...p.parts.map(part => [part.id, part.name])];
+    const sourceSelect = `<select data-rail-index="${railIndex}" data-rail-field="sourcePartId" aria-label="Supply part for ${html(rail.name)}">${sourceChoices.map(([id, name]) => `<option value="${html(id)}" ${id === rail.sourcePartId ? 'selected' : ''}>${html(name)}</option>`).join('')}</select>`;
+    const used = new Set((rail.loads || []).map(load => load.partId));
+    const available = p.parts.filter(part => !used.has(part.id) && part.id !== rail.sourcePartId);
+    const loadRows = (rail.loads || []).map((load, loadIndex) => {
+      const part = p.parts.find(item => item.id === load.partId);
+      const current = load.currentMaEach == null ? '' : load.currentMaEach;
+      const total = budget.loads[loadIndex]?.totalMa;
+      return `<div class="power-load"><div><strong>${html(part?.name || 'Missing part')}</strong><small>QTY ${html(part?.qty ?? '?')}</small></div><label><span>PEAK mA / UNIT</span><input type="number" min="0" step="any" value="${html(current)}" data-load-rail="${railIndex}" data-load-index="${loadIndex}" aria-label="Peak current per ${html(part?.name || 'missing part')}"></label><b>${total == null ? 'UNKNOWN' : `${Number(total).toFixed(0)} mA`}</b><button class="text-link" type="button" data-remove-load="${railIndex}:${loadIndex}" aria-label="Remove ${html(part?.name || 'load')} from rail">Remove</button></div>`;
+    }).join('');
+    const statusText = { incomplete: 'NEEDS INPUT', overload: 'OVER CAPACITY', 'below-margin': 'BELOW TARGET', 'within-margin': 'WITHIN TARGET' }[budget.status];
+    const headroom = budget.complete ? `${budget.headroomMa.toFixed(0)} mA / ${budget.headroomPercent.toFixed(1)}%` : 'UNKNOWN';
+    return `<section class="power-card"><div class="power-card-head"><div><div class="eyebrow">RAIL / ${String(railIndex + 1).padStart(2, '0')}</div><h4>${html(rail.name)}</h4></div><span class="power-status ${budget.status}">${statusText}</span></div><div class="power-fields"><label><span>RAIL NAME</span><input data-rail-index="${railIndex}" data-rail-field="name" value="${html(rail.name)}" aria-label="Rail name"></label><label><span>VOLTAGE / V</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="voltageV" value="${html(rail.voltageV)}" aria-label="Rail voltage"></label><label><span>SUPPLY RATING / mA</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="supplyCurrentMa" value="${html(rail.supplyCurrentMa ?? '')}" aria-label="Supply current rating"></label><label><span>HEADROOM TARGET / %</span><input type="number" min="0" max="99" step="any" data-rail-index="${railIndex}" data-rail-field="marginPercent" value="${html(rail.marginPercent)}" aria-label="Headroom target"></label><label class="wide"><span>SUPPLY PART</span>${sourceSelect}</label></div><div class="power-metrics"><div><span>KNOWN LOAD</span><strong>${budget.knownDemandMa.toFixed(0)} mA</strong></div><div><span>RATED SUPPLY</span><strong>${budget.supplyMa == null ? 'UNKNOWN' : `${budget.supplyMa.toFixed(0)} mA`}</strong></div><div><span>HEADROOM</span><strong>${headroom}</strong></div></div><div class="power-list-head">ASSIGNED LOADS <span>Part quantity is included in the total.</span></div>${loadRows || '<div class="power-empty">Add a part and record its documented peak current.</div>'}<div class="power-actions">${available.length ? `<select id="add-load-${railIndex}" aria-label="Part to add to ${html(rail.name)}">${available.map(part => `<option value="${html(part.id)}">${html(part.name)}</option>`).join('')}</select><button class="small-button" type="button" data-add-load="${railIndex}">＋ Add load</button>` : '<span>All available parts are assigned.</span>'}<button class="text-link" type="button" data-remove-rail="${railIndex}">Remove rail</button></div></section>`;
+  }).join('');
+  return panelHead('ELECTRICAL / BUDGET', 'Power worksheet', 'Record one rail at a time. Use peak load current from exact component data and the rated supply output.', '<button id="add-rail" class="small-button" type="button">＋ Add rail</button>') + (cards || '<div class="empty"><strong>No power rail recorded</strong>Add a rail to compare rated supply current with assigned loads.</div>') + '<div class="notice">A result covers only the loads entered for that rail. It does not verify voltage compatibility, startup surges, cable or connector ratings, regulator heat, or unassigned parts.</div>';
 }
 function assemblySvg(p) {
   const parts = p.parts.slice(0, 10);
@@ -228,7 +247,7 @@ function deleteEntry() {
   if (!editor || editor.index < 0) return;
   const p = current(), { kind, index } = editor;
   if (!window.confirm(`Delete this ${kind} from the project?`)) return;
-  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.review = { electrical: false, mechanical: false, sourcing: false }; }
+  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
   closeEditor(); save(); render(); showToast('Entry removed.');
@@ -261,6 +280,10 @@ function handleClick(event) {
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-diagram') { const svg = $('#panel svg'); if (svg) { download(`${filename(p)}-${activeTab}.svg`, new XMLSerializer().serializeToString(svg), 'image/svg+xml'); showToast('Diagram downloaded.'); } }
   else if (button.id === 'add-part') openEditor('part');
+  else if (button.id === 'add-rail') { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; save(); render(); }
+  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; save(); render(); } }
+  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); p.powerRails?.[railIndex]?.loads.splice(loadIndex, 1); p.review.electrical = false; save(); render(); }
+  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; p.powerRails.splice(index, 1); p.review.electrical = false; save(); render(); }
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
   else if (button.id === 'add-step') openEditor('step');
   else if (button.id === 'close-dialog' || button.id === 'cancel-dialog') closeEditor();
@@ -268,6 +291,22 @@ function handleClick(event) {
 }
 function handleChange(event) {
   const p = current(); const target = event.target;
+  if (target.dataset.railField) {
+    const rail = p.powerRails?.[Number(target.dataset.railIndex)]; if (!rail) return;
+    const key = target.dataset.railField;
+    const value = ['voltageV', 'supplyCurrentMa', 'marginPercent'].includes(key) ? (target.value === '' ? null : Number(target.value)) : target.value.trim();
+    if (key === 'voltageV' && (!Number.isFinite(value) || value <= 0)) return showToast('Enter a positive rail voltage.');
+    if (key === 'supplyCurrentMa' && value != null && (!Number.isFinite(value) || value <= 0)) return showToast('Enter a positive supply rating.');
+    if (key === 'marginPercent' && (!Number.isFinite(value) || value < 0 || value >= 100)) return showToast('Enter a margin target from 0 to 99%.');
+    if (key === 'name' && !value) return showToast('Give the rail a name.');
+    rail[key] = value; p.review.electrical = false; save(); render(); return;
+  }
+  if (target.dataset.loadRail != null) {
+    const load = p.powerRails?.[Number(target.dataset.loadRail)]?.loads?.[Number(target.dataset.loadIndex)]; if (!load) return;
+    const value = target.value === '' ? null : Number(target.value);
+    if (value != null && (!Number.isFinite(value) || value < 0)) return showToast('Enter a nonnegative peak current or leave it blank.');
+    load.currentMaEach = value; p.review.electrical = false; save(); render(); return;
+  }
   if (target.dataset.doneStep != null) { p.steps[Number(target.dataset.doneStep)].done = target.checked; save(); render(); }
   if (target.dataset.review) { p.review[target.dataset.review] = target.checked; save(); renderReview(p); }
   if (target.id === 'import-file') {
@@ -298,6 +337,6 @@ function initialize() {
 }
 function safeProjectForStorage(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('Invalid stored project');
-  return { ...input, review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
+  return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
 }
 initialize();

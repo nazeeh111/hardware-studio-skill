@@ -29,12 +29,13 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG.
+- Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
 
 ## Limits that matter
 
-This app does **not** produce a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. Diagrams show relationships and part inventory. They do not prove pin compatibility, power capacity, clearances or fit. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
+This app does **not** produce a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. Diagrams show relationships and part inventory. The power worksheet covers only the loads assigned to each rail and does not check voltage compatibility, startup surges, cable or connector ratings, or regulator heat. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
 
 The [Blueprint analysis](./BLUEPRINT_ANALYSIS.md) separates directly observed public behavior from Blueprint's own statements and unknown implementation details. The [hardware design skill](./skills/hardware-studio/SKILL.md) guides Codex through a more rigorous end-to-end design workflow and can use appropriate local CAD tools when a dimensioned model is requested.
 
@@ -46,7 +47,7 @@ For ideas beyond the built-in starters, ask Codex to use the skill to create a p
 npm test
 ```
 
-The Node tests cover cost arithmetic, broken references, CSV quoting, import boundaries and local-model output checks. Visual and interaction checks should be performed in a browser after changes.
+The Node tests cover cost arithmetic, broken references, CSV quoting, import boundaries, local-model output and power-budget calculations. Visual and interaction checks should be performed in a browser after changes.
 
 ## License
 
