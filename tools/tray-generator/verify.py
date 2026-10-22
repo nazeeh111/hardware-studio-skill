@@ -51,6 +51,21 @@ def volume(shape):
     return properties.Mass()
 
 
+def stl_bounds(data, triangle_count):
+    low = [math.inf] * 3
+    high = [-math.inf] * 3
+    for index in range(triangle_count):
+        values = struct.unpack_from('<12f', data, 84 + index * 50)
+        if not all(math.isfinite(value) for value in values):
+            raise RuntimeError(f'STL triangle {index} contains a non-finite coordinate')
+        for vertex in range(3):
+            for axis in range(3):
+                coordinate = values[3 + vertex * 3 + axis]
+                low[axis] = min(low[axis], coordinate)
+                high[axis] = max(high[axis], coordinate)
+    return [high[axis] - low[axis] for axis in range(3)]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--package', type=Path, required=True)
@@ -79,12 +94,16 @@ def main():
     triangle_count = struct.unpack_from('<I', stl, 80)[0]
     if triangle_count < 12 or len(stl) != 84 + triangle_count * 50:
         raise RuntimeError('STL triangle count or byte length is invalid')
+    mesh_span = stl_bounds(stl, triangle_count)
+    if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(mesh_span, expected)):
+        raise RuntimeError(f'STL dimensions {mesh_span} differ from spec {expected}')
     result = {
         'status': 'fresh-process same-kernel readback passed; physical fit untested',
         'solid_count': solid_count,
         'outer_span_mm': span,
         'volume_mm3': volume_mm3,
         'stl_triangles': triangle_count,
+        'stl_outer_span_mm': mesh_span,
         'sha256': {name: sha256(root / name) for name in ('spec.json', 'tray.step', 'tray.stl', 'layout.svg')},
         'limits': ['Same OpenCascade kernel wrote and read STEP.', 'No manufacturer models, printed sample, connector access or physical tolerances were checked.'],
     }

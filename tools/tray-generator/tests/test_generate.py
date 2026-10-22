@@ -1,6 +1,9 @@
 import copy
 import json
+import struct
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -14,6 +17,19 @@ EXAMPLE = Path(__file__).resolve().parents[1] / 'examples' / 'pico-neopixel-tray
 
 
 class TrayGeneratorTests(unittest.TestCase):
+    def test_export_readback_rejects_corrupt_stl_coordinates(self):
+        root = EXAMPLE.parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / 'tray'
+            subprocess.run([sys.executable, str(root / 'generate.py'), '--spec', str(EXAMPLE), '--out', str(package)], check=True, capture_output=True, text=True)
+            self.assertEqual(json.loads((package / 'verification.json').read_text())['stl_outer_span_mm'], [66.0, 45.0, 14.0])
+            stl = bytearray((package / 'tray.stl').read_bytes())
+            struct.pack_into('<f', stl, 84 + 12, float('nan'))
+            (package / 'tray.stl').write_bytes(stl)
+            check = subprocess.run([sys.executable, str(root / 'verify.py'), '--package', str(package)], capture_output=True, text=True)
+            self.assertNotEqual(check.returncode, 0)
+            self.assertIn('non-finite coordinate', check.stderr)
+
     def test_reproduces_existing_pico_tray_geometry(self):
         spec = validate(json.loads(EXAMPLE.read_text()))
         shape = make_tray(spec)
