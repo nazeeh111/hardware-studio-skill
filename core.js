@@ -22,6 +22,7 @@ export function parseSavedWorkspace(raw) {
   if (!Array.isArray(saved?.projects) || !saved.projects.length || saved.projects.some(project =>
     !project || typeof project.id !== 'string' || !Array.isArray(project.parts) || !Array.isArray(project.wires) || !Array.isArray(project.steps) ||
     project.parts.some(part => !part || typeof part !== 'object') || project.wires.some(wire => !wire || typeof wire !== 'object') || project.steps.some(step => !step || typeof step !== 'object') ||
+    (project.mechanicalConnections != null && (!Array.isArray(project.mechanicalConnections) || project.mechanicalConnections.some(link => !link || typeof link !== 'object'))) ||
     (project.powerRails != null && (!Array.isArray(project.powerRails) || project.powerRails.some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.some(load => !load || typeof load !== 'object')))))) throw new Error('Invalid saved workspace');
   saved.projects.forEach(project => safeReferenceImage(project.referenceImage));
   return saved;
@@ -100,7 +101,7 @@ export function makeProject(starter, title) {
   return {
     id: crypto.randomUUID(), title: title || starter.name, brief: starter.prompt,
     summary: starter.summary, starterId: starter.id, createdAt: now, updatedAt: now,
-    parts: structuredClone(starter.parts), wires: structuredClone(starter.wires),
+    parts: structuredClone(starter.parts), wires: structuredClone(starter.wires), mechanicalConnections: structuredClone(starter.mechanicalConnections || []),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
     powerRails: structuredClone(starter.powerRails || []),
     notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, review: { electrical: false, mechanical: false, sourcing: false }
@@ -111,7 +112,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null,
+    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null,
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -162,6 +163,11 @@ export function validate(project) {
     if (!ids.has(w.from) || !ids.has(w.to)) issues.push({ kind: 'error', text: `A ${w.signal || 'wire'} connection refers to a missing part.` });
     if (w.from === w.to) issues.push({ kind: 'error', text: 'A connection points to the same part at both ends.' });
   }
+  for (const link of project.mechanicalConnections || []) {
+    if (!ids.has(link.from) || !ids.has(link.to)) issues.push({ kind: 'error', text: `A ${link.label || 'mechanical'} relationship refers to a missing part.` });
+    if (link.from === link.to && Number(project.parts.find(part => part.id === link.from)?.qty || 0) < 2) issues.push({ kind: 'error', text: 'A mechanical relationship uses one part at both ends without multiple units.' });
+    if (!String(link.label || '').trim()) issues.push({ kind: 'error', text: 'A mechanical relationship needs a mounting or fit description.' });
+  }
   const unmappedPins = project.wires.filter(w => !String(w.fromPin || '').trim() || !String(w.toPin || '').trim()).length;
   if (unmappedPins) issues.push({ kind: 'todo', text: `${unmappedPins} connection${unmappedPins === 1 ? '' : 's'} need an exact pin or terminal at both ends.` });
   for (const rail of project.powerRails || []) {
@@ -185,6 +191,7 @@ export function validate(project) {
   if (!project.parts.length) issues.push({ kind: 'todo', text: 'Add parts before calling this a design.' });
   if (!project.wires.length) issues.push({ kind: 'todo', text: 'Add and verify the electrical connections.' });
   if (!project.steps.length) issues.push({ kind: 'todo', text: 'Add a build and test sequence.' });
+  if (project.parts.some(part => /mechanical|structural|enclosure/i.test(part.category)) && !(project.mechanicalConnections || []).length) issues.push({ kind: 'todo', text: 'Record how mechanical parts mount or fit with the rest of the build.' });
   if (project.parts.some(p => !p.verified)) issues.push({ kind: 'review', text: 'Part specifications and availability are not all verified.' });
   if (project.parts.some(p => !p.sourceUrl)) issues.push({ kind: 'review', text: 'Some parts have no verified supplier link. Costs are planning estimates.' });
   if (!project.review.electrical) issues.push({ kind: 'review', text: 'Electrical ratings, pinouts and current budget need independent review.' });
@@ -201,9 +208,19 @@ export function bomCsv(project) {
   ].join('\r\n') + '\r\n';
 }
 
+export function mountingCsv(project) {
+  const names = new Map(project.parts.map(part => [part.id, part.name]));
+  return [
+    ['From ID', 'From part', 'To ID', 'To part', 'Mounting or fit intent', 'Notes'].map(csvCell).join(','),
+    ...(project.mechanicalConnections || []).map(link => [link.from, names.get(link.from) || '', link.to, names.get(link.to) || '', link.label, link.note].map(csvCell).join(','))
+  ].join('\r\n') + '\r\n';
+}
+
 export function safeProject(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('This file is not a Hardware Studio project.');
-  if (input.parts.length > 200 || input.wires.length > 500 || input.steps.length > 200 || (input.powerRails || []).length > 20) throw new Error('This project exceeds the local editor limits.');
+  if (input.parts.length > 200 || input.wires.length > 500 || input.steps.length > 200 || (input.mechanicalConnections || []).length > 500 || (input.powerRails || []).length > 20) throw new Error('This project exceeds the local editor limits.');
+  if (input.mechanicalConnections != null && !Array.isArray(input.mechanicalConnections)) throw new Error('Mechanical relationships must be an array.');
+  if ((input.mechanicalConnections || []).some(link => !link || typeof link !== 'object')) throw new Error('A mechanical relationship is invalid.');
   if (input.powerRails != null && !Array.isArray(input.powerRails)) throw new Error('Power rails must be an array.');
   if ((input.powerRails || []).some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.length > 200)) throw new Error('A power rail has an invalid load list.');
   return {
@@ -216,6 +233,7 @@ export function safeProject(input) {
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), fromPin: String(w.fromPin || '').slice(0, 100), to: String(w.to || ''), toPin: String(w.toPin || '').slice(0, 100), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
+    mechanicalConnections: (input.mechanicalConnections || []).map(link => ({ from: String(link.from || '').slice(0, 80), to: String(link.to || '').slice(0, 80), label: String(link.label || '').slice(0, 240), note: String(link.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }

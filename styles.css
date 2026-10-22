@@ -181,6 +181,11 @@ a { color: inherit; }
 .wire-row span { color: #6e7e6f; font: 500 9px var(--mono); margin-left: auto; }
 .wire-row .arrow { color: #839a3e; margin: 0 3px; }
 .wire-row button { margin-left: 8px; }
+.mount-list { display: grid; gap: 6px; margin-top: 15px; }
+.mount-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 11px 12px; border: 1px solid #d6dfd1; background: var(--white); }
+.mount-row div { display: grid; gap: 3px; min-width: 0; }
+.mount-row strong { font-size: 10px; }
+.mount-row span, .mount-row small { color: #617260; font: 500 10px/1.4 var(--mono); }
 .power-card { border: 1px solid #c6d3c1; background: var(--white); padding: 18px; margin: 0 0 15px; }
 .power-card-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; border-bottom: 1px solid #d7e0d2; padding-bottom: 13px; }
 .power-card-head h4 { font: 600 21px var(--display); letter-spacing: -.05em; margin: 5px 0 0; }

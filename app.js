@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=17';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=18';
 import { createZip } from './zip.js?v=1';
 
 const $ = selector => document.querySelector(selector);
@@ -196,12 +196,13 @@ function exportPackage(p) {
   const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
   const title = String(p.title).replace(/[\r\n]+/g, ' ');
   const reference = safeReferenceImage(p.referenceImage);
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
     { name: 'project.json', data: JSON.stringify(p, null, 2) + '\n' },
     { name: 'bill-of-materials.csv', data: bomCsv(p) },
+    { name: 'mounting.csv', data: mountingCsv(p) },
     { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
     { name: 'review.txt', data: report },
@@ -349,7 +350,9 @@ function assemblySvg(p) {
 function renderAssembly(p) {
   const evidence = safeUrl(p.cadUrl) ? `<div class="notice">Attached dimensioned work: <a href="${html(safeUrl(p.cadUrl))}" target="_blank" rel="noopener noreferrer">Open CAD source and checks ↗</a>. Review its stated scope before relying on it.</div>` : '';
   const next = evidence ? 'Next check: compare the linked CAD with physical parts, then test mounting, access, cable fit, thermal clearance and wire routing. Revise the model when hardware changes.' : 'Next check: measure the actual components, create a dimensioned model, then test mounting, access, motion, thermal clearance and wire routing. Revise the model when hardware changes.';
-  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories the physical parts. It is not dimensioned CAD and does not prove that parts fit.', '<button id="export-diagram" class="small-button" type="button">Export SVG ↗</button>') + evidence + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<p class="assembly-legend">${next}</p>`;
+  const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
+  const mounts = (p.mechanicalConnections || []).map((link, index) => `<div class="mount-row"><div><strong>${html(labels[link.from] || 'Missing part')} → ${html(labels[link.to] || 'Missing part')}</strong><span>${html(link.label)}</span>${link.note ? `<small>${html(link.note)}</small>` : ''}</div><button class="text-link" data-edit-mount="${index}" type="button">Edit</button></div>`).join('');
+  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next}</p>`;
 }
 function renderBuild(p) {
   const rows = p.steps.map((step, i) => `<div class="step-card ${step.done ? 'done' : ''}"><input data-done-step="${i}" type="checkbox" ${step.done ? 'checked' : ''} aria-label="Mark ${html(step.title)} complete"><div><small>${html(step.phase.toUpperCase())} / ${String(i + 1).padStart(2, '0')}</small><strong>${html(step.title)}</strong><p>${html(step.detail)}</p></div><button class="text-link" data-edit-step="${i}" type="button">Edit</button></div>`).join('');
@@ -363,15 +366,16 @@ function renderReview(p) {
 const field = (name, label, value = '', options = {}) => `<div class="field ${options.wide ? 'wide' : ''}"><label for="f-${name}">${label}</label>${options.type === 'textarea' ? `<textarea id="f-${name}" name="${name}" ${options.required ? 'required' : ''}>${html(value)}</textarea>` : options.type === 'select' ? `<select id="f-${name}" name="${name}" ${options.required ? 'required' : ''}>${options.choices.map(([id, text]) => `<option value="${html(id)}" ${String(id) === String(value) ? 'selected' : ''}>${html(text)}</option>`).join('')}</select>` : `<input id="f-${name}" name="${name}" type="${options.type || 'text'}" value="${html(value)}" ${options.required ? 'required' : ''} ${options.min != null ? `min="${options.min}"` : ''} ${options.step ? `step="${options.step}"` : ''}>`}</div>`;
 function openEditor(kind, index = -1) {
   const p = current(); editor = { kind, index };
-  const isNew = index < 0; const item = !isNew ? (kind === 'part' ? p.parts[index] : kind === 'wire' ? p.wires[index] : kind === 'step' ? p.steps[index] : p) : {};
+  const isNew = index < 0; const item = !isNew ? (kind === 'part' ? p.parts[index] : kind === 'wire' ? p.wires[index] : kind === 'mount' ? p.mechanicalConnections?.[index] : kind === 'step' ? p.steps[index] : p) : {};
   $('#dialog-kicker').textContent = kind.toUpperCase() + (isNew ? ' / NEW' : ' / EDIT');
-  $('#dialog-title').textContent = `${isNew ? 'Add' : 'Edit'} ${kind === 'wire' ? 'connection' : kind === 'title' ? 'project' : kind}`;
+  $('#dialog-title').textContent = `${isNew ? 'Add' : 'Edit'} ${kind === 'wire' ? 'connection' : kind === 'mount' ? 'mounting relationship' : kind === 'title' ? 'project' : kind}`;
   $('#delete-entry').hidden = isNew || kind === 'title';
   $('#dialog-error').hidden = true;
   const choices = p.parts.map(part => [part.id, part.name]);
   let fields = '';
   if (kind === 'part') fields = field('name', 'Part name', item.name, { required: true, wide: true }) + field('category', 'Category', item.category || 'Other') + field('qty', 'Quantity', item.qty ?? 1, { type: 'number', min: 1, step: 1 }) + field('unitCost', 'Unit estimate (USD)', item.unitCost ?? 0, { type: 'number', min: 0, step: '.01' }) + field('voltage', 'Operating voltage', item.voltage || '') + field('sourceUrl', 'Supplier listing URL', item.sourceUrl || '', { type: 'url', wide: true }) + field('specUrl', 'Manufacturer specification or independent evidence URL', item.specUrl || '', { type: 'url', wide: true }) + field('detail', 'Specification, datasheet and open questions', item.detail || '', { type: 'textarea', wide: true }) + `<div class="field wide"><label class="verify-label"><input type="checkbox" name="verified"> I checked this exact part against the linked specification now</label></div>`;
   if (kind === 'wire') fields = field('from', 'From part', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('fromPin', 'From pin or terminal', item.fromPin || '') + field('to', 'To part', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('toPin', 'To pin or terminal', item.toPin || '') + field('signal', 'Signal or connection', item.signal || '', { required: true }) + field('voltage', 'Voltage / range', item.voltage || '') + field('note', 'Pinout source or verification note', item.note || '', { type: 'textarea', wide: true });
+  if (kind === 'mount') fields = field('from', 'First part', item.from || choices[0]?.[0] || '', { type: 'select', choices }) + field('to', 'Second part', item.to || choices[1]?.[0] || choices[0]?.[0] || '', { type: 'select', choices }) + field('label', 'Mounting or fit intent', item.label || '', { required: true, wide: true }) + field('note', 'Dimension, fastener or open check', item.note || '', { type: 'textarea', wide: true });
   if (kind === 'step') fields = field('phase', 'Phase', item.phase || 'Build', { type: 'select', choices: [['Prepare', 'Prepare'], ['Wire', 'Wire'], ['Bring up', 'Bring up'], ['Assemble', 'Assemble'], ['Test', 'Test']] }) + field('title', 'Step title', item.title || '', { required: true }) + field('detail', 'Action and acceptance check', item.detail || '', { type: 'textarea', wide: true });
   if (kind === 'title') fields = field('title', 'Project title', p.title, { required: true, wide: true }) + field('brief', 'Design brief', p.brief, { type: 'textarea', wide: true }) + field('summary', 'Summary', p.summary, { type: 'textarea', wide: true }) + field('wiringUrl', 'Electrical plan and evidence URL', p.wiringUrl || '', { type: 'url', wide: true }) + field('cadUrl', 'Dimensioned CAD or verification package URL', p.cadUrl || '', { type: 'url', wide: true });
   $('#dialog-fields').innerHTML = fields; $('#editor-dialog').showModal();
@@ -393,6 +397,14 @@ function saveEditor(event) {
     const wire = { from: String(form.get('from')), fromPin: String(form.get('fromPin') || '').trim().slice(0, 100), to: String(form.get('to')), toPin: String(form.get('toPin') || '').trim().slice(0, 100), signal: String(form.get('signal') || '').trim(), voltage: String(form.get('voltage') || '').trim(), note: String(form.get('note') || '').trim() };
     if (!wire.from || !wire.to || wire.from === wire.to || !wire.signal) return editorError('Choose two different parts and name the connection.');
     if (index < 0) p.wires.push(wire); else p.wires[index] = wire; p.review.electrical = false;
+  }
+  if (kind === 'mount') {
+    const link = { from: String(form.get('from')), to: String(form.get('to')), label: String(form.get('label') || '').trim().slice(0, 240), note: String(form.get('note') || '').trim().slice(0, 1000) };
+    if (!link.from || !link.to || !link.label) return editorError('Choose two parts and describe how they attach or fit.');
+    if (link.from === link.to && Number(p.parts.find(part => part.id === link.from)?.qty || 0) < 2) return editorError('Choose two different parts, or use a part with multiple units.');
+    p.mechanicalConnections ||= [];
+    if (index < 0) p.mechanicalConnections.push(link); else p.mechanicalConnections[index] = link;
+    p.review.mechanical = false;
   }
   if (kind === 'step') {
     const step = { id: index < 0 ? `step-${crypto.randomUUID().slice(0, 8)}` : p.steps[index].id, phase: String(form.get('phase')), title: String(form.get('title') || '').trim(), detail: String(form.get('detail') || '').trim(), done: index < 0 ? false : p.steps[index].done };
@@ -416,8 +428,9 @@ function deleteEntry() {
   if (!editor || editor.index < 0) return;
   const p = current(), { kind, index } = editor;
   if (!window.confirm(`Delete this ${kind} from the project?`)) return;
-  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
+  if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.mechanicalConnections = (p.mechanicalConnections || []).filter(link => link.from !== id && link.to !== id); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
+  if (kind === 'mount') { p.mechanicalConnections.splice(index, 1); p.review.mechanical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
   closeEditor(); const saved = save(`Before deleting ${kind}`); render(); if (saved) showToast('Entry removed.');
 }
@@ -429,6 +442,7 @@ function handleClick(event) {
   else if (button.dataset.tab) { activeTab = button.dataset.tab; render(); }
   else if (button.dataset.editPart != null) openEditor('part', Number(button.dataset.editPart));
   else if (button.dataset.editWire != null) openEditor('wire', Number(button.dataset.editWire));
+  else if (button.dataset.editMount != null) openEditor('mount', Number(button.dataset.editMount));
   else if (button.dataset.editStep != null) openEditor('step', Number(button.dataset.editStep));
   else if (button.id === 'new-project') addProject(blankProject());
   else if (button.id === 'create-from-brief') {
@@ -481,6 +495,7 @@ function handleClick(event) {
   else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); p.powerRails?.[railIndex]?.loads.splice(loadIndex, 1); p.review.electrical = false; save('Before removing rail load'); render(); }
   else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; p.powerRails.splice(index, 1); p.review.electrical = false; save('Before removing power rail'); render(); }
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
+  else if (button.id === 'add-mount') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('mount'); }
   else if (button.id === 'add-step') openEditor('step');
   else if (button.id === 'close-dialog' || button.id === 'cancel-dialog') closeEditor();
   else if (button.id === 'delete-entry') deleteEntry();
@@ -544,6 +559,6 @@ function initialize() {
 }
 function safeProjectForStorage(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('Invalid stored project');
-  return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
+  return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], mechanicalConnections: Array.isArray(input.mechanicalConnections) ? input.mechanicalConnections : [], review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
 }
 initialize();

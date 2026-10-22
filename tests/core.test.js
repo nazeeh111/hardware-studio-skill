@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -186,4 +186,16 @@ test('pin-level connection fields survive import and missing endpoints remain op
   assert.equal(imported.wires[0].fromPin, 'GPIO21 / SDA');
   assert.equal(imported.wires[0].toPin, 'SDA');
   assert.ok(validate(imported).some(issue => issue.text.includes('4 connections need')));
+});
+
+test('mounting relationships retain linked parts and reject broken references', () => {
+  const p = makeProject(STARTERS[0]);
+  assert.ok(validate(p).some(issue => issue.text.includes('Record how mechanical parts mount')));
+  p.mechanicalConnections.push({ from: 'case', to: 'esp32', label: 'Standoffs to board mounting holes', note: 'Measure the chosen board and case first.' });
+  const imported = safeProject(p);
+  assert.equal(imported.mechanicalConnections[0].label, 'Standoffs to board mounting holes');
+  assert.match(mountingCsv(imported), /"case","Ventilated enclosure","esp32","ESP32 DevKit board"/);
+  assert.ok(!validate(imported).some(issue => issue.text.includes('Record how mechanical parts mount')));
+  imported.mechanicalConnections[0].to = 'missing';
+  assert.ok(validate(imported).some(issue => issue.kind === 'error' && issue.text.includes('relationship refers to a missing part')));
 });

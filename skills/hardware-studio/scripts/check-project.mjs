@@ -32,6 +32,13 @@ try {
     if (typeof wire.signal !== 'string' || !wire.signal.trim()) issues.push(`wires[${i}].signal is required.`);
     for (const pin of ['fromPin', 'toPin']) if (wire[pin] != null && (typeof wire[pin] !== 'string' || wire[pin].length > 100)) issues.push(`wires[${i}].${pin} must be text under 100 characters.`);
   }
+  if (project?.mechanicalConnections != null && !Array.isArray(project.mechanicalConnections)) issues.push('mechanicalConnections must be an array when supplied.');
+  for (const [i, link] of (Array.isArray(project?.mechanicalConnections) ? project.mechanicalConnections : []).entries()) {
+    if (!link || typeof link !== 'object') { issues.push(`mechanicalConnections[${i}] must be an object.`); continue; }
+    if (!ids.has(link.from) || !ids.has(link.to)) issues.push(`mechanicalConnections[${i}] refers to a missing part.`);
+    if (link.from === link.to && (project.parts.find(part => part.id === link.from)?.qty || 0) < 2) issues.push(`mechanicalConnections[${i}] needs two units for a same-part relationship.`);
+    if (typeof link.label !== 'string' || !link.label.trim()) issues.push(`mechanicalConnections[${i}].label is required.`);
+  }
   if (project?.powerRails != null && !Array.isArray(project.powerRails)) issues.push('powerRails must be an array when supplied.');
   for (const [i, rail] of (Array.isArray(project?.powerRails) ? project.powerRails : []).entries()) {
     if (!rail || typeof rail !== 'object') { issues.push(`powerRails[${i}] must be an object.`); continue; }

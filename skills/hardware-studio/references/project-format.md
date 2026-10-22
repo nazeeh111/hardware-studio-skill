@@ -4,6 +4,8 @@ Use this format when handing a Codex-designed project to the browser app. The ap
 
 Connections can also carry `fromPin` and `toPin` strings for exact pins or terminals. Keep them empty when the chosen part is not exact or its pinout has not been checked. The app flags every connection missing either endpoint, so a part-level arrow cannot masquerade as a complete wiring instruction. A connection entry should describe one conductor or a clearly named bus; split combined power and ground runs before physical wiring.
 
+`mechanicalConnections` is optional for older projects. Each entry links two existing part IDs using `from`, `to`, a short `label` describing mounting or fit intent, and an optional `note` for dimensions, fasteners or unresolved checks. A same-part relationship needs at least two units of that part. These records are assembly notes, not dimensioned CAD or proof of physical fit.
+
 ```json
 {
   "title": "USB temperature display",
@@ -28,6 +30,7 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
     }
   ],
   "wires": [],
+  "mechanicalConnections": [],
   "powerRails": [
     {
       "id": "rail-5v",
