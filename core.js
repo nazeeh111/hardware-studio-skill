@@ -278,9 +278,10 @@ export function localAiDraft(input, brief, model) {
   // A named 5 V design also needs a deliberate signal interface.
   if (/\b(?:pico|rp2040)\b/i.test(brief) && /\b(?:neopixel|ws2812)\b/i.test(brief)) {
     const missingHardware = [];
+    const fiveVolt = /\b5\s?v\b/i.test(`${brief} ${terms}`);
     if (!/\b(?:power\s*(?:supply|source|adapter)|5\s?v\s*(?:supply|adapter)|battery|regulated\s*5\s?v)\b/i.test(terms)) missingHardware.push('rated LED power source');
-    if (/\b5\s?v\b/i.test(`${brief} ${terms}`) && !/\b(?:level\s*(?:shifter|converter|translator)|74(?:a)?hct(?:125|245)|logic\s*buffer)\b/i.test(terms)) missingHardware.push('logic-level interface');
-    if (missingHardware.length) throw new Error(`The local model omitted a ${missingHardware.join(' and a ')} for the requested Pico and 5 V NeoPixel design. Review power and signal requirements before drafting again.`);
+    if (fiveVolt && !/\b(?:level\s*(?:shifter|converter|translator)|74(?:a)?hct(?:125|245)|logic\s*buffer)\b/i.test(terms)) missingHardware.push('logic-level interface');
+    if (missingHardware.length) throw new Error(`The local model omitted a ${missingHardware.join(' and a ')} for the requested Pico and ${fiveVolt ? '5 V ' : ''}NeoPixel design. Review power and signal requirements before drafting again.`);
   }
   return project;
 }
