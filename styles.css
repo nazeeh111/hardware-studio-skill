@@ -246,6 +246,16 @@ dialog::backdrop { background: #101d19b8; }
 .field textarea { min-height: 83px; resize: vertical; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 23px; }
 .dialog-actions .button-danger { margin-right: auto; }
+.history-shell { padding: 24px; }
+.history-shell > h2 { font: 600 27px var(--display); letter-spacing: -.05em; margin: 6px 0 15px; }
+.history-shell > p, .history-intro { color: var(--muted); font-size: 12px; line-height: 1.5; margin: -5px 0 18px; }
+.history-list { border-top: 1px solid var(--line); max-height: 375px; overflow-y: auto; }
+.history-entry { display: flex; justify-content: space-between; align-items: center; gap: 15px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.history-entry > div { min-width: 0; }
+.history-entry strong { display: block; font-size: 12px; line-height: 1.4; }
+.history-entry small { display: block; color: var(--muted); font: 10px var(--mono); line-height: 1.5; margin-top: 4px; }
+.history-empty { padding: 20px 0; color: var(--muted); font-size: 12px; }
+#recovery-dialog .dialog-actions { flex-wrap: wrap; }
 #toast { position: fixed; bottom: 22px; right: 22px; z-index: 10; background: var(--ink); color: var(--white); border-left: 3px solid var(--signal); padding: 12px 16px; box-shadow: 0 14px 30px #14211f30; font-size: 11px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .2s, transform .2s; }
 #toast.show { opacity: 1; transform: translateY(0); }
 

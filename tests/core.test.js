@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -130,4 +130,32 @@ test('a checked part needs a specification link and a check date', () => {
   item.checkedAt = '2026-10-22T18:00:00.000Z';
   assert.equal(partReviewRecorded(item), true);
   assert.match(bomCsv(p), /"https:\/\/example.com\/datasheet","2026-10-22T18:00:00.000Z","yes"/);
+});
+
+test('revision comparison ignores save timestamps and restoration resets claims', () => {
+  const current = makeProject(STARTERS[0]);
+  const previous = structuredClone(current);
+  previous.updatedAt = '2026-01-01T00:00:00.000Z';
+  assert.equal(projectContentChanged(previous, current), false);
+  previous.parts[0].name = 'Earlier controller';
+  previous.parts[0].verified = true;
+  previous.parts[0].checkedAt = '2026-01-01T00:00:00.000Z';
+  previous.review.electrical = true;
+  previous.steps[0].done = true;
+  previous.wiringUrl = 'javascript:alert(1)';
+  assert.equal(projectContentChanged(previous, current), true);
+  const restored = restoreProjectFromRevision(current, previous);
+  assert.equal(restored.id, current.id);
+  assert.equal(restored.parts[0].name, 'Earlier controller');
+  assert.equal(restored.parts[0].verified, false);
+  assert.equal(restored.review.electrical, false);
+  assert.equal(restored.steps[0].done, false);
+  assert.equal(restored.wiringUrl, '');
+});
+
+test('unreadable workspace bytes are rejected before startup can save over them', () => {
+  assert.throws(() => parseSavedWorkspace('{not-json'), SyntaxError);
+  assert.throws(() => parseSavedWorkspace('{"projects":[]}'), /Invalid saved workspace/);
+  const project = makeProject(STARTERS[0]);
+  assert.equal(parseSavedWorkspace(JSON.stringify({ projects: [project], currentId: project.id })).currentId, project.id);
 });

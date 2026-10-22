@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded } from './core.js?v=12';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=13';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -11,6 +11,8 @@ let editor = null;
 let toastTimer;
 let draftController = null;
 let pendingDraft = null;
+let unreadableSavedData = null;
+let storageUnavailable = false;
 const OLLAMA_URL = 'http://127.0.0.1:11434';
 const LOCAL_AI_SCHEMA = {
   type: 'object',
@@ -97,10 +99,42 @@ function showToast(message) {
 }
 function editorError(message) { const el = $('#dialog-error'); el.textContent = message; el.hidden = false; }
 function current() { return projects.find(p => p.id === currentId) || projects[0]; }
-function save() {
+function readRevisions() {
+  const raw = localStorage.getItem(REVISIONS_KEY);
+  if (!raw) return [];
+  const entries = JSON.parse(raw);
+  if (!Array.isArray(entries) || entries.some(entry => !entry || typeof entry.id !== 'string' || typeof entry.projectId !== 'string' || !entry.snapshot || typeof entry.snapshot !== 'object')) throw new Error('Revision history is unreadable.');
+  return entries;
+}
+function recordRevision(snapshot, reason) {
+  const entries = readRevisions();
+  entries.push({ id: crypto.randomUUID(), projectId: snapshot.id, at: new Date().toISOString(), reason, snapshot });
+  while (entries.filter(entry => entry.projectId === snapshot.id).length > 12) entries.splice(entries.findIndex(entry => entry.projectId === snapshot.id), 1);
+  while (entries.length > 1 && JSON.stringify(entries).length > 2_000_000) entries.shift();
+  if (JSON.stringify(entries).length > 2_000_000) throw new Error('Revision exceeds the local history limit.');
+  localStorage.setItem(REVISIONS_KEY, JSON.stringify(entries));
+}
+function showRecovery() { if (!$('#recovery-dialog').open) $('#recovery-dialog').showModal(); }
+function save(reason = 'edit', { skipRevision = false } = {}) {
+  if (storageUnavailable) { showToast('Browser storage is unavailable. Export JSON to keep this project.'); return false; }
+  if (unreadableSavedData !== null) { showRecovery(); showToast('Download the unreadable saved data before starting a new workspace.'); return false; }
   const p = current(); if (p) p.updatedAt = new Date().toISOString();
+  let before = null;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY) === null ? null : parseSavedWorkspace(localStorage.getItem(STORAGE_KEY));
+    before = saved?.projects?.find(item => item.id === p?.id) || null;
+  } catch {
+    try { unreadableSavedData = localStorage.getItem(STORAGE_KEY); }
+    catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep this project.'); return false; }
+    showRecovery(); showToast('Saved workspace data became unreadable. Download it before editing further.'); return false;
+  }
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects, currentId })); }
-  catch { showToast('Local storage is full. Export your project to keep a copy.'); }
+  catch { showToast('Local storage is full. Export your project to keep a copy.'); return false; }
+  if (!skipRevision && before && projectContentChanged(before, p)) {
+    try { recordRevision(before, reason); }
+    catch { queueMicrotask(() => showToast('Project saved, but revision history could not be stored. Export JSON for a backup.')); }
+  }
+  return true;
 }
 function download(name, contents, type) {
   const blob = new Blob([contents], { type }); const url = URL.createObjectURL(blob);
@@ -108,7 +142,29 @@ function download(name, contents, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
-function addProject(p) { projects.unshift(p); currentId = p.id; activeTab = 'overview'; save(); render(); showToast('Project created. Review the design before building.'); }
+function openHistory() {
+  const p = current(); let entries;
+  try { entries = readRevisions().filter(entry => entry.projectId === p.id).reverse(); }
+  catch { $('#history-list').innerHTML = '<div class="history-empty">Revision history could not be read. Export the current JSON before making more changes.</div>'; $('#history-dialog').showModal(); return; }
+  $('#history-list').innerHTML = entries.length ? entries.map(entry => `<div class="history-entry"><div><strong>${html(entry.reason)}</strong><small>${html(new Date(entry.at).toLocaleString())} · ${html(entry.snapshot.parts?.length ?? '?')} parts · ${html(entry.snapshot.wires?.length ?? '?')} connections</small></div><button class="button button-outline" type="button" data-restore-revision="${html(entry.id)}">Restore</button></div>`).join('') : '<div class="history-empty">No earlier edits recorded for this project yet.</div>';
+  $('#history-dialog').showModal();
+}
+function restoreRevision(id) {
+  const p = current(); let entry;
+  try { entry = readRevisions().find(item => item.id === id && item.projectId === p.id); }
+  catch { return showToast('Revision history could not be read.'); }
+  if (!entry) return showToast('That revision is no longer available.');
+  let restored;
+  try { restored = restoreProjectFromRevision(p, entry.snapshot); }
+  catch { return showToast('This revision is invalid and was not restored.'); }
+  try { recordRevision(p, 'Before restoring an older revision'); }
+  catch { return showToast('Current state could not be preserved in history. Export JSON before restoring.'); }
+  const index = projects.findIndex(item => item.id === p.id);
+  projects[index] = restored;
+  if (!save('Restored revision', { skipRevision: true })) { projects[index] = p; return; }
+  $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Older state restored. Verification marks were reset.');
+}
+function addProject(p) { projects.unshift(p); currentId = p.id; activeTab = 'overview'; const saved = save('Before creating project'); render(); if (saved) showToast('Project created. Review the design before building.'); }
 
 function render() {
   const p = current(); if (!p) return;
@@ -260,7 +316,7 @@ function saveEditor(event) {
     if (wiringUrl !== (p.wiringUrl || '')) p.review.electrical = false;
     p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; p.wiringUrl = wiringUrl;
   }
-  closeEditor(); save(); render(); showToast('Saved locally.');
+  closeEditor(); const saved = save(`Before ${kind} edit`); render(); if (saved) showToast('Saved locally.');
 }
 function deleteEntry() {
   if (!editor || editor.index < 0) return;
@@ -269,7 +325,7 @@ function deleteEntry() {
   if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
-  closeEditor(); save(); render(); showToast('Entry removed.');
+  closeEditor(); const saved = save(`Before deleting ${kind}`); render(); if (saved) showToast('Entry removed.');
 }
 function handleClick(event) {
   const button = event.target.closest('button'); if (!button) return;
@@ -293,16 +349,28 @@ function handleClick(event) {
   else if (button.id === 'accept-draft' && pendingDraft) { const draft = pendingDraft; pendingDraft = null; $('#draft-dialog').close(); addProject(draft); $('#brief-input').value = ''; }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
   else if (button.id === 'rename-project') openEditor('title', 0);
+  else if (button.id === 'history-project') openHistory();
+  else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
+  else if (button.id === 'history-export') { download(`${filename(p)}.json`, JSON.stringify(p, null, 2), 'application/json'); showToast('Current project JSON downloaded.'); }
+  else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
+  else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = false; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
+  else if (button.id === 'start-clean' && unreadableSavedData !== null && !$('#start-clean').disabled) {
+    if (!window.confirm('Replace the unreadable workspace only after keeping its downloaded backup?')) return;
+    const fresh = makeProject(STARTERS[0]);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects: [fresh], currentId: fresh.id })); }
+    catch { return showToast('Could not start a new workspace. Original saved data remains in place.'); }
+    unreadableSavedData = null; projects = [fresh]; currentId = fresh.id; activeTab = 'overview'; $('#recovery-dialog').close(); render(); showToast('New workspace started. Keep the downloaded original for recovery.');
+  }
   else if (button.id === 'import-project') $('#import-file').click();
   else if (button.id === 'delete-project') { if (!window.confirm(`Delete “${p.title}” from local storage? Export it first if you need a copy.`)) return; projects = projects.filter(x => x.id !== p.id); if (!projects.length) projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; activeTab = 'overview'; save(); render(); showToast('Project deleted from this browser.'); }
   else if (button.id === 'export-project') { download(`${filename(p)}.json`, JSON.stringify(p, null, 2), 'application/json'); showToast('Project JSON downloaded.'); }
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-diagram') { const svg = $('#panel svg'); if (svg) { download(`${filename(p)}-${activeTab}.svg`, new XMLSerializer().serializeToString(svg), 'image/svg+xml'); showToast('Diagram downloaded.'); } }
   else if (button.id === 'add-part') openEditor('part');
-  else if (button.id === 'add-rail') { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; save(); render(); }
-  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; save(); render(); } }
-  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); p.powerRails?.[railIndex]?.loads.splice(loadIndex, 1); p.review.electrical = false; save(); render(); }
-  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; p.powerRails.splice(index, 1); p.review.electrical = false; save(); render(); }
+  else if (button.id === 'add-rail') { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; save('Before adding power rail'); render(); }
+  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; save('Before adding rail load'); render(); } }
+  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); p.powerRails?.[railIndex]?.loads.splice(loadIndex, 1); p.review.electrical = false; save('Before removing rail load'); render(); }
+  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; p.powerRails.splice(index, 1); p.review.electrical = false; save('Before removing power rail'); render(); }
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
   else if (button.id === 'add-step') openEditor('step');
   else if (button.id === 'close-dialog' || button.id === 'cancel-dialog') closeEditor();
@@ -318,16 +386,16 @@ function handleChange(event) {
     if (key === 'supplyCurrentMa' && value != null && (!Number.isFinite(value) || value <= 0)) return showToast('Enter a positive supply rating.');
     if (key === 'marginPercent' && (!Number.isFinite(value) || value < 0 || value >= 100)) return showToast('Enter a margin target from 0 to 99%.');
     if (key === 'name' && !value) return showToast('Give the rail a name.');
-    rail[key] = value; p.review.electrical = false; save(); render(); return;
+    rail[key] = value; p.review.electrical = false; save('Before changing power rail'); render(); return;
   }
   if (target.dataset.loadRail != null) {
     const load = p.powerRails?.[Number(target.dataset.loadRail)]?.loads?.[Number(target.dataset.loadIndex)]; if (!load) return;
     const value = target.value === '' ? null : Number(target.value);
     if (value != null && (!Number.isFinite(value) || value < 0)) return showToast('Enter a nonnegative peak current or leave it blank.');
-    load.currentMaEach = value; p.review.electrical = false; save(); render(); return;
+    load.currentMaEach = value; p.review.electrical = false; save('Before changing load current'); render(); return;
   }
-  if (target.dataset.doneStep != null) { p.steps[Number(target.dataset.doneStep)].done = target.checked; save(); render(); }
-  if (target.dataset.review) { p.review[target.dataset.review] = target.checked; save(); renderReview(p); }
+  if (target.dataset.doneStep != null) { p.steps[Number(target.dataset.doneStep)].done = target.checked; save('Before changing step progress'); render(); }
+  if (target.dataset.review) { p.review[target.dataset.review] = target.checked; save('Before changing review mark'); renderReview(p); }
   if (target.id === 'import-file') {
     const file = target.files?.[0]; if (!file) return;
     if (file.size > 2_000_000) { showToast('Choose a project smaller than 2 MB.'); target.value = ''; return; }
@@ -335,11 +403,16 @@ function handleChange(event) {
   }
 }
 function initialize() {
+  let rawSavedData = null;
+  try { rawSavedData = localStorage.getItem(STORAGE_KEY); }
+  catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep projects.'); }
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    if (saved?.projects?.length) { projects = saved.projects.map(safeProjectForStorage); currentId = saved.currentId; }
-  } catch { showToast('Saved data could not be read. A starter project was opened.'); }
-  if (!projects.length) { projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; save(); }
+    if (!storageUnavailable && rawSavedData !== null) {
+      const saved = parseSavedWorkspace(rawSavedData);
+      projects = saved.projects.map(safeProjectForStorage); currentId = saved.currentId;
+    }
+  } catch { unreadableSavedData = rawSavedData; showToast('Saved data could not be read. The original bytes are preserved.'); }
+  if (!projects.length) { projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; if (unreadableSavedData === null && !storageUnavailable) save('Initial workspace'); }
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
@@ -350,8 +423,9 @@ function initialize() {
   });
   $('#editor-form').addEventListener('submit', saveEditor);
   $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; });
-  $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { current().notes = event.target.value; save(); showToast('Notes saved locally.'); } });
+  $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { current().notes = event.target.value; if (save('Before editing notes')) showToast('Notes saved locally.'); } });
   render();
+  if (unreadableSavedData !== null) showRecovery();
   void detectLocalModels();
 }
 function safeProjectForStorage(input) {

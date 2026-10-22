@@ -18,7 +18,7 @@ From this folder:
 python3 -m http.server 4173
 ```
 
-Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects stay in the browser's local storage. Export JSON regularly if the work matters. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
+Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects and recent revisions stay in that browser's local storage. Export JSON regularly for a durable copy; clearing browser data removes local projects and history. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
 
 Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. If Ollama is unavailable, the editor and starter designs still work. The brief goes only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
 
@@ -35,6 +35,7 @@ For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Olla
 - Record multiple power rails, their rated supply current, assigned part loads and a headroom target. The worksheet multiplies per-unit peak current by part quantity and flags missing values, overloads and low margin.
 - Record notes, completion and independent review marks. Errors such as connections to missing parts are highlighted.
 - Keep multiple projects locally; import/export project JSON. Imported review marks reset until the imported design is checked again.
+- Open **History** to restore a recent edit. The app retains up to 12 earlier states per project within a shared 2 MB history limit; restoration saves the current state first and resets verification and completed-step marks. If saved workspace data becomes unreadable, the app preserves its original bytes and offers a download before allowing a fresh workspace.
 
 ## Limits that matter
 

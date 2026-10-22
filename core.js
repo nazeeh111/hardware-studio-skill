@@ -1,4 +1,19 @@
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
+export const REVISIONS_KEY = 'hardware-studio-revisions-v1';
+
+export function projectContentChanged(before, after) {
+  const withoutTimestamp = project => { const { updatedAt, ...content } = project; return JSON.stringify(content); };
+  return withoutTimestamp(before) !== withoutTimestamp(after);
+}
+
+export function parseSavedWorkspace(raw) {
+  const saved = JSON.parse(raw);
+  if (!Array.isArray(saved?.projects) || !saved.projects.length || saved.projects.some(project =>
+    !project || typeof project.id !== 'string' || !Array.isArray(project.parts) || !Array.isArray(project.wires) || !Array.isArray(project.steps) ||
+    project.parts.some(part => !part || typeof part !== 'object') || project.wires.some(wire => !wire || typeof wire !== 'object') || project.steps.some(step => !step || typeof step !== 'object') ||
+    (project.powerRails != null && (!Array.isArray(project.powerRails) || project.powerRails.some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.some(load => !load || typeof load !== 'object')))))) throw new Error('Invalid saved workspace');
+  return saved;
+}
 
 const part = (id, name, category, qty, unitCost, detail, voltage = '') => ({
   id, name, category, qty, unitCost, detail, voltage, sourceUrl: '', specUrl: '', checkedAt: '', verified: false
@@ -190,6 +205,15 @@ export function safeProject(input) {
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }
   };
+}
+
+export function restoreProjectFromRevision(currentProject, snapshot) {
+  const restored = safeProject(snapshot);
+  restored.id = currentProject.id;
+  restored.createdAt = currentProject.createdAt;
+  restored.starterId = currentProject.starterId;
+  restored.steps = restored.steps.map(step => ({ ...step, done: false }));
+  return restored;
 }
 
 export function localAiDraft(input, brief, model) {
