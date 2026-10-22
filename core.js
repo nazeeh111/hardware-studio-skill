@@ -126,7 +126,7 @@ const csvCell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
 export function bomCsv(project) {
   return [
     ['Name', 'Category', 'Quantity', 'Unit estimate USD', 'Subtotal estimate USD', 'Source URL', 'Verified', 'Detail'].map(csvCell).join(','),
-    ...project.parts.map(p => [p.name, p.category, p.qty, p.unitCost, (Number(p.qty) * Number(p.unitCost)).toFixed(2), p.sourceUrl, p.verified ? 'yes' : 'no', p.detail].map(csvCell).join(','))
+    ...project.parts.map(p => { const unknown = project.starterId === 'ai' && Number(p.unitCost) === 0; return [p.name, p.category, p.qty, unknown ? '' : p.unitCost, unknown ? '' : (Number(p.qty) * Number(p.unitCost)).toFixed(2), p.sourceUrl, p.verified ? 'yes' : 'no', p.detail].map(csvCell).join(','); })
   ].join('\r\n') + '\r\n';
 }
 
@@ -143,4 +143,28 @@ export function safeProject(input) {
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
     review: { electrical: false, mechanical: false, sourcing: false }
   };
+}
+
+export function localAiDraft(input, brief, model) {
+  const project = safeProject(input);
+  project.brief = String(brief).slice(0, 5000);
+  project.starterId = 'ai';
+  project.summary = `Local AI concept draft. Exact parts, pinouts, dimensions, prices and safety are unverified. ${project.summary}`.slice(0, 5000);
+  project.notes = `Generated locally with ${String(model).slice(0, 80)}. Verify every part and connection against independent evidence before buying or building.\n\n${project.notes}`.slice(0, 10000);
+  project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', verified: false }));
+  project.review = { electrical: false, mechanical: false, sourcing: false };
+  if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');
+  if (validate(project).some(issue => issue.kind === 'error')) throw new Error('The local model returned broken part references or invalid quantities. Try another model.');
+  const terms = project.parts.map(part => `${part.name} ${part.category}`).join(' ').toLowerCase();
+  const expected = [
+    { requested: /\btemp(?:erature)?\b|thermo/i, present: /therm|temp|bme\s?280|sht\d|dht\d|ds18|tmp\d|mcp9808/i, name: 'temperature sensor' },
+    { requested: /\bsoil\b|\bmoisture\b/i, present: /soil|moisture|capacitive sensor/i, name: 'soil or moisture sensor' },
+    { requested: /\bdisplay\b|\bscreen\b|\boled\b/i, present: /display|screen|oled|lcd/i, name: 'display' },
+    { requested: /\bbutton\b|\bpushbutton\b/i, present: /button|switch/i, name: 'button' },
+    { requested: /\bmotor\b|\bservo\b/i, present: /motor|servo/i, name: 'motor' },
+    { requested: /\bled\b|\blight\b|\blamp\b/i, present: /led|light|lamp/i, name: 'light source' }
+  ];
+  const missing = expected.filter(check => check.requested.test(brief) && !check.present.test(terms)).map(check => check.name);
+  if (missing.length) throw new Error(`The local model omitted a requested ${missing.join(' and ')}. Try another model or use a manual project.`);
+  return project;
 }

@@ -28,7 +28,7 @@ The visible product sequence suggests: idea or reference → clarifying question
 
 ## Reimplementation decisions
 
-Hardware Studio is intentionally original. It uses two editable, hand-authored starter structures and a local data model so its difficult mechanism, coordinated parts/connections/steps and review state, can be exercised without a billed model API. It adds reference integrity checks, makes uncertainty visible, resets review marks after import, and keeps data local. Its isometric assembly view is conceptual. It does not claim parity with Blueprint's AI generation, 3D CAD, live sourcing, images, account system, collaboration, publishing, payments or manufacturing. The companion skill explains how to reach a validated design through independent sources and suitable engineering tools.
+Hardware Studio is intentionally original. It uses two editable, hand-authored starter structures and a local data model so its difficult mechanism, coordinated parts/connections/steps and review state, can be exercised without a billed model API. An optional local Ollama model can draft other ideas, with generated prices and verification marks cleared before saving. It adds reference integrity checks, makes uncertainty visible, resets review marks after import, and keeps data local. Its component index is conceptual. It does not claim parity with Blueprint's AI quality, 3D CAD, live sourcing, images, account system, collaboration, publishing, payments or manufacturing. The companion skill explains how to reach a validated design through independent sources and suitable engineering tools.
 
 ## Evidence and next checks
 

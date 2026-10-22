@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, safeProject } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, safeProject, localAiDraft } from '../core.js';
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -31,4 +31,37 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   const imported = safeProject(p);
   assert.equal(imported.parts[0].sourceUrl, '');
   assert.deepEqual(imported.review, { electrical: false, mechanical: false, sourcing: false });
+});
+
+test('local model output cannot mark estimates or reviews as verified', () => {
+  const raw = makeProject(STARTERS[0]);
+  raw.parts[0].unitCost = 999;
+  raw.parts[0].sourceUrl = 'https://example.com/unchecked';
+  raw.parts[0].verified = true;
+  raw.review = { electrical: true, mechanical: true, sourcing: true };
+  const draft = localAiDraft(raw, 'USB plant monitor', 'qwen3:4b');
+  assert.equal(draft.starterId, 'ai');
+  assert.equal(draft.parts[0].unitCost, 0);
+  assert.equal(draft.parts[0].sourceUrl, '');
+  assert.equal(draft.parts[0].verified, false);
+  assert.equal(draft.review.electrical, false);
+  assert.match(draft.summary, /unverified/);
+});
+
+test('local model output with broken references is rejected', () => {
+  const raw = makeProject(STARTERS[0]);
+  raw.wires[0].to = 'missing';
+  assert.throws(() => localAiDraft(raw, 'USB plant monitor', 'qwen3:4b'), /broken part references/);
+});
+
+test('local model output missing the requested temperature sensor is rejected', () => {
+  const raw = makeProject(STARTERS[0]);
+  raw.parts = raw.parts.filter(part => part.id !== 'bme280');
+  raw.wires = raw.wires.filter(wire => wire.from !== 'bme280' && wire.to !== 'bme280');
+  assert.throws(() => localAiDraft(raw, 'A temperature display', 'qwen3:4b'), /requested temperature sensor/);
+});
+
+test('unpriced AI parts export as blank costs', () => {
+  const draft = localAiDraft(makeProject(STARTERS[0]), 'A plant monitor', 'qwen3:4b');
+  assert.match(bomCsv(draft), /"ESP32 DevKit board","Control","1","",""/);
 });

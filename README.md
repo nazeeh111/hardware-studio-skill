@@ -14,11 +14,14 @@ From this folder:
 python3 -m http.server 4173
 ```
 
-Open `http://localhost:4173` in a browser. No installation, account, paid API or server database is required. Projects stay in the browser's local storage. Export JSON regularly if the work matters. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
+Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects stay in the browser's local storage. Export JSON regularly if the work matters. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
+
+Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. If Ollama is unavailable, the editor and starter designs still work. The brief goes only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
 
 ## What works
 
 - Start from a plant monitor or ambient-light design, or make a blank concept. A brief mentioning plant/soil/garden/greenhouse or light/lamp/LED picks the respective starter. Other briefs create an editable blank project. This is a rule-based route, not arbitrary AI design.
+- Optionally draft an arbitrary low-voltage concept with a local Ollama model. The model output must pass structural checks; the app clears any claimed prices, supplier links and verification marks, then shows the proposed parts for review before adding it to the workspace.
 - Add, edit and remove parts, connections and build steps. Removing a part also removes its associated connections.
 - Track quantities and planning cost estimates, and export the bill of materials as CSV.
 - View and export a connection diagram and a conceptual component index as SVG.
@@ -27,7 +30,7 @@ Open `http://localhost:4173` in a browser. No installation, account, paid API or
 
 ## Limits that matter
 
-This app does **not** produce a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. Diagrams show relationships and part inventory. They do not prove pin compatibility, power capacity, clearances or fit. Review the exact component datasheets and supplier listings before buying parts or connecting power. The example prices are illustrative, not current quotations.
+This app does **not** produce a verified schematic, manufacturing CAD, live prices, supplier stock, firmware or safety certification. Local AI drafts are unverified concepts and may contain wrong or missing parts and connections. Diagrams show relationships and part inventory. They do not prove pin compatibility, power capacity, clearances or fit. Review the exact component datasheets and supplier listings before buying parts or connecting power. The starter prices are illustrative, not current quotations.
 
 The [Blueprint analysis](./BLUEPRINT_ANALYSIS.md) separates directly observed public behavior from Blueprint's own statements and unknown implementation details. The [hardware design skill](./skills/hardware-studio/SKILL.md) guides Codex through a more rigorous end-to-end design workflow and can use appropriate local CAD tools when a dimensioned model is requested.
 
@@ -39,7 +42,7 @@ For ideas beyond the built-in starters, ask Codex to use the skill to create a p
 npm test
 ```
 
-The Node tests cover cost arithmetic, broken references, CSV quoting and import boundaries. Visual and interaction checks should be performed in a browser after changes.
+The Node tests cover cost arithmetic, broken references, CSV quoting, import boundaries and local-model output checks. Visual and interaction checks should be performed in a browser after changes.
 
 ## License
 
