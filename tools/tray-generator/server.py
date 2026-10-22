@@ -1,7 +1,7 @@
 """Serve Hardware Studio locally with a same-origin, loopback-only tray CAD API.
 
-Run with a Python interpreter that has OCP installed:
-    python tools/tray-generator/server.py --port 4174
+Run from the repository root:
+    sh tools/tray-generator/run-local.sh --port 4174
 """
 
 import argparse

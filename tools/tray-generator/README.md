@@ -9,10 +9,12 @@ Use Python 3 with `OCP` (OpenCascade Python bindings). This repository was exerc
 For the browser workbench and one-click CAD download, start the local server:
 
 ```sh
-python tools/tray-generator/server.py --port 4174
+sh tools/tray-generator/run-local.sh --port 4174
 ```
 
 Open `http://127.0.0.1:4174/tray.html`. The server binds only to `127.0.0.1`, accepts JSON only from its own browser origin, processes one CAD build at a time, and returns a ZIP containing the spec, STEP, STL, SVG, build report and fresh-process verification. Stop it with Ctrl-C. The public GitHub Pages site can prepare and export a spec, but cannot run this local Python service.
+
+The launcher selects this Mac's installed OCP environment when present, then checks `python3`. On another machine, set `HARDWARE_STUDIO_PYTHON` to a Python interpreter with the free `cadquery-ocp-novtk` package installed. It exits with a clear error if no usable interpreter is available.
 
 For a command-line build from a saved spec:
 
