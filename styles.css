@@ -145,6 +145,7 @@ a { color: inherit; }
 .tabs button[aria-selected='true']::before { color: #768e22; }
 .panel { min-height: 470px; padding: 28px; }
 .panel-head { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 21px; }
+.panel-head > div + div { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
 .panel-head h3 { font: 600 27px/1.1 var(--display); letter-spacing: -.06em; margin: 7px 0 8px; }
 .panel-head p { color: var(--muted); margin: 0; max-width: 580px; font-size: 11px; line-height: 1.5; }
 .panel-head .eyebrow.accent { color: var(--rust); }
@@ -319,7 +320,7 @@ dialog::backdrop { background: #101d19b8; }
   .project-head { align-items: start; flex-direction: column; }
   .project-head-actions { width: 100%; }
   .panel-head { flex-direction: column; }
-  .panel-head > div + div { display: flex; gap: 6px; flex-wrap: wrap; }
+  .panel-head > div + div { justify-content: flex-start; }
   .overview-grid { grid-template-columns: 1fr; }
   .parts-table { min-width: 530px; table-layout: fixed; }
   .parts-table th:nth-child(1) { width: 45%; }
