@@ -224,6 +224,7 @@ export function validate(project) {
     if (budget.status === 'below-margin') issues.push({ kind: 'review', text: `${name} is below its chosen ${Number(rail.marginPercent)}% headroom target.` });
   }
   if (!project.parts.length) issues.push({ kind: 'todo', text: 'Add parts before calling this a design.' });
+  if (String(project.brief || '').includes('Open design questions; do not invent exact specifications:')) issues.push({ kind: 'todo', text: 'Resolve the design questions recorded in the brief before finalizing the build.' });
   if (!project.wires.length) issues.push({ kind: 'todo', text: 'Add and verify the electrical connections.' });
   if (!project.steps.length) issues.push({ kind: 'todo', text: 'Add a build and test sequence.' });
   if (project.parts.some(part => /mechanical|structural|enclosure/i.test(part.category)) && !(project.mechanicalConnections || []).length) issues.push({ kind: 'todo', text: 'Record how mechanical parts mount or fit with the rest of the build.' });

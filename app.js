@@ -1,6 +1,7 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=24';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=25';
 import { validateTraySpec } from './tray-spec.js?v=2';
 import { createZip } from './zip.js?v=1';
+import { briefQuestions, composeBrief } from './brief.js?v=2';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -15,6 +16,7 @@ let traySyncTimer;
 let draftController = null;
 let pendingDraft = null;
 let pendingReference = null;
+let briefAnswers = {};
 let modelCapabilities = new Map();
 let unreadableSavedData = null;
 let storageUnavailable = false;
@@ -79,10 +81,21 @@ function renderReferenceInput() {
   preview.innerHTML = pendingReference ? `<img src="${html(pendingReference.dataUrl)}" alt="Selected visual reference"><span>${html(pendingReference.name)} · ready to save</span><button id="remove-reference" type="button" aria-label="Remove reference image">×</button>` : '';
 }
 
+function renderBriefGuidance() {
+  const questions = briefQuestions($('#brief-input').value);
+  const panel = $('#brief-guidance');
+  panel.hidden = !questions.length;
+  if (!questions.length) { $('#brief-question-list').replaceChildren(); return; }
+  $('#brief-question-list').innerHTML = questions.map((item, index) => `<div class="brief-question"><span>${String(index + 1).padStart(2, '0')}</span><div><label for="brief-answer-${html(item.id)}">${html(item.title)}<small>${html(item.question)}</small></label><input id="brief-answer-${html(item.id)}" data-brief-answer="${html(item.id)}" maxlength="240" value="${html(briefAnswers[item.id] || '')}" placeholder="Add what you know, or leave open"></div></div>`).join('');
+  const answered = questions.filter(item => String(briefAnswers[item.id] || '').trim()).length;
+  $('#brief-progress').textContent = `${answered} / ${questions.length} ANSWERED`;
+}
+
 async function draftWithLocalAi() {
   if (draftController) { draftController.abort(); return; }
-  const brief = $('#brief-input').value.trim();
-  if (!brief) return showToast('Describe the build before drafting with local AI.');
+  const idea = $('#brief-input').value.trim();
+  if (!idea) return showToast('Describe the build before drafting with local AI.');
+  const brief = composeBrief(idea, briefAnswers).text;
   const model = $('#local-model').value;
   if (!model) return showToast('Choose a local model.');
   if (pendingReference && !modelCapabilities.get(model)?.has('vision')) return showToast('Choose a model marked vision to interpret this image.');
@@ -106,7 +119,7 @@ async function draftWithLocalAi() {
         model, stream: false, format: LOCAL_AI_SCHEMA, think: false, keep_alive: '1m',
         ...(reference ? { images: [reference.dataUrl.split(',')[1]] } : {}),
         options: { temperature: 0.1, num_predict: 2400 },
-        system: 'You draft conceptual low-voltage hobby hardware plans. Every requested sensing, display, input, or actuation function needs a dedicated physical part; a controller alone does not measure temperature or humidity. Include power conversion, cables and enclosure parts where needed. Do not claim that parts, pinouts, prices, sourcing, dimensions, wiring, or safety are verified. Use unique short part IDs and ensure each wire refers to existing part IDs. Use fromPin and toPin only when exact terminals are known; otherwise leave them empty for review. For hazardous or regulated projects, return no actionable wiring or build instructions.',
+        system: 'You draft conceptual low-voltage hobby hardware plans. Treat unanswered design questions as unknown; do not invent exact specifications. Every requested sensing, display, input, or actuation function needs a dedicated physical part; a controller alone does not measure temperature or humidity. Include power conversion, cables and enclosure parts where needed. Do not claim that parts, pinouts, prices, sourcing, dimensions, wiring, or safety are verified. Use unique short part IDs and ensure each wire refers to existing part IDs. Use fromPin and toPin only when exact terminals are known; otherwise leave them empty for review. For hazardous or regulated projects, return no actionable wiring or build instructions.',
         prompt: `Create a concise editable concept record for: ${brief}${reference ? '\nUse the attached image as a visual reference. Distinguish visible features from uncertain or hidden details. Do not infer exact dimensions, part numbers, pins, ratings or materials from appearance alone.' : ''}\nBefore writing JSON, mentally check each requested function against the physical parts list. Use 3–10 parts, 1–15 connections, and 3–10 preparation/build/test steps. Only include connections you can explain; put uncertainty in notes. Use zero for unknown cost, empty strings for unknown supplier URLs, and false for verified. Return only the JSON object matching this schema: ${JSON.stringify(LOCAL_AI_SCHEMA)}`
       })
     });
@@ -139,7 +152,10 @@ function showDraftPreview(draft) {
   pendingDraft = draft;
   $('#draft-title').textContent = draft.title;
   $('#draft-summary').textContent = draft.summary;
-  $('#draft-preview-grid').innerHTML = `<div><h3>PARTS / ${draft.parts.length}</h3><ul>${draft.parts.map(part => `<li>${html(part.name)} · ${html(part.category)}</li>`).join('')}</ul></div><div><h3>BUILD RECORD</h3><ul><li>${draft.wires.length} proposed connections</li><li>${draft.steps.length} preparation and build steps</li><li>Prices and supplier links cleared</li><li>All verification marks reset</li>${draft.referenceImage ? '<li>Visual interpretation remains unverified</li>' : ''}</ul></div>`;
+  const names = new Map(draft.parts.map(part => [part.id, part.name]));
+  const issues = validate(draft).filter(issue => issue.kind !== 'error');
+  const list = (items, limit) => `${items.slice(0, limit).map(item => `<li>${html(item)}</li>`).join('')}${items.length > limit ? `<li>${items.length - limit} more in the saved project</li>` : ''}`;
+  $('#draft-preview-grid').innerHTML = `<div><h3>PROPOSED PARTS / ${draft.parts.length}</h3><ul>${list(draft.parts.map(part => `${part.name} · ${part.category}`), 20)}</ul></div><div><h3>CONNECTION INTENT / ${draft.wires.length}</h3><ul>${list(draft.wires.map(wire => `${names.get(wire.from) || wire.from} → ${names.get(wire.to) || wire.to} · ${wire.signal}${wire.voltage ? ` · ${wire.voltage}` : ''}`), 16)}</ul></div><div><h3>BUILD SEQUENCE / ${draft.steps.length}</h3><ul>${list(draft.steps.map(step => `${step.phase}: ${step.title}`), 12)}</ul></div><div><h3>OPEN CHECKS / ${issues.length}</h3><ul>${list(issues.map(issue => issue.text), 5)}</ul><p>Prices, supplier links and verification marks were cleared. Exact pins and physical fit need independent checks.</p></div>`;
   $('#draft-dialog').showModal();
 }
 
@@ -515,16 +531,19 @@ function handleClick(event) {
   else if (button.dataset.editStep != null) openEditor('step', Number(button.dataset.editStep));
   else if (button.id === 'new-project') addProject(blankProject());
   else if (button.id === 'create-from-brief') {
-    const brief = $('#brief-input').value.trim(); if (!brief) return showToast('Describe your idea first.');
-    const firstSentence = brief.split(/[.!?]/)[0];
+    const idea = $('#brief-input').value.trim(); if (!idea) return showToast('Describe your idea first.');
+    const composed = composeBrief(idea, briefAnswers);
+    const firstSentence = idea.split(/[.!?]/)[0];
     const title = firstSentence.length > 80 ? firstSentence.slice(0, 80).replace(/\s+\S*$/, '') : firstSentence;
-    const next = blankProject(title); next.brief = brief; next.referenceImage = pendingReference;
-    next.summary = 'Custom concept. Add the parts, connections and build steps. No automatic design was generated for this idea.';
-    if (addProject(next)) { $('#brief-input').value = ''; pendingReference = null; renderReferenceInput(); }
+    const next = blankProject(title); next.brief = composed.text; next.referenceImage = pendingReference;
+    const openSummary = composed.openQuestions.length ? `${composed.openQuestions.length} design question${composed.openQuestions.length === 1 ? '' : 's'} ${composed.openQuestions.length === 1 ? 'remains' : 'remain'} open.` : 'Intake questions answered.';
+    next.summary = `Custom concept. Add parts, connections and build steps. ${openSummary} No automatic design was generated.`;
+    if (addProject(next)) { $('#brief-input').value = ''; briefAnswers = {}; pendingReference = null; renderReferenceInput(); renderBriefGuidance(); }
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
   else if (button.id === 'choose-reference') $('#reference-file').click();
-  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; pendingReference = null; renderReferenceInput(); } }
+  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; briefAnswers = {}; pendingReference = null; renderReferenceInput(); renderBriefGuidance(); } }
+  else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
   else if (button.id === 'remove-reference' && !draftController) { pendingReference = null; renderReferenceInput(); }
   else if (button.id === 'remove-project-reference') { const previous = p.referenceImage; p.referenceImage = null; if (save('Before removing visual reference')) { render(); showToast('Visual reference removed.'); } else p.referenceImage = previous; }
@@ -616,6 +635,14 @@ function initialize() {
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
+  $('#brief-input').addEventListener('input', renderBriefGuidance);
+  $('#brief-question-list').addEventListener('input', event => {
+    const key = event.target.dataset.briefAnswer;
+    if (!key) return;
+    briefAnswers[key] = event.target.value;
+    const questions = briefQuestions($('#brief-input').value);
+    $('#brief-progress').textContent = `${questions.filter(item => String(briefAnswers[item.id] || '').trim()).length} / ${questions.length} ANSWERED`;
+  });
   window.addEventListener('storage', event => {
     if (event.key === trayKey(current()?.id)) {
       clearTimeout(traySyncTimer);
@@ -631,6 +658,7 @@ function initialize() {
   $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; });
   $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { current().notes = event.target.value; if (save('Before editing notes')) showToast('Notes saved locally.'); } });
   render();
+  renderBriefGuidance();
   if (unreadableSavedData !== null) showRecovery();
   void detectLocalModels();
 }

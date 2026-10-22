@@ -6,6 +6,7 @@ description: Plan and review small physical hardware builds from an idea through
 # Hardware Studio
 
 Turn the requested device into an engineering work package whose claims can be checked. Start from the function, environment, dimensions, power source, budget and fabrication access. Ask for a missing constraint only when it changes the architecture; proceed with explicit assumptions otherwise.
+When a brief is incomplete, gather the few missing conditions that change architecture or acceptance. Record supplied answers as user constraints and keep unanswered questions explicit. Do not invent ratings, dimensions or environmental limits to make a design look complete. The companion browser app can add deterministic follow-up questions to a brief before a local model drafts it; those questions do not establish any physical specification.
 
 If given a sketch or photo, record what is visibly present and what the user wants it to mean. A visual reference can guide layout and appearance, but scale, hidden parts, material, part numbers, pinouts and electrical ratings require separate evidence. Keep the image with the editable project when the user wants that reference preserved.
 
