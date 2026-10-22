@@ -14,6 +14,8 @@ sh tools/tray-generator/run-local.sh --port 4174
 
 Open `http://127.0.0.1:4174/tray.html`. The server binds only to `127.0.0.1`, accepts JSON only from its own browser origin, processes one CAD build at a time, and returns a ZIP containing the spec, STEP, STL, SVG, build report and fresh-process verification. Stop it with Ctrl-C. The public GitHub Pages site can prepare and export a spec, but cannot run this local Python service.
 
+The same local workbench can check one to four maker STEP files against its current tray. Supply each file, a unique part ID, an axis orientation and X/Y/Z translation in millimeters. The browser limits each file to 8 MB and all files to 17 MB; the local server applies its own byte limits, generates the current tray, runs `fit.py`, and returns a downloadable JSON report. Selected files are stored in a temporary local directory only during the check. The browser offers common quarter-turns and the worked Pico axis mapping; use the CLI manifest below for an arbitrary proper 3D rotation. The browser does not infer placement, mounting-hole alignment or real-world fit.
+
 The launcher selects this Mac's installed OCP environment when present, then checks `python3`. On another machine, set `HARDWARE_STUDIO_PYTHON` to a Python interpreter with the free `cadquery-ocp-novtk` package installed. It exits with a clear error if no usable interpreter is available.
 
 For a command-line build from a saved spec:

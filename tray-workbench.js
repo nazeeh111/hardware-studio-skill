@@ -11,10 +11,22 @@ let draft = null;
 let storageKey = '';
 let cadAvailable = false;
 let cadBusy = false;
+let fitBusy = false;
+let fitReport = null;
+let fitRevision = 0;
+const rotations = {
+  identity: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+  x90: [[1, 0, 0], [0, 0, -1], [0, 1, 0]],
+  y90: [[0, 0, 1], [0, 1, 0], [-1, 0, 0]],
+  z90: [[0, -1, 0], [1, 0, 0], [0, 0, 1]],
+  z180: [[-1, 0, 0], [0, -1, 0], [0, 0, 1]],
+  pico: [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
+};
 
 function updateCadButton() {
   $('#generate-cad').disabled = !draft || !cadAvailable || cadBusy;
   $('#download').disabled = !draft;
+  $('#check-fit').disabled = !draft || !cadAvailable || fitBusy || cadBusy;
 }
 
 async function detectCadService() {
@@ -24,6 +36,7 @@ async function detectCadService() {
     cadAvailable = response.ok && status.ok === true && status.schema === schema;
   } catch { cadAvailable = false; }
   $('#cad-status').textContent = cadAvailable ? 'Local OpenCascade runtime ready. CAD builds stay on this computer.' : 'Local CAD runtime unavailable here. Download the spec, then start the free local server shown below.';
+  $('#fit-status').textContent = cadAvailable ? 'Choose maker STEP files and enter measured placements to compare their modeled solids.' : 'Start the local CAD runtime to check supplied models.';
   $('#cad-status').classList.toggle('error', !cadAvailable);
   updateCadButton();
 }
@@ -65,6 +78,8 @@ function svg(spec) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145} ${h + 145}" role="img" aria-label="Scaled tray top view; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${h + 126}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS</text></svg>`;
 }
 function show() {
+  fitRevision += 1;
+  if (fitReport) { fitReport = null; $('#fit-result').replaceChildren(); $('#fit-status').textContent = 'Tray changed. Run the fit check again for this geometry.'; }
   try {
     const spec = validateTraySpec(readForm());
     draft = spec;
@@ -81,6 +96,70 @@ function show() {
     $('#status-chip').textContent = 'CHECK INPUT'; $('#status-chip').classList.add('invalid');
     updateCadButton();
   }
+}
+function fitRow(index, values = {}) {
+  const id = values.id || `component-${index + 1}`;
+  const xyz = values.translationMm || [0, 0, 0];
+  const orientation = values.orientation || 'identity';
+  return `<div class="fit-card"><div class="row-top"><strong>EXACT MODEL / ${String(index + 1).padStart(2, '0')}</strong><button type="button" data-remove-fit="${index}" aria-label="Remove STEP model ${index + 1}">Remove ×</button></div><label>Part ID<input data-fit="id" maxlength="80" value="${escapeHtml(id)}"></label><label>Maker STEP file<input data-fit="file" type="file" accept=".step,.stp"></label><div class="fit-coordinates">${['X', 'Y', 'Z'].map((axis, number) => `<label>${axis} / mm<input data-fit="${axis.toLowerCase()}" type="number" step="0.1" value="${escapeHtml(xyz[number])}"></label>`).join('')}</div><label>Source axes → tray axes<select data-fit="orientation">${Object.keys(rotations).map(key => `<option value="${key}" ${key === orientation ? 'selected' : ''}>${key === 'identity' ? 'As modeled' : key === 'pico' ? 'X←Z, Y←X, Z←Y' : key.toUpperCase()}</option>`).join('')}</select></label></div>`;
+}
+function resetFitReport() {
+  fitRevision += 1;
+  fitReport = null;
+  $('#fit-result').replaceChildren();
+  $('#fit-status').textContent = 'Placement or model changed. Run the fit check again.';
+}
+function downloadJson(name, data) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2) + '\n'], { type: 'application/json' }));
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = name; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+async function fileBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',', 2)[1]);
+    reader.onerror = () => reject(new Error('Could not read a STEP file.'));
+    reader.readAsDataURL(file);
+  });
+}
+async function runFit() {
+  if (!draft || !cadAvailable || fitBusy || cadBusy) return;
+  const spec = draft;
+  const revision = fitRevision;
+  const rows = [...document.querySelectorAll('.fit-card')];
+  if (!rows.length || rows.length > 4) throw new Error('Choose one to four STEP models.');
+  const ids = new Set();
+  const components = [];
+  let totalBytes = 0;
+  for (const row of rows) {
+    const value = key => row.querySelector(`[data-fit="${key}"]`).value;
+    const id = value('id').trim();
+    const file = row.querySelector('[data-fit="file"]').files?.[0];
+    if (!id || ids.has(id)) throw new Error('Give every STEP model a unique part ID.');
+    ids.add(id);
+    if (!file || !/\.(step|stp)$/i.test(file.name) || file.size > 8_000_000) throw new Error(`Choose a .step or .stp file under 8 MB for ${id}.`);
+    totalBytes += file.size;
+    if (totalBytes > 17_000_000) throw new Error('Selected STEP files must total less than 17 MB.');
+    const translationMm = ['x', 'y', 'z'].map(key => Number(value(key)));
+    if (translationMm.some(number => !Number.isFinite(number) || Math.abs(number) > 10000)) throw new Error(`Enter finite placement coordinates for ${id}.`);
+    components.push({ id, translationMm, rotation: rotations[value('orientation')], dataBase64: await fileBase64(file) });
+  }
+  fitBusy = true; updateCadButton();
+  $('#fit-status').textContent = 'Generating the current tray and checking supplied STEP solids locally…';
+  $('#fit-status').classList.remove('error');
+  try {
+    const response = await fetch('./api/fit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schema: 'hardware-studio-browser-fit-v1', traySpec: spec, components }), signal: AbortSignal.timeout(250000) });
+    const report = await response.json();
+    if (!response.ok) throw new Error(report.error || 'The fit check failed.');
+    if (report.schema !== 'hardware-studio-fit-report-v1') throw new Error('The local service returned an unfamiliar fit report.');
+    if (fitRevision !== revision || draft !== spec) throw new Error('Geometry or placement changed while checking. Run the check again.');
+    fitReport = report;
+    const collisions = [...report.components.filter(item => item.interference_above_threshold).map(item => `${item.id} intersects tray by ${item.tray_overlap_mm3.toFixed(2)} mm³`), ...report.component_pairs.filter(item => item.interference_above_threshold).map(item => `${item.parts.join(' ↔ ')} overlap by ${item.overlap_mm3.toFixed(2)} mm³`)];
+    const result = $('#fit-result');
+    result.innerHTML = `<strong class="${collisions.length ? 'fit-alert' : 'fit-clear'}">${collisions.length ? 'MODELED INTERFERENCE' : 'NO MODELED INTERSECTION'}</strong><p>${collisions.length ? collisions.map(escapeHtml).join('<br>') : `${report.components.length} supplied models checked at the entered coordinates. Inspect source hashes, distances and cavity margins in the report.`}</p><button id="download-fit-report" type="button">Download fit report ↓</button><small>This is nominal model geometry. Tolerances, connectors, cables and physical assembly remain untested.</small>`;
+    result.querySelector('button').addEventListener('click', () => downloadJson('hardware-studio-fit-report.json', fitReport));
+    $('#fit-status').textContent = `Fit check complete. ${collisions.length} modeled collisions above ${report.overlap_limit_mm3} mm³.`;
+  } finally { fitBusy = false; updateCadButton(); }
 }
 function populate(spec) {
   $('#title').value = spec.title;
@@ -99,6 +178,7 @@ function appendRow(kind) {
   show();
 }
 function initialize() {
+  $('#fit-components').innerHTML = fitRow(0);
   const url = new URL(location.href);
   const projectId = (url.searchParams.get('project') || '').slice(0, 80);
   storageKey = projectId ? `hardware-studio-tray-${projectId}` : 'hardware-studio-tray-standalone';
@@ -117,6 +197,26 @@ function initialize() {
   void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());
   $('#tray-form').addEventListener('input', show);
+  $('#fit-components').addEventListener('input', resetFitReport);
+  $('#fit-components').addEventListener('change', resetFitReport);
+  $('#add-fit-component').addEventListener('click', () => {
+    const count = document.querySelectorAll('.fit-card').length;
+    if (count >= 4) return;
+    $('#fit-components').insertAdjacentHTML('beforeend', fitRow(count));
+    resetFitReport();
+    $('#add-fit-component').disabled = count + 1 >= 4;
+  });
+  $('#fit-components').addEventListener('click', event => {
+    const button = event.target.closest('[data-remove-fit]');
+    if (!button) return;
+    button.closest('.fit-card').remove();
+    $('#add-fit-component').disabled = false;
+    resetFitReport();
+  });
+  $('#check-fit').addEventListener('click', async () => {
+    try { await runFit(); }
+    catch (error) { $('#fit-status').textContent = error.name === 'TimeoutError' ? 'Fit check timed out. Inspect the local server terminal.' : error.message; $('#fit-status').classList.add('error'); }
+  });
   $('#tray-form').addEventListener('change', event => { if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
   $('#add-mount').addEventListener('click', () => appendRow('mount'));
   $('#add-cutout').addEventListener('click', () => appendRow('cutout'));
