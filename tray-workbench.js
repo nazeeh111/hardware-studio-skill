@@ -1,4 +1,5 @@
 import { validateTraySpec } from './tray-spec.js?v=2';
+import { STORAGE_KEY } from './core.js?v=23';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const $ = selector => document.querySelector(selector);
@@ -103,7 +104,15 @@ function initialize() {
   storageKey = projectId ? `hardware-studio-tray-${projectId}` : 'hardware-studio-tray-standalone';
   const projectTitle = (url.searchParams.get('title') || 'Prototype').slice(0, 80);
   let initial = { schema, title: `${projectTitle} tray study`, units: 'mm', outer: { length: 80, width: 55, height: 18 }, wall: 2.5, floor: 2.5, mounts: [], cutouts: [] };
-  try { const saved = localStorage.getItem(storageKey); if (saved) initial = validateTraySpec(JSON.parse(saved)); } catch { /* Start from defaults if a draft is unavailable. */ }
+  let loaded = false;
+  try { const saved = localStorage.getItem(storageKey); if (saved) { initial = validateTraySpec(JSON.parse(saved)); loaded = true; } } catch { /* Try the project record next. */ }
+  if (!loaded && projectId) {
+    try {
+      const workspace = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      const attached = workspace?.projects?.find(project => project.id === projectId)?.traySpec;
+      if (attached) initial = validateTraySpec(attached);
+    } catch { /* Keep the blank measured study. */ }
+  }
   populate(initial);
   void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());

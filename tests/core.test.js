@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from '../core.js';
+import { readFileSync } from 'node:fs';
+import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from '../core.js';
+
+const trayFixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-tray.json', import.meta.url)));
 
 test('starter totals use quantity and keep cost as an estimate', () => {
   const p = makeProject(STARTERS[0]);
@@ -44,6 +47,22 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   assert.deepEqual(imported.review, { electrical: false, mechanical: false, sourcing: false });
 });
 
+test('tray geometry survives project JSON import and revision restore while new geometry resets mechanical review', () => {
+  const project = makeProject(STARTERS[0]);
+  project.review.mechanical = true;
+  assert.equal(setProjectTraySpec(project, trayFixture), true);
+  assert.equal(project.review.mechanical, false);
+  assert.deepEqual(project.traySpec.outer, { length: 66, width: 45, height: 14 });
+  const imported = safeProject(JSON.parse(JSON.stringify(project)));
+  assert.equal(imported.traySpec.mounts.length, 6);
+  const restored = restoreProjectFromRevision(project, project);
+  assert.equal(restored.traySpec.cutouts.length, 1);
+  const broken = JSON.parse(JSON.stringify(project));
+  broken.traySpec.wall = 50;
+  assert.throws(() => safeProject(broken), /Wall/);
+  assert.throws(() => parseSavedWorkspace(JSON.stringify({ projects: [broken], currentId: broken.id })), /Wall/);
+});
+
 test('local model output cannot mark estimates or reviews as verified', () => {
   const raw = makeProject(STARTERS[0]);
   raw.summary = 'Manufacturer fit validated in CAD';
@@ -54,6 +73,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.steps[0].done = true;
   raw.cadUrl = 'https://example.com/unverified-cad';
   raw.wiringUrl = 'https://example.com/unverified-wiring';
+  raw.traySpec = trayFixture;
   raw.review = { electrical: true, mechanical: true, sourcing: true };
   const draft = localAiDraft(raw, 'USB plant monitor', 'qwen3:4b');
   assert.equal(draft.starterId, 'ai');
@@ -63,6 +83,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.steps[0].done, false);
   assert.equal(draft.cadUrl, '');
   assert.equal(draft.wiringUrl, '');
+  assert.equal(draft.traySpec, null);
   assert.equal(draft.review.electrical, false);
   assert.match(draft.summary, /unverified/);
   assert.doesNotMatch(draft.summary, /validated in CAD/);

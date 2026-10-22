@@ -1,3 +1,5 @@
+import { validateTraySpec } from './tray-spec.js';
+
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
 export const REVISIONS_KEY = 'hardware-studio-revisions-v1';
 export const MAX_REFERENCE_DATA_URL = 250_000;
@@ -24,8 +26,19 @@ export function parseSavedWorkspace(raw) {
     project.parts.some(part => !part || typeof part !== 'object') || project.wires.some(wire => !wire || typeof wire !== 'object') || project.steps.some(step => !step || typeof step !== 'object') ||
     (project.mechanicalConnections != null && (!Array.isArray(project.mechanicalConnections) || project.mechanicalConnections.some(link => !link || typeof link !== 'object'))) ||
     (project.powerRails != null && (!Array.isArray(project.powerRails) || project.powerRails.some(rail => !rail || typeof rail !== 'object' || !Array.isArray(rail.loads) || rail.loads.some(load => !load || typeof load !== 'object')))))) throw new Error('Invalid saved workspace');
-  saved.projects.forEach(project => safeReferenceImage(project.referenceImage));
+  saved.projects.forEach(project => {
+    safeReferenceImage(project.referenceImage);
+    if (project.traySpec != null) validateTraySpec(project.traySpec);
+  });
   return saved;
+}
+
+export function setProjectTraySpec(project, input) {
+  const next = input == null ? null : validateTraySpec(input);
+  if (JSON.stringify(project.traySpec ?? null) === JSON.stringify(next)) return false;
+  project.traySpec = next;
+  project.review.mechanical = false;
+  return true;
 }
 
 const part = (id, name, category, qty, unitCost, detail, voltage = '') => ({
@@ -104,7 +117,7 @@ export function makeProject(starter, title) {
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires), mechanicalConnections: structuredClone(starter.mechanicalConnections || []),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, done: false })),
     powerRails: structuredClone(starter.powerRails || []),
-    notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, review: { electrical: false, mechanical: false, sourcing: false }
+    notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
 
@@ -112,7 +125,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null,
+    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null,
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -229,6 +242,7 @@ export function safeProject(input) {
     starterId: 'imported', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
     referenceImage: safeReferenceImage(input.referenceImage),
+    traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
@@ -257,6 +271,7 @@ export function localAiDraft(input, brief, model) {
   project.notes = `Generated locally with ${String(model).slice(0, 80)}. The model text below is unverified, including any measurements, source claims or assertions of testing. Check each claim against independent evidence before buying or building.\n\nMODEL NOTES / UNVERIFIED\n${project.notes}`.slice(0, 10000);
   project.cadUrl = '';
   project.wiringUrl = '';
+  project.traySpec = null;
   project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
   project.steps = project.steps.map(step => ({ ...step, done: false }));
   project.powerRails = [];

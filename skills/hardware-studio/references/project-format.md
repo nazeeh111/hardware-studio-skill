@@ -13,6 +13,7 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
   "summary": "Concept design awaiting component and enclosure review.",
   "cadUrl": "",
   "wiringUrl": "",
+  "traySpec": null,
   "referenceImage": null,
   "parts": [
     {
@@ -67,4 +68,4 @@ The sample demonstrates the carrier only; it is deliberately incomplete as a bui
 
 The app accepts additional fields but does not use them. Keep full calculations, datasheet links and dimensioned CAD sources beside the JSON when they cannot be represented faithfully in these fields.
 
-The browser tray workbench stores its valid draft separately for each local project. Export the project ZIP to include `tray-spec.json`, or download the spec directly from the workbench. Project JSON by itself does not include that draft. Run the repository's tray generator with the spec to make STEP/STL; check component fit separately and record the resulting evidence URL in `cadUrl` when published.
+The browser tray workbench stores its valid draft with the local project as optional `traySpec`, and the project ZIP includes the same geometry as `tray-spec.json`. Project JSON imports retain this field while resetting mechanical review. Download the spec directly from the workbench or use the repository's tray generator to make STEP/STL; check component fit separately and record the resulting evidence URL in `cadUrl` when published.
