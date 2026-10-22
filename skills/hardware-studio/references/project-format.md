@@ -2,6 +2,8 @@
 
 Use this format when handing a Codex-designed project to the browser app. The app imports JSON, assigns a new local ID, and resets review marks. Keep IDs stable within the file and unique for each part. A connection's `from` and `to` must match part IDs. Costs are per unit in USD and should be marked as estimates unless checked against current listings. Write useful part details, not just generic names.
 
+Connections can also carry `fromPin` and `toPin` strings for exact pins or terminals. Keep them empty when the chosen part is not exact or its pinout has not been checked. The app flags every connection missing either endpoint, so a part-level arrow cannot masquerade as a complete wiring instruction. A connection entry should describe one conductor or a clearly named bus; split combined power and ground runs before physical wiring.
+
 ```json
 {
   "title": "USB temperature display",

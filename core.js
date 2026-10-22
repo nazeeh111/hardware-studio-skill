@@ -162,6 +162,8 @@ export function validate(project) {
     if (!ids.has(w.from) || !ids.has(w.to)) issues.push({ kind: 'error', text: `A ${w.signal || 'wire'} connection refers to a missing part.` });
     if (w.from === w.to) issues.push({ kind: 'error', text: 'A connection points to the same part at both ends.' });
   }
+  const unmappedPins = project.wires.filter(w => !String(w.fromPin || '').trim() || !String(w.toPin || '').trim()).length;
+  if (unmappedPins) issues.push({ kind: 'todo', text: `${unmappedPins} connection${unmappedPins === 1 ? '' : 's'} need an exact pin or terminal at both ends.` });
   for (const rail of project.powerRails || []) {
     const name = rail.name || 'Unnamed rail';
     if (!Number.isFinite(Number(rail.voltageV)) || Number(rail.voltageV) <= 0) issues.push({ kind: 'error', text: `${name} needs a positive rail voltage.` });
@@ -213,7 +215,7 @@ export function safeProject(input) {
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
-    wires: input.wires.map(w => ({ from: String(w.from || ''), to: String(w.to || ''), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
+    wires: input.wires.map(w => ({ from: String(w.from || ''), fromPin: String(w.fromPin || '').slice(0, 100), to: String(w.to || ''), toPin: String(w.toPin || '').slice(0, 100), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), done: Boolean(s.done) })),
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }

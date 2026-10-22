@@ -30,6 +30,7 @@ try {
     if (!ids.has(wire.from) || !ids.has(wire.to)) issues.push(`wires[${i}] refers to a missing part.`);
     if (wire.from === wire.to) issues.push(`wires[${i}] loops to the same part.`);
     if (typeof wire.signal !== 'string' || !wire.signal.trim()) issues.push(`wires[${i}].signal is required.`);
+    for (const pin of ['fromPin', 'toPin']) if (wire[pin] != null && (typeof wire[pin] !== 'string' || wire[pin].length > 100)) issues.push(`wires[${i}].${pin} must be text under 100 characters.`);
   }
   if (project?.powerRails != null && !Array.isArray(project.powerRails)) issues.push('powerRails must be an array when supplied.');
   for (const [i, rail] of (Array.isArray(project?.powerRails) ? project.powerRails : []).entries()) {

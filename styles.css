@@ -177,6 +177,7 @@ a { color: inherit; }
 .wire-list { display: grid; gap: 6px; margin-top: 15px; }
 .wire-row { display: flex; align-items: center; gap: 8px; padding: 11px 12px; border: 1px solid #d6dfd1; background: var(--white); }
 .wire-row b { font-size: 10px; }
+.wire-row b small { display: block; margin-top: 3px; color: #687c67; font: 600 9px var(--mono); }
 .wire-row span { color: #6e7e6f; font: 500 9px var(--mono); margin-left: auto; }
 .wire-row .arrow { color: #839a3e; margin: 0 3px; }
 .wire-row button { margin-left: 8px; }

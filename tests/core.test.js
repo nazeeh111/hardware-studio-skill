@@ -176,3 +176,14 @@ test('local visual reference survives import while unsafe image payloads are rej
   assert.throws(() => safeProject(p), /small JPEG/);
   assert.throws(() => parseSavedWorkspace(JSON.stringify({ projects: [p], currentId: p.id })), /small JPEG/);
 });
+
+test('pin-level connection fields survive import and missing endpoints remain open checks', () => {
+  const p = makeProject(STARTERS[0]);
+  assert.ok(validate(p).some(issue => issue.text.includes('exact pin or terminal')));
+  p.wires[0].fromPin = 'GPIO21 / SDA';
+  p.wires[0].toPin = 'SDA';
+  const imported = safeProject(p);
+  assert.equal(imported.wires[0].fromPin, 'GPIO21 / SDA');
+  assert.equal(imported.wires[0].toPin, 'SDA');
+  assert.ok(validate(imported).some(issue => issue.text.includes('4 connections need')));
+});

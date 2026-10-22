@@ -6,4 +6,6 @@ The public workflow presents prompt or image/sketch input, then a project with I
 
 The FAQ reports optional private projects, community publishing, CAD export, version history and paid ZIP export. It acknowledges wrong parts, prices, placement and supplier links. No public API is advertised. These facts may change: inspect the live site before relying on feature availability, plan terms or prices.
 
+An unauthenticated REA capture of the public home page retained its shipped frontend code. Static request references in that version covered generation, images, project saves, sourcing, wiring-rail inference, CAD jobs, ZIP export, publishing and collaboration. Only the landing-page feature, statistics, trending and community requests were observed running. The static graph was partial, and neither a frontend reference nor a landing-page request proves that a private backend feature works. See [the analysis](https://github.com/nazeeh111/hardware-studio-skill/blob/main/BLUEPRINT_ANALYSIS.md) for the capture scope and evidence IDs.
+
 Transferable design lesson: keep every part, wire, mechanical object and instruction in one linked record; expose estimates and open review items. Do not transfer Blueprint's branding, content or unverified claims into another product.
