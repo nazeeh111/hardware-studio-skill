@@ -1,4 +1,5 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=14';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, makeProject, blankProject, stats, validate, bomCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=15';
+import { createZip } from './zip.js?v=1';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -142,6 +143,24 @@ function download(name, contents, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
+function exportPackage(p) {
+  const generatedAt = new Date().toISOString();
+  const issues = validate(p);
+  const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
+  const title = String(p.title).replace(/[\r\n]+/g, ' ');
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  const archive = createZip([
+    { name: 'README.md', data: readme },
+    { name: 'project.json', data: JSON.stringify(p, null, 2) + '\n' },
+    { name: 'bill-of-materials.csv', data: bomCsv(p) },
+    { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
+    { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
+    { name: 'review.txt', data: report }
+  ]);
+  download(`${filename(p)}-package.zip`, archive, 'application/zip');
+  showToast('Project package downloaded. Diagrams are conceptual and checks remain open.');
+}
 function openHistory() {
   const p = current(); let allEntries;
   try { allEntries = readRevisions(); }
@@ -395,6 +414,7 @@ function handleClick(event) {
     render(); showToast('Project moved to Recently deleted. Open History to recover it.');
   }
   else if (button.id === 'export-project') { download(`${filename(p)}.json`, JSON.stringify(p, null, 2), 'application/json'); showToast('Project JSON downloaded.'); }
+  else if (button.id === 'export-package') { try { exportPackage(p); } catch { showToast('Package export failed. Export JSON to preserve the project.'); } }
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-diagram') { const svg = $('#panel svg'); if (svg) { download(`${filename(p)}-${activeTab}.svg`, new XMLSerializer().serializeToString(svg), 'image/svg+xml'); showToast('Diagram downloaded.'); } }
   else if (button.id === 'add-part') openEditor('part');
