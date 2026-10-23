@@ -161,6 +161,7 @@ a { color: inherit; }
 .panel { min-height: 470px; padding: 28px; }
 .panel-head { display: flex; justify-content: space-between; align-items: start; gap: 18px; margin-bottom: 21px; }
 .panel-head > div + div { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.panel-head .wire-actions { flex: 0 0 auto; }
 .panel-head h3 { font: 600 27px/1.1 var(--display); letter-spacing: -.06em; margin: 7px 0 8px; }
 .panel-head p { color: var(--muted); margin: 0; max-width: 580px; font-size: 11px; line-height: 1.5; }
 .panel-head .eyebrow.accent { color: var(--rust); }

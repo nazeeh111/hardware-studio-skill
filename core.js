@@ -263,7 +263,11 @@ export function validate(project) {
   return issues;
 }
 
-const csvCell = value => `"${String(value ?? '').replaceAll('"', '""')}"`;
+const csvCell = value => {
+  const content = String(value ?? '');
+  const safe = /^[\s\uFEFF]*[=+\-@]/u.test(content) ? `'${content}` : content;
+  return `"${safe.replaceAll('"', '""')}"`;
+};
 export function bomCsv(project) {
   return [
     ['Name', 'Category', 'Quantity', 'Unit estimate USD', 'Subtotal estimate USD', 'Supplier URL', 'Specification URL', 'Checked at', 'Verified', 'Detail'].map(csvCell).join(','),
@@ -276,6 +280,22 @@ export function mountingCsv(project) {
   return [
     ['From ID', 'From part', 'To ID', 'To part', 'Mounting or fit intent', 'Notes'].map(csvCell).join(','),
     ...(project.mechanicalConnections || []).map(link => [link.from, names.get(link.from) || '', link.to, names.get(link.to) || '', link.label, link.note].map(csvCell).join(','))
+  ].join('\r\n') + '\r\n';
+}
+
+export function wiringCsv(project) {
+  const parts = new Map(project.parts.map(part => [part.id, part]));
+  const status = wire => {
+    const from = parts.get(wire.from), to = parts.get(wire.to);
+    if (!from || !to) return 'BROKEN PART REFERENCE';
+    if (!String(wire.fromPin || '').trim() || !String(wire.toPin || '').trim()) return 'PIN ENDPOINT MISSING';
+    if ((from.pins?.length && !from.pins.includes(wire.fromPin)) || (to.pins?.length && !to.pins.includes(wire.toPin))) return 'PIN NOT IN RECORDED INVENTORY';
+    if (!from.pins?.length || !to.pins?.length) return 'PIN INVENTORY MISSING';
+    return 'RECORDED NAMES ONLY';
+  };
+  return [
+    ['From part ID', 'From part', 'From pin or terminal', 'To part ID', 'To part', 'To pin or terminal', 'Signal or connection', 'Voltage or range', 'Review state', 'Note'].map(csvCell).join(','),
+    ...project.wires.map(wire => [wire.from, parts.get(wire.from)?.name || '', wire.fromPin || '', wire.to, parts.get(wire.to)?.name || '', wire.toPin || '', wire.signal || '', wire.voltage || '', status(wire), wire.note || ''].map(csvCell).join(','))
   ].join('\r\n') + '\r\n';
 }
 

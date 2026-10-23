@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from '../core.js';
+import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from '../core.js';
 
 const trayFixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-tray.json', import.meta.url)));
 
@@ -24,6 +24,22 @@ test('CSV export quotes names and notes safely', () => {
   const csv = bomCsv(p);
   assert.match(csv, /"Sensor, ""special"""/);
   assert.match(csv, /"Unit estimate USD"/);
+});
+
+test('connection register exposes unresolved endpoints and keeps spreadsheet formulas inert', () => {
+  const p = makeProject(STARTERS[0]);
+  p.parts[0].name = '=HYPERLINK("https://example.invalid", "trap")';
+  p.parts[0].pins = ['GPIO21'];
+  p.parts[1].pins = ['SDA'];
+  p.wires = [
+    { from: p.parts[0].id, fromPin: 'GPIO21', to: p.parts[1].id, toPin: 'SDA', signal: 'I²C data', voltage: '3.3 V', note: 'Recorded names only' },
+    { from: p.parts[0].id, fromPin: '', to: p.parts[1].id, toPin: 'SDA', signal: 'Shared rail', voltage: '3.3 V', note: '' }
+  ];
+  const csv = wiringCsv(p);
+  assert.match(csv, /"RECORDED NAMES ONLY"/);
+  assert.match(csv, /"PIN ENDPOINT MISSING"/);
+  assert.match(csv, /"'=HYPERLINK\(""https:\/\/example.invalid"", ""trap""\)"/);
+  assert.match(bomCsv(p), /"'=HYPERLINK/);
 });
 
 test('JSON import rejects malformed shape and removes untrusted source schemes', () => {
