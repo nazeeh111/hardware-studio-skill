@@ -18,6 +18,16 @@ test('a removed part leaves a detectable broken connection', () => {
   assert.ok(validate(p).some(issue => issue.kind === 'error' && issue.text.includes('missing part')));
 });
 
+test('lighting review catches a control-only LED connection', () => {
+  const p = makeProject(STARTERS[1]);
+  assert.equal(validate(p).some(issue => issue.text.includes('explicit supply and ground/return')), false);
+  p.wires = p.wires.filter(wire => !(wire.from === 'usb' && wire.to === 'led'));
+  assert.equal(validate(p).some(issue => issue.kind === 'todo' && issue.text.includes('a control or data connection alone')), true);
+  p.wires.push({ from: 'shift', to: 'led', signal: '5 V data', voltage: '5 V', note: 'A data signal is not the LED supply.' });
+  p.wires.push({ from: 'usb', to: 'led', signal: 'GND return', voltage: '0 V', note: '' });
+  assert.equal(validate(p).some(issue => issue.text.includes('explicit supply and ground/return')), true);
+});
+
 test('CSV export quotes names and notes safely', () => {
   const p = makeProject(STARTERS[0]);
   p.parts[0].name = 'Sensor, "special"';

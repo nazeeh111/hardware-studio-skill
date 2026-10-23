@@ -226,6 +226,14 @@ export function validate(project) {
   }
   const unmappedPins = project.wires.filter(w => !String(w.fromPin || '').trim() || !String(w.toPin || '').trim()).length;
   if (unmappedPins) issues.push({ kind: 'todo', text: `${unmappedPins} connection${unmappedPins === 1 ? '' : 's'} need an exact pin or terminal at both ends.` });
+  for (const part of project.parts.filter(p => /lighting/i.test(p.category) && /\b(?:led|light|lamp|neopixel)\b/i.test(p.name))) {
+    const labels = project.wires.filter(w => w.from === part.id || w.to === part.id)
+      .map(w => `${w.signal || ''} ${w.fromPin || ''} ${w.toPin || ''}`);
+    const supply = labels.some(label => /\b(?:power|supply|positive|vcc|vbus)\b/i.test(label) ||
+      (/(?:\+?\s*\d+\s*v\b)/i.test(label) && !/\b(?:data|control|signal|din)\b/i.test(label)));
+    const ground = labels.some(label => /\b(?:gnd|ground|return|negative)\b/i.test(label));
+    if (!supply || !ground) issues.push({ kind: 'todo', text: `${part.name} needs an explicit supply and ground/return path; a control or data connection alone does not power the light.` });
+  }
   for (const rail of project.powerRails || []) {
     const name = rail.name || 'Unnamed rail';
     if (!Number.isFinite(Number(rail.voltageV)) || Number(rail.voltageV) <= 0) issues.push({ kind: 'error', text: `${name} needs a positive rail voltage.` });
