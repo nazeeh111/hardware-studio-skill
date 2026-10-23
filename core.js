@@ -16,6 +16,14 @@ function safeStepPartIds(value) {
   return [...value];
 }
 
+export function safePinList(value) {
+  if (value == null) return [];
+  if (!Array.isArray(value) || value.length > 80 || value.some(pin => typeof pin !== 'string' || !pin.trim() || pin.length > 80 || /[\r\n]/.test(pin))) throw new Error('Pin inventory must contain up to 80 short names.');
+  const pins = value.map(pin => pin.trim());
+  if (new Set(pins).size !== pins.length) throw new Error('Pin inventory names must be unique.');
+  return pins;
+}
+
 export function safeReferenceImage(input) {
   if (input == null) return null;
   if (!input || typeof input !== 'object' || typeof input.name !== 'string' || typeof input.dataUrl !== 'string' ||
@@ -44,6 +52,7 @@ export function parseSavedWorkspace(raw) {
     safeTextList(project.tools, 'Tools');
     safeTextList(project.assumptions, 'Assumptions');
     project.steps.forEach(step => safeStepPartIds(step.partIds));
+    project.parts.forEach(part => safePinList(part.pins));
   });
   return saved;
 }
@@ -57,7 +66,7 @@ export function setProjectTraySpec(project, input) {
 }
 
 const part = (id, name, category, qty, unitCost, detail, voltage = '') => ({
-  id, name, category, qty, unitCost, detail, voltage, sourceUrl: '', specUrl: '', checkedAt: '', verified: false
+  id, name, category, qty, unitCost, detail, voltage, pins: [], sourceUrl: '', specUrl: '', checkedAt: '', verified: false
 });
 
 export const STARTERS = [
@@ -183,10 +192,12 @@ export function partReviewRecorded(part) {
 export function validate(project) {
   const issues = [];
   const ids = new Set();
+  const partsById = new Map();
   for (const p of project.parts) {
     if (!p.id || !p.name) issues.push({ kind: 'error', text: 'A part is missing its ID or name.' });
     if (ids.has(p.id)) issues.push({ kind: 'error', text: `Duplicate part ID: ${p.id}` });
     ids.add(p.id);
+    partsById.set(p.id, p);
     if (!Number.isFinite(Number(p.qty)) || Number(p.qty) <= 0) issues.push({ kind: 'error', text: `${p.name || 'Part'} needs a positive quantity.` });
     if (!Number.isFinite(Number(p.unitCost)) || Number(p.unitCost) < 0) issues.push({ kind: 'error', text: `${p.name || 'Part'} has an invalid cost estimate.` });
     if (p.verified && !partReviewRecorded(p)) issues.push({ kind: 'error', text: `${p.name || 'Part'} is marked checked without a specification source and check date.` });
@@ -194,7 +205,17 @@ export function validate(project) {
   for (const w of project.wires) {
     if (!ids.has(w.from) || !ids.has(w.to)) issues.push({ kind: 'error', text: `A ${w.signal || 'wire'} connection refers to a missing part.` });
     if (w.from === w.to) issues.push({ kind: 'error', text: 'A connection points to the same part at both ends.' });
+    for (const [partId, pin] of [[w.from, w.fromPin], [w.to, w.toPin]]) {
+      const part = partsById.get(partId);
+      if (part && String(pin || '').trim() && Array.isArray(part.pins) && part.pins.length && !part.pins.includes(pin)) issues.push({ kind: 'error', text: `${part.name} connection names pin “${pin}”, which is absent from its recorded pin inventory.` });
+    }
   }
+  const uncheckedPinParts = new Set();
+  for (const w of project.wires) for (const [partId, pin] of [[w.from, w.fromPin], [w.to, w.toPin]]) {
+    const part = partsById.get(partId);
+    if (part && String(pin || '').trim() && !(part.pins || []).length) uncheckedPinParts.add(part.name);
+  }
+  if (uncheckedPinParts.size) issues.push({ kind: 'todo', text: `${uncheckedPinParts.size} part${uncheckedPinParts.size === 1 ? '' : 's'} have named wire pins but no pin inventory for cross-checking.` });
   for (const link of project.mechanicalConnections || []) {
     if (!ids.has(link.from) || !ids.has(link.to)) issues.push({ kind: 'error', text: `A ${link.label || 'mechanical'} relationship refers to a missing part.` });
     if (link.from === link.to && Number(project.parts.find(part => part.id === link.from)?.qty || 0) < 2) issues.push({ kind: 'error', text: 'A mechanical relationship uses one part at both ends without multiple units.' });
@@ -269,7 +290,7 @@ export function safeProject(input) {
     traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
-    parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
+    parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), pins: safePinList(p.pins), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), fromPin: String(w.fromPin || '').slice(0, 100), to: String(w.to || ''), toPin: String(w.toPin || '').slice(0, 100), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     mechanicalConnections: (input.mechanicalConnections || []).map(link => ({ from: String(link.from || '').slice(0, 80), to: String(link.to || '').slice(0, 80), label: String(link.label || '').slice(0, 240), note: String(link.note || '').slice(0, 1000) })),
     steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), partIds: safeStepPartIds(s.partIds), done: Boolean(s.done) })),
@@ -296,7 +317,7 @@ export function localAiDraft(input, brief, model) {
   project.cadUrl = '';
   project.wiringUrl = '';
   project.traySpec = null;
-  project.parts = project.parts.map(part => ({ ...part, unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
+  project.parts = project.parts.map(part => ({ ...part, pins: [], unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
   project.steps = project.steps.map(step => ({ ...step, done: false }));
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };

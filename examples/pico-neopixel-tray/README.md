@@ -6,6 +6,8 @@ This example closes one mechanical gap in Hardware Studio: it supplies an editab
 
 This is a mechanical prototype with a provisional wiring plan, not a complete desk light or fabrication release. It has no cover, diffuser, verified electrical assembly, auxiliary-electronics placement, cable plug model, retention fasteners, printed fit test, or measured production components. The tray geometry is original; the manufacturer CAD files used for checking are **linked but not redistributed**.
 
+The importable app project records a partial pin inventory for the data path: Pico `GP2`, [TI SN74AHCT125N](https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf) `1A` and `1Y`, and the Stick's [DIN pad](https://learn.adafruit.com/elements/3154879/assets/124485/exhibit). The [Raspberry Pi pinout](https://datasheets.raspberrypi.com/pico/Pico-2-Pinout.pdf) identifies `GP2`. Its power and ground relationships still combine multiple conductors and have unnamed endpoints in the app. Matching these few labels to the recorded inventory is an internal consistency check, not a complete schematic or permission to energize the prototype.
+
 ## Source evidence, checked 22 October 2026
 
 | Part | Original source | Observed geometry | Scope |

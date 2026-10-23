@@ -17,7 +17,10 @@
       "sourceUrl": "https://www.raspberrypi.com/products/raspberry-pi-pico/",
       "specUrl": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": [
+        "GP2"
+      ]
     },
     {
       "id": "neopixel-1426",
@@ -30,7 +33,12 @@
       "sourceUrl": "https://www.adafruit.com/product/1426",
       "specUrl": "https://www.adafruit.com/product/1426",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": [
+        "DIN",
+        "5VDC",
+        "GND"
+      ]
     },
     {
       "id": "tray",
@@ -43,7 +51,8 @@
       "sourceUrl": "",
       "specUrl": "",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": []
     },
     {
       "id": "ahct",
@@ -56,7 +65,14 @@
       "sourceUrl": "https://www.ti.com/product/SN74AHCT125",
       "specUrl": "https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": [
+        "1OE",
+        "1A",
+        "1Y",
+        "VCC",
+        "GND"
+      ]
     },
     {
       "id": "res470",
@@ -69,7 +85,8 @@
       "sourceUrl": "",
       "specUrl": "",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": []
     },
     {
       "id": "bulkcap",
@@ -82,7 +99,8 @@
       "sourceUrl": "",
       "specUrl": "https://learn.adafruit.com/adafruit-neopixel-uberguide/powering-neopixels",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": []
     },
     {
       "id": "bypass",
@@ -95,7 +113,8 @@
       "sourceUrl": "",
       "specUrl": "https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": []
     },
     {
       "id": "supply",
@@ -108,7 +127,8 @@
       "sourceUrl": "",
       "specUrl": "",
       "checkedAt": "",
-      "verified": false
+      "verified": false,
+      "pins": []
     }
   ],
   "wires": [
@@ -138,21 +158,27 @@
       "to": "ahct",
       "signal": "GP2 → 1A pin 2; common GND",
       "voltage": "3.3 V data",
-      "note": "Never connect a 5 V signal to Pico GPIO. Confirm exact Pico header pinout before wiring."
+      "note": "Never connect a 5 V signal to Pico GPIO. Confirm exact Pico header pinout before wiring.",
+      "fromPin": "GP2",
+      "toPin": "1A"
     },
     {
       "from": "ahct",
       "to": "res470",
       "signal": "1Y pin 3 → 470 Ω",
       "voltage": "5 V data",
-      "note": "Series resistor is near Stick DIN."
+      "note": "Series resistor is near Stick DIN.",
+      "fromPin": "1Y",
+      "toPin": ""
     },
     {
       "from": "res470",
       "to": "neopixel-1426",
       "signal": "470 Ω → DIN input pad",
       "voltage": "5 V data",
-      "note": "DOUT is left unconnected for one Stick."
+      "note": "DOUT is left unconnected for one Stick.",
+      "fromPin": "",
+      "toPin": "DIN"
     },
     {
       "from": "bulkcap",

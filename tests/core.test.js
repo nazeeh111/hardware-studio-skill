@@ -94,6 +94,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.parts[0].unitCost = 999;
   raw.parts[0].sourceUrl = 'https://example.com/unchecked';
   raw.parts[0].verified = true;
+  raw.parts[0].pins = ['MODEL_GUESS'];
   raw.steps[0].done = true;
   raw.cadUrl = 'https://example.com/unverified-cad';
   raw.wiringUrl = 'https://example.com/unverified-wiring';
@@ -104,6 +105,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.parts[0].unitCost, 0);
   assert.equal(draft.parts[0].sourceUrl, '');
   assert.equal(draft.parts[0].verified, false);
+  assert.deepEqual(draft.parts[0].pins, []);
   assert.equal(draft.steps[0].done, false);
   assert.equal(draft.cadUrl, '');
   assert.equal(draft.wiringUrl, '');
@@ -253,6 +255,24 @@ test('pin-level connection fields survive import and missing endpoints remain op
   assert.equal(imported.wires[0].fromPin, 'GPIO21 / SDA');
   assert.equal(imported.wires[0].toPin, 'SDA');
   assert.ok(validate(imported).some(issue => issue.text.includes('4 connections need')));
+});
+
+test('recorded pin inventories cross-check exact wire endpoints', () => {
+  const project = makeProject(STARTERS[0]);
+  const controller = project.parts.find(part => part.id === 'esp32');
+  const sensor = project.parts.find(part => part.id === 'bme280');
+  controller.pins = ['GPIO21', 'GND'];
+  sensor.pins = ['SDA', 'GND'];
+  project.wires[0].fromPin = 'GPIO21';
+  project.wires[0].toPin = 'SDA';
+  assert.ok(!validate(project).some(issue => issue.kind === 'error' && issue.text.includes('pin inventory')));
+  assert.deepEqual(safeProject(project).parts.find(part => part.id === 'esp32').pins, ['GPIO21', 'GND']);
+  project.wires[0].fromPin = 'GPIO22';
+  assert.ok(validate(project).some(issue => issue.kind === 'error' && issue.text.includes('GPIO22')));
+  const invalid = structuredClone(project);
+  invalid.parts[0].pins = ['GND', 'GND'];
+  assert.throws(() => safeProject(invalid), /unique/);
+  assert.throws(() => parseSavedWorkspace(JSON.stringify({ projects: [invalid], currentId: invalid.id })), /unique/);
 });
 
 test('mounting relationships retain linked parts and reject broken references', () => {

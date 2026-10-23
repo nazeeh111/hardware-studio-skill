@@ -3,6 +3,7 @@
 Use this format when handing a Codex-designed project to the browser app. The app imports JSON, assigns a new local ID, and resets review marks. Keep IDs stable within the file and unique for each part. A connection's `from` and `to` must match part IDs. Costs are per unit in USD and should be marked as estimates unless checked against current listings. Write useful part details, not just generic names.
 
 Connections can also carry `fromPin` and `toPin` strings for exact pins or terminals. Keep them empty when the chosen part is not exact or its pinout has not been checked. The app flags every connection missing either endpoint, so a part-level arrow cannot masquerade as a complete wiring instruction. A connection entry should describe one conductor or a clearly named bus; split combined power and ground runs before physical wiring.
+For a selected part, optional `pins` is an array of unique pin or terminal names copied from that exact revision's maker documentation. The connection editor suggests those names and the app and skill checker flag a named endpoint missing from the recorded inventory. This checks internal labels only; it does not establish correct function, voltage, direction, current rating or physical connection.
 
 `mechanicalConnections` is optional for older projects. Each entry links two existing part IDs using `from`, `to`, a short `label` describing mounting or fit intent, and an optional `note` for dimensions, fasteners or unresolved checks. A same-part relationship needs at least two units of that part. These records are assembly notes, not dimensioned CAD or proof of physical fit.
 
@@ -26,6 +27,7 @@ Connections can also carry `fromPin` and `toPin` strings for exact pins or termi
       "unitCost": 0,
       "detail": "Select a board with documented I2C pins; add the manufacturer datasheet URL and revision here.",
       "voltage": "unknown",
+      "pins": [],
       "sourceUrl": "",
       "specUrl": "",
       "checkedAt": "",

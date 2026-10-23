@@ -19,11 +19,14 @@ try {
     catch (error) { issues.push(`traySpec: ${error.message}`); }
   }
   const ids = new Set();
+  const pinLists = new Map();
   for (const [i, part] of (Array.isArray(project?.parts) ? project.parts : []).entries()) {
     if (!part || typeof part !== 'object') { issues.push(`parts[${i}] must be an object.`); continue; }
     if (typeof part.id !== 'string' || !part.id) issues.push(`parts[${i}].id is required.`);
     else if (ids.has(part.id)) issues.push(`Duplicate part ID: ${part.id}`);
     ids.add(part.id);
+    if (part.pins != null && (!Array.isArray(part.pins) || part.pins.length > 80 || part.pins.some(pin => typeof pin !== 'string' || !pin.trim() || pin.length > 80 || /[\r\n]/.test(pin)) || new Set(part.pins.map(pin => typeof pin === 'string' ? pin.trim() : pin)).size !== part.pins.length)) issues.push(`parts[${i}].pins must contain unique short pin names.`);
+    if (Array.isArray(part.pins)) pinLists.set(part.id, part.pins);
     if (typeof part.name !== 'string' || !part.name.trim()) issues.push(`parts[${i}].name is required.`);
     if (!Number.isInteger(part.qty) || part.qty < 1) issues.push(`parts[${i}].qty must be a positive integer.`);
     if (typeof part.unitCost !== 'number' || !Number.isFinite(part.unitCost) || part.unitCost < 0) issues.push(`parts[${i}].unitCost must be a nonnegative number.`);
@@ -37,6 +40,7 @@ try {
     if (wire.from === wire.to) issues.push(`wires[${i}] loops to the same part.`);
     if (typeof wire.signal !== 'string' || !wire.signal.trim()) issues.push(`wires[${i}].signal is required.`);
     for (const pin of ['fromPin', 'toPin']) if (wire[pin] != null && (typeof wire[pin] !== 'string' || wire[pin].length > 100)) issues.push(`wires[${i}].${pin} must be text under 100 characters.`);
+    for (const [partId, pin] of [[wire.from, wire.fromPin], [wire.to, wire.toPin]]) if (pin && pinLists.get(partId)?.length && !pinLists.get(partId).includes(pin)) issues.push(`wires[${i}] uses pin ${pin} absent from ${partId}'s inventory.`);
   }
   if (project?.mechanicalConnections != null && !Array.isArray(project.mechanicalConnections)) issues.push('mechanicalConnections must be an array when supplied.');
   for (const [i, link] of (Array.isArray(project?.mechanicalConnections) ? project.mechanicalConnections : []).entries()) {
