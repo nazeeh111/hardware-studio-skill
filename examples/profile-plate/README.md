@@ -19,3 +19,10 @@ Import [the editable project](project.json) into the studio, then open Assembly 
 ## Limits
 
 This is one successful model edit, not a model-quality benchmark. The outline control shows the supplied polygon before booleans; it does not preview the final solid. STEP writer and reader use the same OpenCascade kernel. No physical fit, material strength, manufacturing tolerance, curved sketch interpretation or independent CAD-system interoperability was established. Profiles contain one simple straight-edged ring, with holes added through separate cuts. They do not provide freeform sketch reconstruction, constraints, fillets, lofts or assemblies.
+
+
+## Retained three-view inspection sheet
+
+The browser viewer opened `generated/solid.stl` and downloaded the files in [inspection/](inspection/). The [PNG](inspection/inspection.png) contains top/front/right views at 8 pixels per assumed millimeter. Actual colored mesh extents are 480 × 320, 480 × 32 and 320 × 32 pixels, matching the retained 60 × 40 × 4 mm mesh bounds. Its 360-triangle Float32 render-data hash was independently recomputed from the retained STL and matches [inspection.json](inspection/inspection.json). That hash is not the original STL byte hash.
+
+These are surface views of this generated mesh, without hidden lines or feature dimensions. The source profile and hole should still be checked against the editable specification and readback. No AI inspection or physical test was run.

@@ -63,3 +63,10 @@ Hardware Studio's mechanical surface now also includes an original WebGL STL vie
 
 
 The original [feature solid modeler](solid.html) extends the reconstruction beyond rectangular trays through an ordered declarative box/cylinder/polygon-extrusion program, with dimension controls and retained JSON source. It builds one connected solid, requires each operation to affect material and checks supplied material/void regions after build and STEP readback. Its source, local text proposals and CAD exports do not establish Blueprint's private generation mechanism or arbitrary modeling parity. Applied feature sources opened from a project’s Assembly view are now retained in project JSON, ZIP and history. A direct modeler link retains its separate standalone draft; generated CAD packages remain separate checked downloads.
+
+
+## Current mechanical UI and inspection export
+
+23 October 2026. The original Assembly view now groups project-saved CAD source and linked external evidence before an HTML component index. Its symbols distinguish basic part families and retain full names. They are illustrations, without a per-part CAD binding or solved placement. Exported conceptual SVGs use a stable layout independent of viewport size.
+
+Following a [deeper text-to-CAD source review](research/TEXT_TO_CAD.md#deeper-source-review-geometry-inspection-and-editable-controls), the existing viewer now exports top/front/right orthographic images at a common pixel scale, with geometry identity in a ZIP. The [actual retained profile export](examples/profile-plate/inspection/inspection.png) shows 60 × 40 × 4 mm mesh bounds; the [manifest](examples/profile-plate/inspection/inspection.json) identifies its 360 rendered triangles. Browser downloads were checked for ZIP integrity, retained-STL geometry hash, exact projected pixel extents, hidden-mesh exclusion, and identical output before/after display lift and zoom changes. No vision model was called. These views do not establish semantic correctness, electrical safety, dimensions of occluded features, B-rep validity, physical fit or general Blueprint parity.
