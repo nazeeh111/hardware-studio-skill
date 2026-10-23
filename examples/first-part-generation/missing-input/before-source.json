@@ -1,0 +1,49 @@
+{
+  "schema": "hardware-studio-solid-v1",
+  "title": "Instrument Mounting Plate",
+  "units": "mm",
+  "features": [
+    {
+      "id": "box1",
+      "operation": "add",
+      "shape": "box",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        48,
+        32,
+        3
+      ]
+    },
+    {
+      "id": "cyl1",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        8,
+        16,
+        0
+      ],
+      "axis": "z",
+      "radius": 2,
+      "height": 48
+    },
+    {
+      "id": "cyl2",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        40,
+        16,
+        0
+      ],
+      "axis": "z",
+      "radius": 2,
+      "height": 48
+    }
+  ],
+  "probes": []
+}

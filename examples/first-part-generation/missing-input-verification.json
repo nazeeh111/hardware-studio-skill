@@ -1,0 +1,26 @@
+{
+  "status": "passed",
+  "archive": {
+    "archive": "hardware-studio-cad-proposal.zip",
+    "sha256": "3a32c2bac2c6981123988e124e1beb1d7a85cc48ef409d65b68b0aa2ca54d21c",
+    "crc": "passed",
+    "extracted_sha256": {
+      "proposal.json": "0780e5f4f1207e1cfc9efa07fa7ccd6be510356f292abde26e4a235b3b432636",
+      "README.txt": "a3d48b282424d12cc3fc9beeb4ffdb1d872fe2dec03cc2e262f89febe6dd55a9",
+      "before-source.json": "ae276f1c421485ebafdf6bd1908456fd7710e6763ee6981924f210339c222972"
+    }
+  },
+  "proposal_path": "missing-input/proposal.json",
+  "raw_response_validation_replayed": true,
+  "response_status": "needs-input",
+  "spec": null,
+  "missing": [
+    "plate dimensions (length, width, thickness)",
+    "hole diameter and locations (x, y coordinates relative to plate origin)"
+  ],
+  "captured_before_source_matches_original_plate": true,
+  "proposed_source_exported": false,
+  "limits": [
+    "Captured before-source confirms the recorded baseline; live state preservation is a separate browser check."
+  ]
+}

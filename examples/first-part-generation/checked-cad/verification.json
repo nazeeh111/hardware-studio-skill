@@ -1,0 +1,27 @@
+{
+  "status": "fresh-process same-kernel readback passed; physical fit untested",
+  "solid_count": 1,
+  "outer_span_mm": [
+    48.0,
+    32.0,
+    3.0
+  ],
+  "volume_mm3": 4532.6017763138425,
+  "stl_outer_span_mm": [
+    48.0,
+    32.0,
+    3.0
+  ],
+  "stl_triangles": 692,
+  "probes": [],
+  "sha256": {
+    "spec.json": "5c97c6549de0b5cff2ae91277e70440ad94d77e18f3d6ce36d05af851c1c463f",
+    "solid.step": "6d53dc0321ffa23c4009428ca5a35204dac6fff2b2b7a1a1e7c2cf43e9d0ad7b",
+    "solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef"
+  },
+  "limits": [
+    "STEP writer and reader use the same OpenCascade kernel.",
+    "Probe checks test only the supplied regions, not full instruction fidelity.",
+    "No strength, tolerances, wall thickness, fastener fit, fabrication or physical measurements were validated."
+  ]
+}

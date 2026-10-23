@@ -1,0 +1,1 @@
+Local model proposal, not verified CAD. request retains the project brief and selected target part. It is context only: the project still has one shared solid source and no solved assembly or per-part CAD binding. Model text is untrusted. Review dimensions, apply explicitly, then generate and inspect a separate checked CAD package. No engineering evidence or review marks are set.

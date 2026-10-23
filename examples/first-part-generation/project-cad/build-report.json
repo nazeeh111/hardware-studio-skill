@@ -1,0 +1,44 @@
+{
+  "outer_span_mm": [
+    48.0,
+    32.0,
+    3.0
+  ],
+  "volume_mm3": 4532.601776313845,
+  "feature_history": [
+    {
+      "id": "box-0",
+      "operation": "add",
+      "volume_mm3": 4608.0,
+      "volume_delta_mm3": 4608.0,
+      "span_mm": [
+        48.0,
+        32.0,
+        3.0
+      ]
+    },
+    {
+      "id": "cyl-0",
+      "operation": "cut",
+      "volume_mm3": 4570.300888156923,
+      "volume_delta_mm3": -37.699111843076935,
+      "span_mm": [
+        48.0,
+        32.0,
+        3.0
+      ]
+    },
+    {
+      "id": "cyl-1",
+      "operation": "cut",
+      "volume_mm3": 4532.601776313845,
+      "volume_delta_mm3": -37.699111843077844,
+      "span_mm": [
+        48.0,
+        32.0,
+        3.0
+      ]
+    }
+  ],
+  "probes": []
+}

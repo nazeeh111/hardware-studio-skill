@@ -1,0 +1,82 @@
+{
+  "schema": "hardware-studio-solid-intent-v1",
+  "request": {
+    "mode": "create",
+    "instruction": "Create an M6 threaded bolt with a helical thread and a smooth rounded head. These threads and curves are essential; do not approximate them with boxes or cylinders.",
+    "context": null,
+    "base": {
+      "schema": "hardware-studio-solid-v1",
+      "title": "Instrument Mounting Plate",
+      "units": "mm",
+      "features": [
+        {
+          "id": "box1",
+          "operation": "add",
+          "shape": "box",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "size": [
+            48,
+            32,
+            3
+          ]
+        },
+        {
+          "id": "cyl1",
+          "operation": "cut",
+          "shape": "cylinder",
+          "origin": [
+            8,
+            16,
+            0
+          ],
+          "axis": "z",
+          "radius": 2,
+          "height": 48
+        },
+        {
+          "id": "cyl2",
+          "operation": "cut",
+          "shape": "cylinder",
+          "origin": [
+            40,
+            16,
+            0
+          ],
+          "axis": "z",
+          "radius": 2,
+          "height": 48
+        }
+      ],
+      "probes": []
+    }
+  },
+  "model": {
+    "name": "qwen3-vl:4b-instruct",
+    "digest": "84f7ed8042fa7cdbd902f7dcb7d0370e032095047cc3244179f263b77b5bc318",
+    "identityCheckedBeforeAndAfter": true
+  },
+  "capturedAt": "2026-10-23T23:16:24.380Z",
+  "output": {
+    "status": "unsupported",
+    "spec": null,
+    "assumptions": [],
+    "missing": [
+      "Threaded geometry requires fillets, curved profiles, or helical extrusions — unsupported by allowed primitives (boxes, cylinders, simple polygon extrusions)."
+    ],
+    "base": "{\"schema\":\"hardware-studio-solid-v1\",\"title\":\"Instrument Mounting Plate\",\"units\":\"mm\",\"features\":[{\"id\":\"box1\",\"operation\":\"add\",\"shape\":\"box\",\"origin\":[0,0,0],\"size\":[48,32,3]},{\"id\":\"cyl1\",\"operation\":\"cut\",\"shape\":\"cylinder\",\"origin\":[8,16,0],\"axis\":\"z\",\"radius\":2,\"height\":48},{\"id\":\"cyl2\",\"operation\":\"cut\",\"shape\":\"cylinder\",\"origin\":[40,16,0],\"axis\":\"z\",\"radius\":2,\"height\":48}],\"probes\":[]}"
+  },
+  "rawResponse": {
+    "model": "qwen3-vl:4b-instruct",
+    "done": true,
+    "done_reason": "stop",
+    "response": "{\n  \"status\": \"unsupported\",\n  \"spec\": null,\n  \"assumptions\": [],\n  \"missing\": [\n    \"Threaded geometry requires fillets, curved profiles, or helical extrusions — unsupported by allowed primitives (boxes, cylinders, simple polygon extrusions).\"\n  ]\n}",
+    "total_duration": 7368291833,
+    "eval_count": 63
+  },
+  "error": null,
+  "completedAt": "2026-10-23T23:16:31.795Z"
+}

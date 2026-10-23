@@ -1,0 +1,133 @@
+{
+  "status": "passed",
+  "basis": "Explicit user dimensions and independent analytic expectations; no generated probes or reports used.",
+  "numeric_absolute_tolerance": 1e-06,
+  "archives": [
+    {
+      "archive": "hardware-studio-cad-proposal.zip",
+      "sha256": "a31a8b08fcb509d047ce0a34cc8b25aa693920536c63ad6c0bc78d0102928f4b",
+      "crc": "passed",
+      "extracted_sha256": {
+        "proposal.json": "06155d37cf7ea427ea019ce4c50d735507374476b695c840210bf39b07a778cc",
+        "README.txt": "a3d48b282424d12cc3fc9beeb4ffdb1d872fe2dec03cc2e262f89febe6dd55a9",
+        "proposed-source.json": "ae276f1c421485ebafdf6bd1908456fd7710e6763ee6981924f210339c222972"
+      }
+    },
+    {
+      "archive": "hardware-studio-feature-cad.zip",
+      "sha256": "5497f3730867bb0ff87884be41816335bd9d799a248732d73279a6924bb4b24e",
+      "crc": "passed",
+      "extracted_sha256": {
+        "spec.json": "5c97c6549de0b5cff2ae91277e70440ad94d77e18f3d6ce36d05af851c1c463f",
+        "solid.step": "6d53dc0321ffa23c4009428ca5a35204dac6fff2b2b7a1a1e7c2cf43e9d0ad7b",
+        "solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "build-report.json": "d0c4b10f1cfcf4cb230055e36870d6480e9929243416fb0606b6ce9181373880",
+        "verification.json": "8491bbe72418dfead2e92d6184740db16e255e3262000446819172f5847c8f1d"
+      }
+    }
+  ],
+  "replay": {
+    "raw_response_validation_replayed": true,
+    "proposal_and_cad_source_match": true,
+    "instruction": "Create a rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z. Minimum corner is (0,0,0). Exactly two cylindrical through holes, 4 mm diameter, axis +Z, centers at (8,16) and (40,16) mm. No other features.",
+    "model_name_recorded": "qwen3-vl:4b-instruct",
+    "cut_tool_heights_mm": [
+      48,
+      48
+    ]
+  },
+  "step_sha256": "6d53dc0321ffa23c4009428ca5a35204dac6fff2b2b7a1a1e7c2cf43e9d0ad7b",
+  "measurements": {
+    "solid_count": 1,
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      48.0,
+      32.0,
+      3.0
+    ],
+    "span_mm": [
+      48.0,
+      32.0,
+      3.0
+    ],
+    "volume_mm3": 4532.6017763138425,
+    "expected_volume_mm3": 4532.601776313845,
+    "volume_absolute_error_mm3": 2.7284841053187847e-12,
+    "cylinder_faces": [
+      {
+        "radius_mm": 2.0,
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "center_xy_mm": [
+          8.0,
+          16.0
+        ],
+        "z_range_mm": [
+          0.0,
+          3.0
+        ]
+      },
+      {
+        "radius_mm": 2.0,
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "center_xy_mm": [
+          40.0,
+          16.0
+        ],
+        "z_range_mm": [
+          0.0,
+          3.0
+        ]
+      }
+    ],
+    "planar_faces": 6,
+    "independent_regions": [
+      {
+        "center_xy_mm": [
+          8.0,
+          16.0
+        ],
+        "through_core_overlap_mm3": 0.0,
+        "surrounding_annulus_material_mm3": 17.341591447815652,
+        "expected_annulus_mm3": 17.341591447815656
+      },
+      {
+        "center_xy_mm": [
+          40.0,
+          16.0
+        ],
+        "through_core_overlap_mm3": 0.0,
+        "surrounding_annulus_material_mm3": 17.341591447815638,
+        "expected_annulus_mm3": 17.341591447815656
+      }
+    ]
+  },
+  "negative_controls": [
+    {
+      "case": "missing-hole",
+      "rejected": true,
+      "reason": "Wrong analytic volume: 4570.300888156932."
+    },
+    {
+      "case": "shifted-hole",
+      "rejected": true,
+      "reason": "Wrong hole center: {'radius_mm': 2.0, 'axis': [0.0, 0.0, 1.0], 'center_xy_mm': [9.0, 16.0], 'z_range_mm': [0.0, 3.0]}."
+    }
+  ],
+  "limits": [
+    "Fresh-process readback uses the same OpenCascade kernel as generation, not another CAD system.",
+    "This single successful instruction does not establish general model accuracy.",
+    "No physical fit, fabrication, strength, safety or material measurements were performed."
+  ]
+}

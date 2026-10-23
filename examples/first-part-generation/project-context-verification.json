@@ -1,0 +1,136 @@
+{
+  "status": "passed",
+  "archives": [
+    {
+      "archive": "hardware-studio-cad-proposal.zip",
+      "sha256": "3bce6777c2caca2c779ec1d100bad19ddf6be836c8a6be6583f974bb0c8be4da",
+      "crc": "passed",
+      "extracted_sha256": {
+        "proposal.json": "bef8782d81d712e576d853e5dc6e5cea013d2a31f4447acd27fe512bab29dacf",
+        "README.txt": "a3d48b282424d12cc3fc9beeb4ffdb1d872fe2dec03cc2e262f89febe6dd55a9",
+        "proposed-source.json": "3d96a1d58973087f3bb9cb2f4e509a31a36e8a23bb327829dfcf746e79b317f2"
+      }
+    },
+    {
+      "archive": "hardware-studio-feature-cad.zip",
+      "sha256": "c88bdde0fc60b4845c51f6cfe0afa1747fd60084f7829f653f9ec43c6cae7366",
+      "crc": "passed",
+      "extracted_sha256": {
+        "spec.json": "ed8076e0c79f89a20a626c1f9471b2ffae439cb0f9036ac73d2fb9e4e3ca3958",
+        "solid.step": "52a1e87aa378f8374ab0a8bc8dc58d89811a036ddfc860d3ff40a6a90b9c0347",
+        "solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "build-report.json": "cd82735da73f1bccef87aec22b30967a94eadc66a3aab2f0666d4dae0652bd69",
+        "verification.json": "1189715cde77717d63914e39a052740e9347145240ee088eb7a2a2e912d43a3d"
+      }
+    }
+  ],
+  "proposal_path": "project-context/proposal.json",
+  "step_path": "project-cad/solid.step",
+  "step_sha256": "52a1e87aa378f8374ab0a8bc8dc58d89811a036ddfc860d3ff40a6a90b9c0347",
+  "raw_response_validation_replayed": true,
+  "proposal_and_cad_source_match": true,
+  "request_instruction": "Create the selected part exactly as described in the project brief, with no extra features.",
+  "context": {
+    "project": {
+      "id": "de300d96-0888-4137-adfb-640527462622",
+      "title": "Instrument plate / first-part trial",
+      "brief": "A rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z, minimum corner (0,0,0). Exactly two 4 mm diameter cylindrical through holes along Z, centered at (8,16) and (40,16) mm. No other features.",
+      "summary": "Mechanical-only first-part generation trial. Geometry and part fit remain unverified."
+    },
+    "target": {
+      "id": "instrument-plate",
+      "name": "Instrument mounting plate",
+      "category": "Mechanical",
+      "detail": "A rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z, minimum corner (0,0,0). Exactly two 4 mm diameter cylindrical through holes along Z, centered at (8,16) and (40,16) mm. No other features.",
+      "qty": 1
+    }
+  },
+  "baseline": null,
+  "expected_geometry_basis": "Explicit dimensions in the preserved project brief and target detail; independent constants in verify_intent.py.",
+  "measurements": {
+    "solid_count": 1,
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      48.0,
+      32.0,
+      3.0
+    ],
+    "span_mm": [
+      48.0,
+      32.0,
+      3.0
+    ],
+    "volume_mm3": 4532.6017763138425,
+    "expected_volume_mm3": 4532.601776313845,
+    "volume_absolute_error_mm3": 2.7284841053187847e-12,
+    "cylinder_faces": [
+      {
+        "radius_mm": 2.0,
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "center_xy_mm": [
+          8.0,
+          16.0
+        ],
+        "z_range_mm": [
+          0.0,
+          3.0
+        ]
+      },
+      {
+        "radius_mm": 2.0,
+        "axis": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "center_xy_mm": [
+          40.0,
+          16.0
+        ],
+        "z_range_mm": [
+          0.0,
+          3.0
+        ]
+      }
+    ],
+    "planar_faces": 6,
+    "independent_regions": [
+      {
+        "center_xy_mm": [
+          8.0,
+          16.0
+        ],
+        "through_core_overlap_mm3": 0.0,
+        "surrounding_annulus_material_mm3": 17.341591447815652,
+        "expected_annulus_mm3": 17.341591447815656
+      },
+      {
+        "center_xy_mm": [
+          40.0,
+          16.0
+        ],
+        "through_core_overlap_mm3": 0.0,
+        "surrounding_annulus_material_mm3": 17.341591447815638,
+        "expected_annulus_mm3": 17.341591447815656
+      }
+    ]
+  },
+  "cut_tool_heights_mm": [
+    3.0,
+    3.0
+  ],
+  "limits": [
+    "Fresh-process readback uses OpenCascade, the same kernel as generation.",
+    "No generated probes or build reports supplied the geometry expectations.",
+    "These trials do not establish general model accuracy or physical fit, strength, safety or fabrication performance.",
+    "Returning to the project and exporting its current workspace are separate browser checks."
+  ]
+}

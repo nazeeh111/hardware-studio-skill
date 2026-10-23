@@ -1,0 +1,90 @@
+{
+  "id": "de300d96-0888-4137-adfb-640527462622",
+  "title": "Instrument plate / first-part trial",
+  "brief": "A rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z, minimum corner (0,0,0). Exactly two 4 mm diameter cylindrical through holes along Z, centered at (8,16) and (40,16) mm. No other features.",
+  "summary": "Mechanical-only first-part generation trial. Geometry and part fit remain unverified.",
+  "starterId": "imported",
+  "createdAt": "2026-10-23T23:13:41.973Z",
+  "updatedAt": "2026-10-23T23:16:17.167Z",
+  "notes": "",
+  "tools": [],
+  "assumptions": [],
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": {
+    "schema": "hardware-studio-solid-v1",
+    "title": "Instrument mounting plate",
+    "units": "mm",
+    "features": [
+      {
+        "id": "box-0",
+        "operation": "add",
+        "shape": "box",
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "size": [
+          48,
+          32,
+          3
+        ]
+      },
+      {
+        "id": "cyl-0",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          8,
+          16,
+          0
+        ],
+        "axis": "z",
+        "radius": 2,
+        "height": 3
+      },
+      {
+        "id": "cyl-1",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          40,
+          16,
+          0
+        ],
+        "axis": "z",
+        "radius": 2,
+        "height": 3
+      }
+    ],
+    "probes": []
+  },
+  "cadUrl": "",
+  "wiringUrl": "",
+  "parts": [
+    {
+      "id": "instrument-plate",
+      "name": "Instrument mounting plate",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "A rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z, minimum corner (0,0,0). Exactly two 4 mm diameter cylindrical through holes along Z, centered at (8,16) and (40,16) mm. No other features.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [],
+  "steps": [],
+  "powerRails": [],
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

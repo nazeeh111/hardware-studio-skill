@@ -1,0 +1,80 @@
+{
+  "schema": "hardware-studio-solid-intent-v1",
+  "request": {
+    "mode": "create",
+    "instruction": "Create a rectangular instrument mounting plate, 48 mm along X, 32 mm along Y, 3 mm thick along Z. Minimum corner is (0,0,0). Exactly two cylindrical through holes, 4 mm diameter, axis +Z, centers at (8,16) and (40,16) mm. No other features.",
+    "context": null,
+    "base": null
+  },
+  "model": {
+    "name": "qwen3-vl:4b-instruct",
+    "digest": "84f7ed8042fa7cdbd902f7dcb7d0370e032095047cc3244179f263b77b5bc318",
+    "identityCheckedBeforeAndAfter": true
+  },
+  "capturedAt": "2026-10-23T23:09:10.793Z",
+  "output": {
+    "status": "ready",
+    "spec": {
+      "schema": "hardware-studio-solid-v1",
+      "title": "Instrument Mounting Plate",
+      "units": "mm",
+      "features": [
+        {
+          "id": "box1",
+          "operation": "add",
+          "shape": "box",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "size": [
+            48,
+            32,
+            3
+          ]
+        },
+        {
+          "id": "cyl1",
+          "operation": "cut",
+          "shape": "cylinder",
+          "origin": [
+            8,
+            16,
+            0
+          ],
+          "axis": "z",
+          "radius": 2,
+          "height": 48
+        },
+        {
+          "id": "cyl2",
+          "operation": "cut",
+          "shape": "cylinder",
+          "origin": [
+            40,
+            16,
+            0
+          ],
+          "axis": "z",
+          "radius": 2,
+          "height": 48
+        }
+      ],
+      "probes": []
+    },
+    "assumptions": [],
+    "missing": [],
+    "base": null
+  },
+  "rawResponse": {
+    "model": "qwen3-vl:4b-instruct",
+    "done": true,
+    "done_reason": "stop",
+    "response": "{\n  \"status\": \"ready\",\n  \"spec\": {\n    \"schema\": \"hardware-studio-solid-v1\",\n    \"title\": \"Instrument Mounting Plate\",\n    \"units\": \"mm\",\n    \"features\": [\n      {\n        \"id\": \"box1\",\n        \"operation\": \"add\",\n        \"shape\": \"box\",\n        \"origin\": [0, 0, 0],\n        \"size\": [48, 32, 3]\n      },\n      {\n        \"id\": \"cyl1\",\n        \"operation\": \"cut\",\n        \"shape\": \"cylinder\",\n        \"origin\": [8, 16, 0],\n        \"axis\": \"z\",\n        \"radius\": 2,\n        \"height\": 48\n      },\n      {\n        \"id\": \"cyl2\",\n        \"operation\": \"cut\",\n        \"shape\": \"cylinder\",\n        \"origin\": [40, 16, 0],\n        \"axis\": \"z\",\n        \"radius\": 2,\n        \"height\": 48\n      }\n    ],\n    \"probes\": []\n  },\n  \"assumptions\": [],\n  \"missing\": []\n}",
+    "total_duration": 21791733875,
+    "eval_count": 264
+  },
+  "error": null,
+  "completedAt": "2026-10-23T23:09:36.677Z"
+}
