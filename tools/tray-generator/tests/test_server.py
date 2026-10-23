@@ -1,5 +1,6 @@
 import base64
 import io
+import http.client
 import json
 import sys
 import tempfile
@@ -26,6 +27,31 @@ WINDOW_EXAMPLE = EXAMPLE.with_name('pico-neopixel-window-cover.json')
 
 
 class LocalServerTests(unittest.TestCase):
+    def test_static_files_require_local_host_and_do_not_list_directories(self):
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        try:
+            for method in ('GET', 'HEAD'):
+                for host, path, expected in (
+                    ('outside.example', '/index.html', 403),
+                    ('127.0.0.1', '/index.html', 403),
+                    (f'127.0.0.1:{server.server_port}', '/index.html', 200),
+                    (f'127.0.0.1:{server.server_port}', '/tools/tray-generator/', 403),
+                ):
+                    connection = http.client.HTTPConnection('127.0.0.1', server.server_port, timeout=10)
+                    try:
+                        connection.request(method, path, headers={'Host': host})
+                        response = connection.getresponse()
+                        self.assertEqual(response.status, expected, (method, host, path))
+                        response.read()
+                    finally:
+                        connection.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=5)
+
     def test_browser_fit_endpoint_clear_collision_and_origin_gate(self):
         with tempfile.TemporaryDirectory() as temporary:
             component = Path(temporary) / 'block.step'

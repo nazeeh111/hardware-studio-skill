@@ -76,5 +76,8 @@ try {
   }
   if (issues.length) { for (const issue of issues) console.error(`ERROR ${issue}`); process.exit(1); }
   console.log(`Structure OK: ${project.parts.length} parts, ${project.wires.length} connections, ${project.steps.length} steps.`);
+  const unnamed = project.wires.filter(wire => !String(wire.fromPin || '').trim() || !String(wire.toPin || '').trim()).length;
+  const assemblyLabels = project.wires.filter(wire => /^ASSIGNED\b/i.test(String(wire.fromPin || '')) || /^ASSIGNED\b/i.test(String(wire.toPin || ''))).length;
+  if (unnamed || assemblyLabels) console.log(`Review mapping: ${unnamed} connections lack a named endpoint; ${assemblyLabels} use project-assigned positions or rails that still need a physical hole map.`);
   console.log('Engineering, sourcing and safety are not validated by this checker.');
 } catch (error) { console.error(`ERROR ${error.message}`); process.exit(1); }

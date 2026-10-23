@@ -28,6 +28,16 @@ test('lighting review catches a control-only LED connection', () => {
   assert.equal(validate(p).some(issue => issue.text.includes('explicit supply and ground/return')), true);
 });
 
+test('assembly-assigned endpoints stay visible as physical mapping work', () => {
+  const p = makeProject(STARTERS[0]);
+  p.parts[0].pins = ['ASSIGNED PORT 1'];
+  p.parts[1].pins = ['SDA'];
+  p.wires[0].fromPin = 'ASSIGNED PORT 1';
+  p.wires[0].toPin = 'SDA';
+  assert.ok(validate(p).some(issue => issue.kind === 'todo' && issue.text.includes('map actual connector positions and board holes')));
+  assert.match(wiringCsv(p), /ASSEMBLY LABEL \/ HOLE UNMAPPED/);
+});
+
 test('CSV export quotes names and notes safely', () => {
   const p = makeProject(STARTERS[0]);
   p.parts[0].name = 'Sensor, "special"';
@@ -68,6 +78,8 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   p.parts[0].checkedAt = new Date().toISOString();
   p.parts[0].verified = true;
   p.review = { electrical: true, mechanical: true, sourcing: true };
+  p.steps[0].done = 'false';
+  p.steps[1].done = true;
   const imported = safeProject(p);
   assert.equal(imported.parts[0].sourceUrl, '');
   assert.equal(imported.cadUrl, '');
@@ -77,6 +89,7 @@ test('JSON import rejects malformed shape and removes untrusted source schemes',
   assert.equal(imported.parts[0].verified, false);
   assert.equal(imported.parts[0].checkedAt, '');
   assert.deepEqual(imported.review, { electrical: false, mechanical: false, sourcing: false });
+  assert.ok(imported.steps.every(step => step.done === false));
 });
 
 test('tray geometry survives project JSON import and revision restore while new geometry resets mechanical review', () => {

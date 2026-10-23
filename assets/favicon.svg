@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hardware Studio">
+  <rect width="64" height="64" rx="7" fill="#14211f"/>
+  <path d="M14 15h8v14h16V15h8v34h-8V36H22v13h-8z" fill="#f4f1e8"/>
+  <path d="M48 37h4v6h6v4h-6v6h-4v-6h-6v-4h6z" fill="#d6ed72"/>
+</svg>

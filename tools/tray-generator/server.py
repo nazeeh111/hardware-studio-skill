@@ -127,14 +127,23 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        if not self._local_origin():
+            return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            if not self._local_origin():
-                return self._json(403, {'error': 'Local origin required.'})
             return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1'})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()
+
+    def do_HEAD(self):
+        if not self._local_origin():
+            return self.send_error(403, 'Local origin required.')
+        return super().do_HEAD()
+
+    def list_directory(self, path):
+        self.send_error(403, 'Directory listing disabled.')
+        return None
 
     def do_POST(self):
         path = urlsplit(self.path).path

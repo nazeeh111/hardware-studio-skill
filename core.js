@@ -226,6 +226,8 @@ export function validate(project) {
   }
   const unmappedPins = project.wires.filter(w => !String(w.fromPin || '').trim() || !String(w.toPin || '').trim()).length;
   if (unmappedPins) issues.push({ kind: 'todo', text: `${unmappedPins} connection${unmappedPins === 1 ? '' : 's'} need an exact pin or terminal at both ends.` });
+  const assignedEndpoints = project.wires.filter(w => /^ASSIGNED\b/i.test(String(w.fromPin || '')) || /^ASSIGNED\b/i.test(String(w.toPin || ''))).length;
+  if (assignedEndpoints) issues.push({ kind: 'todo', text: `${assignedEndpoints} connection${assignedEndpoints === 1 ? '' : 's'} use project-assigned port or rail labels; map actual connector positions and board holes before assembly.` });
   for (const part of project.parts.filter(p => /lighting/i.test(p.category) && /\b(?:led|light|lamp|neopixel)\b/i.test(p.name))) {
     const labels = project.wires.filter(w => w.from === part.id || w.to === part.id)
       .map(w => `${w.signal || ''} ${w.fromPin || ''} ${w.toPin || ''}`);
@@ -301,6 +303,7 @@ export function wiringCsv(project) {
     if (!String(wire.fromPin || '').trim() || !String(wire.toPin || '').trim()) return 'PIN ENDPOINT MISSING';
     if ((from.pins?.length && !from.pins.includes(wire.fromPin)) || (to.pins?.length && !to.pins.includes(wire.toPin))) return 'PIN NOT IN RECORDED INVENTORY';
     if (!from.pins?.length || !to.pins?.length) return 'PIN INVENTORY MISSING';
+    if (/^ASSIGNED\b/i.test(wire.fromPin) || /^ASSIGNED\b/i.test(wire.toPin)) return 'ASSEMBLY LABEL / HOLE UNMAPPED';
     return 'RECORDED NAMES ONLY';
   };
   return [
@@ -329,7 +332,7 @@ export function safeProject(input) {
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), pins: safePinList(p.pins), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
     wires: input.wires.map(w => ({ from: String(w.from || ''), fromPin: String(w.fromPin || '').slice(0, 100), to: String(w.to || ''), toPin: String(w.toPin || '').slice(0, 100), signal: String(w.signal || '').slice(0, 160), voltage: String(w.voltage || '').slice(0, 80), note: String(w.note || '').slice(0, 1000) })),
     mechanicalConnections: (input.mechanicalConnections || []).map(link => ({ from: String(link.from || '').slice(0, 80), to: String(link.to || '').slice(0, 80), label: String(link.label || '').slice(0, 240), note: String(link.note || '').slice(0, 1000) })),
-    steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), partIds: safeStepPartIds(s.partIds), done: Boolean(s.done) })),
+    steps: input.steps.map((s, i) => ({ id: `step-${i + 1}`, phase: String(s.phase || 'Build').slice(0, 80), title: String(s.title || '').slice(0, 200), detail: String(s.detail || '').slice(0, 2000), partIds: safeStepPartIds(s.partIds), done: false })),
     powerRails: (input.powerRails || []).map((rail, i) => ({ id: String(rail.id || `rail-${i}`).slice(0, 80), name: String(rail.name || `Rail ${i + 1}`).slice(0, 100), voltageV: Number(rail.voltageV), supplyCurrentMa: rail.supplyCurrentMa == null || rail.supplyCurrentMa === '' ? null : Number(rail.supplyCurrentMa), marginPercent: Number(rail.marginPercent ?? 20), sourcePartId: String(rail.sourcePartId || '').slice(0, 80), loads: rail.loads.map(load => ({ partId: String(load.partId || '').slice(0, 80), currentMaEach: load.currentMaEach == null || load.currentMaEach === '' ? null : Number(load.currentMaEach) })) })),
     review: { electrical: false, mechanical: false, sourcing: false }
   };

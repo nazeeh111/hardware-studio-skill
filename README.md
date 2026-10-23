@@ -2,13 +2,13 @@
 
 An original, local-first hardware design workspace informed by a public study of [Blueprint.io](https://www.blueprint.io/). It helps turn a small electronics idea into an editable project brief, parts list, connection map, conceptual assembly view, build sequence, and review record. It does not copy Blueprint's code, graphics, brand, private data, or generated project packages.
 
-**[Open the live app](https://nazeeh111.github.io/hardware-studio-skill/)** · [Read the design analysis](./BLUEPRINT_ANALYSIS.md) · [Use the Codex skill](./skills/hardware-studio/SKILL.md)
+**[Open the live app](https://nazeeh111.github.io/hardware-studio-skill/)** · [Read the design analysis](./BLUEPRINT_ANALYSIS.md) · [Review checks and open gaps](./AUDIT.md) · [Use the Codex skill](./skills/hardware-studio/SKILL.md)
 
 ![Hardware Studio desktop interface](assets/studio-desktop.png)
 
-[View the narrow layout](assets/studio-narrow.png).
+[View the narrow layout](assets/studio-narrow.png) or [phone layout](assets/studio-phone.png).
 
-For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path. Its [connection register](examples/pico-neopixel-tray/connections.csv) separates 28 proposed conductor paths; six still lack a named endpoint. The proposed 5 V / 2 A source, two separate five-position splices, off-tray shifter carrier and 22 AWG wire are listed, while the power worksheet flags missing load and branch evidence. Assigned connector positions and carrier rail labels are not physical assembly verification. It remains a prototype with documented open checks.
+For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path. Its [connection register](examples/pico-neopixel-tray/connections.csv) separates 28 proposed conductor paths; six still lack a named endpoint, while 17 use assembly-assigned labels that need a physical hole map. The proposed 5 V / 2 A source, two separate five-position splices, off-tray shifter carrier and 22 AWG wire are listed, while the power worksheet flags missing load and branch evidence. It remains a prototype with documented open checks.
 The [open-window cover revision](examples/pico-neopixel-tray/README.md#open-window-cover-revision) cuts a measured aperture above the modeled Stick and retains the lid STEP, readback, maker-model fit report and Blender scene. It does not include a diffuser or verified optical design.
 
 To create a new rectangular tray and optional separate lift-off cover, use the [parametric tray generator](tools/tray-generator/README.md) with a millimeter JSON specification. It exports fresh STEP, STL and a dimensioned layout, then reopens the exports in a separate process to check their integrity and nominal lid/tray intersection. Component fit and fabrication checks still need separate evidence.
@@ -23,10 +23,10 @@ The [tray workbench](tray.html) provides a scaled browser plan and controls for 
 From this folder:
 
 ```sh
-python3 -m http.server 4173
+python3 -m http.server 4173 --bind 127.0.0.1
 ```
 
-Open `http://localhost:4173` in a browser. No account, paid API or server database is required. Projects and recent revisions stay in that browser's local storage. Export JSON regularly for a durable copy; clearing browser data removes local projects and history. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
+Open `http://127.0.0.1:4173` in a browser. No account, paid API or server database is required. Projects and recent revisions stay in that browser's local storage. Export JSON regularly for a durable copy; clearing browser data removes local projects and history. The public GitHub Pages app stores data on the `nazeeh111.github.io` browser origin, which is shared with other sites under that same host. Use the loopback version for sensitive drafts. The interface fetches Google Fonts when online; it falls back to local system fonts offline.
 
 Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. Add a sketch or photo if useful; image drafting requires a model marked **vision** in the selector. If Ollama is unavailable, the editor and starter designs still work. The brief and optional resized image go only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
 

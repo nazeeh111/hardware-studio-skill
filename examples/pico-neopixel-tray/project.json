@@ -697,5 +697,19 @@
     "All fit and electrical work remains a prototype plan until physical and bench checks are recorded.",
     "Two WAGO 221-415 splices, an Adafruit #1609 carrier and #288/#290 22 AWG wire are proposed parts, not purchased or bench checked.",
     "Project-assigned WAGO port numbers and carrier bus labels require physical marking, hole mapping and unpowered continuity checks."
+  ],
+  "mechanicalConnections": [
+    {
+      "from": "tray",
+      "to": "pico-r3",
+      "label": "Four tray locator pins enter Pico mounting holes",
+      "note": "CAD nominal: 1.6 mm pins in 2.1 mm holes, 0.25 mm radial clearance; four hole centers from the official Pico STEP. They locate the board but do not retain it. Physical print and purchased-board fit remain untested."
+    },
+    {
+      "from": "tray",
+      "to": "neopixel-1426",
+      "label": "Two tray locator pins enter Stick mounting holes",
+      "note": "CAD nominal: 1.6 mm pins in 2.2 mm holes, 0.30 mm radial clearance. Manufacturer STEP and published dimensions were compared; purchased Stick revision, insertion and retention remain untested."
+    }
   ]
 }

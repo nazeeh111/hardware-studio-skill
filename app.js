@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=30';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=32';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { createZip } from './zip.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=2';
@@ -215,6 +215,19 @@ function save(reason = 'edit', { skipRevision = false } = {}) {
   }
   return true;
 }
+function saveWithRollback(project, before, reason) {
+  if (save(reason)) return true;
+  for (const key of Object.keys(project)) delete project[key];
+  Object.assign(project, before);
+  return false;
+}
+function editProject(project, reason, change) {
+  const before = structuredClone(project);
+  change();
+  const saved = saveWithRollback(project, before, reason);
+  render();
+  return saved;
+}
 function download(name, contents, type) {
   const blob = new Blob([contents], { type }); const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = name; a.click();
@@ -238,11 +251,9 @@ function syncCurrentTrayDraft(p) {
   try { spec = traySpecForProject(p); }
   catch { showToast('The saved tray draft is unreadable. Export the project before changing it.'); return false; }
   if (!spec) return true;
-  const previous = p.traySpec ?? null, priorReview = p.review.mechanical;
+  const before = structuredClone(p);
   if (!setProjectTraySpec(p, spec)) return true;
-  if (save('Before updating tray geometry')) return true;
-  p.traySpec = previous; p.review.mechanical = priorReview;
-  return false;
+  return saveWithRollback(p, before, 'Before updating tray geometry');
 }
 function writeTraySidecar(p) {
   try {
@@ -413,7 +424,7 @@ function renderPower(p) {
   return panelHead('ELECTRICAL / BUDGET', 'Power worksheet', 'Record one rail at a time. Use peak load current from exact component data and the rated supply output.', '<button id="add-rail" class="small-button" type="button">＋ Add rail</button>') + (cards || '<div class="empty"><strong>No power rail recorded</strong>Add a rail to compare rated supply current with assigned loads.</div>') + '<div class="notice">A result covers only the loads entered for that rail. It does not verify voltage compatibility, startup surges, cable or connector ratings, regulator heat, or unassigned parts.</div>';
 }
 function assemblySvg(p) {
-  const parts = p.parts.slice(0, 10);
+  const parts = p.parts.slice(0, 30);
   const cols = window.innerWidth < 530 ? 1 : 2;
   const width = cols === 1 ? 370 : 720;
   const height = 60 + Math.ceil(parts.length / cols) * 150;
@@ -433,7 +444,7 @@ function assemblySvg(p) {
     const [line1, line2] = splitName(part.name);
     return `<g><title>${html(part.name)}</title><rect x="${x}" y="${y}" width="332" height="137" fill="#fffefa" stroke="#c8d6c5"/><rect x="${x}" y="${y}" width="4" height="137" fill="${/power/.test(part.category.toLowerCase()) ? '#b8cf64' : '#82a78e'}"/><text x="${x + 17}" y="${y + 25}" font-size="10" font-family="monospace" fill="#73906d">${String(i + 1).padStart(2, '0')} / ${html(part.category.toUpperCase())}</text><text x="${x + 17}" y="${y + 65}" font-size="15" font-family="Arial" font-weight="bold" fill="#14211f">${html(line1)}</text>${line2 ? `<text x="${x + 17}" y="${y + 83}" font-size="15" font-family="Arial" font-weight="bold" fill="#14211f">${html(line2)}</text>` : ''}<text x="${x + 17}" y="${y + 113}" font-size="9" font-family="monospace" fill="#89978a">QTY ${html(part.qty)} · CONCEPT ONLY</text><g transform="translate(${x + 190} ${y + 37}) scale(.93)">${icon(part)}</g></g>`;
   }).join('');
-  return `<svg class="assembly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Conceptual part inventory, not dimensioned CAD"><rect width="${width}" height="${height}" fill="#f5f7f0"/><text x="20" y="28" font-size="10" font-family="monospace" font-weight="bold" letter-spacing="2" fill="#607b66">COMPONENT INDEX</text><text x="${width - 108}" y="28" font-size="9" font-family="monospace" fill="#79917c">NOT TO SCALE</text>${cards}</svg>`;
+  return `<svg class="assembly-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Conceptual part inventory, ${parts.length} of ${p.parts.length} parts shown, not dimensioned CAD"><rect width="${width}" height="${height}" fill="#f5f7f0"/><text x="20" y="28" font-size="10" font-family="monospace" font-weight="bold" letter-spacing="2" fill="#607b66">COMPONENT INDEX / ${parts.length} OF ${p.parts.length}</text><text x="${width - 108}" y="28" font-size="9" font-family="monospace" fill="#79917c">NOT TO SCALE</text>${cards}</svg>`;
 }
 function renderAssembly(p) {
   const evidence = safeUrl(p.cadUrl) ? `<div class="notice">Attached dimensioned work: <a href="${html(safeUrl(p.cadUrl))}" target="_blank" rel="noopener noreferrer">Open CAD source and checks ↗</a>. Review its stated scope before relying on it.</div>` : '';
@@ -442,7 +453,7 @@ function renderAssembly(p) {
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const mounts = (p.mechanicalConnections || []).map((link, index) => `<div class="mount-row"><div><strong>${html(labels[link.from] || 'Missing part')} → ${html(labels[link.to] || 'Missing part')}</strong><span>${html(link.label)}</span>${link.note ? `<small>${html(link.note)}</small>` : ''}</div><button class="text-link" data-edit-mount="${index}" type="button">Edit</button></div>`).join('');
   const trayWorkbench = `./tray.html?project=${encodeURIComponent(p.id)}&title=${encodeURIComponent(p.title)}`;
-  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + tray + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
+  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + tray + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + (p.parts.length > 30 ? `<p class="assembly-legend">Preview shows the first 30 of ${p.parts.length} parts. Use the Parts tab for the complete list.</p>` : '') + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
 }
 function renderBuild(p) {
   const names = new Map(p.parts.map(part => [part.id, part.name]));
@@ -486,6 +497,7 @@ function closeEditor() { $('#editor-dialog').close(); editor = null; }
 function saveEditor(event) {
   event.preventDefault(); if (!editor) return;
   const p = current(); const form = new FormData($('#editor-form')); const { kind, index } = editor;
+  const before = structuredClone(p);
   if (kind === 'part') {
     let pins;
     try { pins = safePinList(String(form.get('pins') || '').split(/\r?\n/).map(value => value.trim()).filter(Boolean)); }
@@ -537,22 +549,25 @@ function saveEditor(event) {
     if (wiringUrl !== (p.wiringUrl || '')) p.review.electrical = false;
     p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; p.wiringUrl = wiringUrl;
   }
-  closeEditor(); const saved = save(`Before ${kind} edit`); render(); if (saved) showToast('Saved locally.');
+  if (!saveWithRollback(p, before, `Before ${kind} edit`)) return editorError('This edit was not saved. Export the project or free browser storage, then try again.');
+  closeEditor(); render(); showToast('Saved locally.');
 }
 function deleteEntry() {
   if (!editor || editor.index < 0) return;
   const p = current(), { kind, index } = editor;
   if (!window.confirm(`Delete this ${kind} from the project?`)) return;
+  const before = structuredClone(p);
   if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.mechanicalConnections = (p.mechanicalConnections || []).filter(link => link.from !== id && link.to !== id); p.steps.forEach(step => { step.partIds = (step.partIds || []).filter(partId => partId !== id); }); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'mount') { p.mechanicalConnections.splice(index, 1); p.review.mechanical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
-  closeEditor(); const saved = save(`Before deleting ${kind}`); render(); if (saved) showToast('Entry removed.');
+  if (!saveWithRollback(p, before, `Before deleting ${kind}`)) return editorError('The entry was not deleted because the change could not be saved.');
+  closeEditor(); render(); showToast('Entry removed.');
 }
 function handleClick(event) {
   const button = event.target.closest('button'); if (!button) return;
   const p = current();
-  if (button.dataset.project) { currentId = button.dataset.project; activeTab = 'overview'; save(); render(); }
+  if (button.dataset.project) { const priorId = currentId; currentId = button.dataset.project; activeTab = 'overview'; if (!save()) currentId = priorId; render(); }
   else if (button.dataset.starter) addProject(makeProject(STARTERS.find(s => s.id === button.dataset.starter)));
   else if (button.dataset.tab) { activeTab = button.dataset.tab; render(); }
   else if (button.dataset.editPart != null) openEditor('part', Number(button.dataset.editPart));
@@ -576,7 +591,7 @@ function handleClick(event) {
   else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
   else if (button.id === 'remove-reference' && !draftController) { pendingReference = null; renderReferenceInput(); }
-  else if (button.id === 'remove-project-reference') { const previous = p.referenceImage; p.referenceImage = null; if (save('Before removing visual reference')) { render(); showToast('Visual reference removed.'); } else p.referenceImage = previous; }
+  else if (button.id === 'remove-project-reference') { if (editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
   else if (button.id === 'rename-project') openEditor('title', 0);
   else if (button.id === 'history-project') { if (syncCurrentTrayDraft(p)) openHistory(); }
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
@@ -610,10 +625,10 @@ function handleClick(event) {
   else if (button.id === 'export-connections') { download(`${filename(p)}-connections.csv`, wiringCsv(p), 'text/csv'); showToast('Connection register downloaded. Pin names still need independent review.'); }
   else if (button.id === 'export-diagram') { const svg = $('#panel svg'); if (svg) { download(`${filename(p)}-${activeTab}.svg`, new XMLSerializer().serializeToString(svg), 'image/svg+xml'); showToast('Diagram downloaded.'); } }
   else if (button.id === 'add-part') openEditor('part');
-  else if (button.id === 'add-rail') { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; save('Before adding power rail'); render(); }
-  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; save('Before adding rail load'); render(); } }
-  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); p.powerRails?.[railIndex]?.loads.splice(loadIndex, 1); p.review.electrical = false; save('Before removing rail load'); render(); }
-  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; p.powerRails.splice(index, 1); p.review.electrical = false; save('Before removing power rail'); render(); }
+  else if (button.id === 'add-rail') editProject(p, 'Before adding power rail', () => { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; });
+  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) editProject(p, 'Before adding rail load', () => { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; }); }
+  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); if (p.powerRails?.[railIndex]?.loads?.[loadIndex]) editProject(p, 'Before removing rail load', () => { p.powerRails[railIndex].loads.splice(loadIndex, 1); p.review.electrical = false; }); }
+  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; if (p.powerRails?.[index]) editProject(p, 'Before removing power rail', () => { p.powerRails.splice(index, 1); p.review.electrical = false; }); }
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
   else if (button.id === 'add-mount') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('mount'); }
   else if (button.id === 'add-step') openEditor('step');
@@ -636,16 +651,16 @@ function handleChange(event) {
     if (key === 'supplyCurrentMa' && value != null && (!Number.isFinite(value) || value <= 0)) return showToast('Enter a positive supply rating.');
     if (key === 'marginPercent' && (!Number.isFinite(value) || value < 0 || value >= 100)) return showToast('Enter a margin target from 0 to 99%.');
     if (key === 'name' && !value) return showToast('Give the rail a name.');
-    rail[key] = value; p.review.electrical = false; save('Before changing power rail'); render(); return;
+    editProject(p, 'Before changing power rail', () => { rail[key] = value; p.review.electrical = false; }); return;
   }
   if (target.dataset.loadRail != null) {
     const load = p.powerRails?.[Number(target.dataset.loadRail)]?.loads?.[Number(target.dataset.loadIndex)]; if (!load) return;
     const value = target.value === '' ? null : Number(target.value);
     if (value != null && (!Number.isFinite(value) || value < 0)) return showToast('Enter a nonnegative peak current or leave it blank.');
-    load.currentMaEach = value; p.review.electrical = false; save('Before changing load current'); render(); return;
+    editProject(p, 'Before changing load current', () => { load.currentMaEach = value; p.review.electrical = false; }); return;
   }
-  if (target.dataset.doneStep != null) { p.steps[Number(target.dataset.doneStep)].done = target.checked; save('Before changing step progress'); render(); }
-  if (target.dataset.review) { p.review[target.dataset.review] = target.checked; save('Before changing review mark'); renderReview(p); }
+  if (target.dataset.doneStep != null) editProject(p, 'Before changing step progress', () => { p.steps[Number(target.dataset.doneStep)].done = target.checked; });
+  if (target.dataset.review) editProject(p, 'Before changing review mark', () => { p.review[target.dataset.review] = target.checked; });
   if (target.id === 'import-file') {
     const file = target.files?.[0]; if (!file) return;
     if (file.size > 2_000_000) { showToast('Choose a project smaller than 2 MB.'); target.value = ''; return; }
@@ -688,7 +703,7 @@ function initialize() {
   $('#editor-form').addEventListener('submit', saveEditor);
   $('#editor-form').addEventListener('change', event => { if (event.target.name === 'from' || event.target.name === 'to') updatePinHints(); });
   $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; });
-  $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { current().notes = event.target.value; if (save('Before editing notes')) showToast('Notes saved locally.'); } });
+  $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { const p = current(), before = structuredClone(p); p.notes = event.target.value; if (saveWithRollback(p, before, 'Before editing notes')) showToast('Notes saved locally.'); } });
   render();
   renderBriefGuidance();
   if (unreadableSavedData !== null) showRecovery();
