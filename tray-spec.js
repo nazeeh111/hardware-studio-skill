@@ -56,7 +56,17 @@ export function validateTraySpec(raw) {
     const skirtWall = finite(raw.lid.skirtWall, 'Cover skirt wall', .5, 10);
     const clearance = finite(raw.lid.clearance, 'Cover side clearance', 0, 5);
     if (skirtDepth >= height - floor || length + 2 * (clearance + skirtWall) > 500 || width + 2 * (clearance + skirtWall) > 500) throw new Error('Cover skirt reaches the floor or its outside envelope exceeds 500 mm.');
-    lid = { thickness, skirtDepth, skirtWall, clearance };
+    let window = null;
+    if (raw.lid.window != null) {
+      if (typeof raw.lid.window !== 'object' || Array.isArray(raw.lid.window)) throw new Error('Cover window must be a measured rectangle.');
+      const x = finite(raw.lid.window.x, 'Window X');
+      const y = finite(raw.lid.window.y, 'Window Y');
+      const windowLength = finite(raw.lid.window.length, 'Window length', 2);
+      const windowWidth = finite(raw.lid.window.width, 'Window width', 2);
+      if (x < wall + 1 || y < wall + 1 || x + windowLength > length - wall - 1 || y + windowWidth > width - wall - 1) throw new Error('Cover window must leave at least 1 mm of plate inside every tray wall.');
+      window = { x, y, length: windowLength, width: windowWidth };
+    }
+    lid = { thickness, skirtDepth, skirtWall, clearance, window };
   }
   return { schema, title: String(raw.title || 'Tray study').trim().slice(0, 100), units: 'mm', outer: { length, width, height }, wall, floor, cutouts, mounts, lid };
 }

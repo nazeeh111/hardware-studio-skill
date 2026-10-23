@@ -22,6 +22,7 @@ from generate import box
 
 EXAMPLE = Path(__file__).resolve().parents[1] / 'examples' / 'pico-neopixel-tray.json'
 COVER_EXAMPLE = EXAMPLE.with_name('pico-neopixel-cover-study.json')
+WINDOW_EXAMPLE = EXAMPLE.with_name('pico-neopixel-window-cover.json')
 
 
 class LocalServerTests(unittest.TestCase):
@@ -65,6 +66,12 @@ class LocalServerTests(unittest.TestCase):
                 self.assertLessEqual(cover_collision['components'][0]['tray_overlap_mm3'], .01)
                 self.assertGreater(cover_collision['components'][0]['lid_overlap_mm3'], 20)
                 self.assertTrue(cover_collision['components'][0]['lid_interference_above_threshold'])
+                request['traySpec'] = json.loads(WINDOW_EXAMPLE.read_text())
+                request['components'][0]['translationMm'] = [20, 30, 13]
+                with post(base) as response:
+                    through_window = json.load(response)
+                self.assertEqual(through_window['status'], 'no modeled intersection above threshold')
+                self.assertLessEqual(through_window['components'][0]['lid_overlap_mm3'], .01)
             finally:
                 server.shutdown()
                 server.server_close()

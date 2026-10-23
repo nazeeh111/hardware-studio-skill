@@ -112,7 +112,19 @@ def validate(spec):
         clearance = number(raw_lid.get('clearance'), 'lid.clearance', upper=5)
         if skirt_depth >= height - floor or length + 2 * (clearance + skirt_wall) > 500 or width + 2 * (clearance + skirt_wall) > 500:
             raise ValueError('lid skirt reaches the floor or its outside envelope exceeds 500 mm')
-        lid = dict(thickness=thickness, skirtDepth=skirt_depth, skirtWall=skirt_wall, clearance=clearance)
+        raw_window = raw_lid.get('window')
+        window = None
+        if raw_window is not None:
+            if not isinstance(raw_window, dict):
+                raise ValueError('lid.window must be a measured rectangle')
+            x = number(raw_window.get('x'), 'lid.window.x')
+            y = number(raw_window.get('y'), 'lid.window.y')
+            window_length = number(raw_window.get('length'), 'lid.window.length', lower=2)
+            window_width = number(raw_window.get('width'), 'lid.window.width', lower=2)
+            if x < wall + 1 or y < wall + 1 or x + window_length > length - wall - 1 or y + window_width > width - wall - 1:
+                raise ValueError('lid.window must leave at least 1 mm of plate inside every tray wall')
+            window = dict(x=x, y=y, length=window_length, width=window_width)
+        lid = dict(thickness=thickness, skirtDepth=skirt_depth, skirtWall=skirt_wall, clearance=clearance, window=window)
     return dict(title=str(spec.get('title') or 'Tray study')[:100], outer=dict(length=length, width=width, height=height), wall=wall, floor=floor, mounts=normalized_mounts, cutouts=normalized_cutouts, lid=lid)
 
 
@@ -184,6 +196,9 @@ def make_lid(spec):
         else: cutter = box(start, width + clearance - 1, low - .01, end - start, skirt_wall + 2, high - low + .02)
         skirt = boolean(BRepAlgoAPI_Cut, skirt, cutter)
     lid = boolean(BRepAlgoAPI_Fuse, lid, skirt)
+    if spec['lid']['window'] is not None:
+        opening = spec['lid']['window']
+        lid = boolean(BRepAlgoAPI_Cut, lid, box(opening['x'], opening['y'], height - .1, opening['length'], opening['width'], thickness + .2))
     return lid
 
 
@@ -220,6 +235,12 @@ def layout_svg(spec):
         margin = (spec['lid']['clearance'] + spec['lid']['skirtWall']) * scale
         cover = f'<rect x="{x0 - margin:.2f}" y="{y0 - margin:.2f}" width="{w + 2 * margin:.2f}" height="{h + 2 * margin:.2f}" fill="none" stroke="#bd9d3a" stroke-width="2" stroke-dasharray="6 4"/>'
         cover_note = f' · LIFT-OFF COVER {spec["lid"]["thickness"]:g} THICK / {spec["lid"]["clearance"]:g} SIDE CLEARANCE'
+    window_mark = ''
+    if spec['lid'] and spec['lid']['window']:
+        opening = spec['lid']['window']
+        wx, wy = x0 + opening['x'] * scale, y0 + opening['y'] * scale
+        wl, ww = opening['length'] * scale, opening['width'] * scale
+        window_mark = f'<rect x="{wx:.2f}" y="{wy:.2f}" width="{wl:.2f}" height="{ww:.2f}" fill="#e4da6c" fill-opacity=".23" stroke="#aa8e30" stroke-width="2"/><text x="{wx + 8:.2f}" y="{wy + 16:.2f}" font-family="monospace" font-size="10" fill="#705d20">LIGHT OPENING {opening["length"]:g} × {opening["width"]:g} mm</text>'
     mounts = ''.join(f'<g><circle cx="{x0 + m["x"] * scale:.2f}" cy="{y0 + m["y"] * scale:.2f}" r="{m["bossRadius"] * scale:.2f}" fill="none" stroke="#728d69" stroke-width="2"/><circle cx="{x0 + m["x"] * scale:.2f}" cy="{y0 + m["y"] * scale:.2f}" r="3" fill="#728d69"/><text x="{x0 + (m["x"] + m["bossRadius"]) * scale + 6:.2f}" y="{y0 + m["y"] * scale - 5:.2f}" font-size="10" fill="#233d31">{html.escape(m["id"])}</text></g>' for m in spec['mounts'])
     cutouts = ''
     for cut in spec['cutouts']:
@@ -235,7 +256,7 @@ def layout_svg(spec):
 <text x="72" y="47" font-family="monospace" font-size="9" fill="#6c806f">TOP VIEW / MILLIMETERS / PROTOTYPE GEOMETRY</text>
 {cover}<rect x="{x0}" y="{y0}" width="{w:.2f}" height="{h:.2f}" fill="#dbe6d1" stroke="#183026" stroke-width="2"/>
 <rect x="{x0 + wall:.2f}" y="{y0 + wall:.2f}" width="{w - 2 * wall:.2f}" height="{h - 2 * wall:.2f}" fill="#f4f5ef" stroke="#819781" stroke-width="1"/>
-{cutouts}{mounts}
+{cutouts}{mounts}{window_mark}
 <path d="M{x0} {y0 + h + 20}H{x0 + w}M{x0} {y0 + h + 15}v10M{x0 + w} {y0 + h + 15}v10" stroke="#233d31"/>
 <text x="{x0 + w / 2:.2f}" y="{y0 + h + 37:.2f}" font-family="monospace" font-size="11" text-anchor="middle" fill="#233d31">{length:g} mm</text>
 <path d="M{x0 - 20} {y0}V{y0 + h}M{x0 - 25} {y0}h10M{x0 - 25} {y0 + h}h10" stroke="#233d31"/>
@@ -280,7 +301,7 @@ def main():
         if lid is not None:
             export(lid, staging, 'lid')
         report = {'status': 'kernel-valid; physical fit untested', 'units': 'mm', 'source_spec_sha256': hashlib.sha256(raw).hexdigest(), 'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'mount_count': len(spec['mounts']), 'cutout_count': len(spec['cutouts']), 'solid_valid': BRepCheck_Analyzer(shape).IsValid(), 'vendor_models_included': False,
-                  'lid': None if lid is None else {'outer_span_mm': bounds(lid), 'volume_mm3': volume(lid), 'seated_overlap_mm3': lid_overlap, 'nominal_side_clearance_mm': spec['lid']['clearance'], 'retention': 'none; lift-off cover'}}
+                  'lid': None if lid is None else {'outer_span_mm': bounds(lid), 'volume_mm3': volume(lid), 'seated_overlap_mm3': lid_overlap, 'nominal_side_clearance_mm': spec['lid']['clearance'], 'window': spec['lid']['window'], 'retention': 'none; lift-off cover'}}
         (staging / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
         subprocess.run([sys.executable, str(Path(__file__).with_name('verify.py')), '--package', str(staging)], check=True, capture_output=True, text=True)
         staging.rename(destination)

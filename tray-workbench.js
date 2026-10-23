@@ -1,4 +1,4 @@
-import { validateTraySpec } from './tray-spec.js?v=3';
+import { validateTraySpec } from './tray-spec.js?v=4';
 import { STORAGE_KEY } from './core.js?v=29';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -63,7 +63,8 @@ function readRows(selector) {
 }
 function readForm() {
   const form = new FormData($('#tray-form'));
-  const lid = $('#lid-enabled').checked ? { thickness: form.get('lidThickness'), skirtDepth: form.get('lidSkirtDepth'), skirtWall: form.get('lidSkirtWall'), clearance: form.get('lidClearance') } : null;
+  const lid = $('#lid-enabled').checked ? { thickness: form.get('lidThickness'), skirtDepth: form.get('lidSkirtDepth'), skirtWall: form.get('lidSkirtWall'), clearance: form.get('lidClearance'),
+    window: $('#lid-window-enabled').checked ? { x: form.get('windowX'), y: form.get('windowY'), length: form.get('windowLength'), width: form.get('windowWidth') } : null } : null;
   return { schema, title: form.get('title'), units: 'mm', outer: { length: form.get('length'), width: form.get('width'), height: form.get('height') }, wall: form.get('wall'), floor: form.get('floor'), mounts: readRows('[data-mount]'), cutouts: readRows('[data-cutout]'), lid };
 }
 function svg(spec) {
@@ -78,7 +79,8 @@ function svg(spec) {
     return `<rect x="${values[0]}" y="${values[1]}" width="${values[2]}" height="${values[3]}" fill="#f0efe8" stroke="#a46748" stroke-width="1.5"/>`;
   }).join('');
   const mounts = spec.mounts.map(m => `<g><circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.bossRadius * scale}" fill="#b8ceb0" stroke="#496a4c" stroke-width="1.5"/>${m.holeRadius ? `<circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.holeRadius * scale}" fill="#f0efe8" stroke="#496a4c"/>` : m.locatorRadius ? `<circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.locatorRadius * scale}" fill="#496a4c"/>` : ''}<text x="${x0 + (m.x + m.bossRadius) * scale + 5}" y="${y0 + m.y * scale - 3}" fill="#335139" font-size="9" font-family="monospace">${escapeHtml(m.id)}</text></g>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145 + 2 * coverMargin} ${h + 145 + 2 * coverMargin}" role="img" aria-label="Scaled tray top view${spec.lid ? ' with lift-off cover outline' : ''}; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text>${cover}<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${y0 + h + 60}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS${spec.lid ? ` · COVER ${spec.lid.clearance} CLEARANCE` : ''}</text></svg>`;
+  const lightOpening = spec.lid?.window ? `<rect class="light-opening" x="${x0 + spec.lid.window.x * scale}" y="${y0 + spec.lid.window.y * scale}" width="${spec.lid.window.length * scale}" height="${spec.lid.window.width * scale}"/><text x="${x0 + spec.lid.window.x * scale + 7}" y="${y0 + spec.lid.window.y * scale + 15}" font-size="9" font-family="monospace" fill="#6b5b20">LIGHT OPENING</text>` : '';
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145 + 2 * coverMargin} ${h + 145 + 2 * coverMargin}" role="img" aria-label="Scaled tray top view${spec.lid ? ' with lift-off cover outline' : ''}${spec.lid?.window ? ' and light opening' : ''}; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text>${cover}<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}${lightOpening}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${y0 + h + 60}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS${spec.lid ? ` · COVER ${spec.lid.clearance} CLEARANCE` : ''}${spec.lid?.window ? ` · WINDOW ${spec.lid.window.length}×${spec.lid.window.width}` : ''}</text></svg>`;
 }
 function show() {
   fitRevision += 1;
@@ -89,7 +91,7 @@ function show() {
     $('#preview').innerHTML = svg(spec);
     let persisted = false;
     try { if (storageKey) { localStorage.setItem(storageKey, JSON.stringify(spec)); persisted = true; } } catch { /* The file download still works. */ }
-    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
+    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${spec.lid?.window ? `Opening ${spec.lid.window.length.toFixed(1)} × ${spec.lid.window.width.toFixed(1)} mm has no diffuser. ` : ''}${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
     $('#status').classList.remove('error');
     $('#status-chip').textContent = 'SPEC READY'; $('#status-chip').classList.remove('invalid');
     updateCadButton();
@@ -174,6 +176,8 @@ function populate(spec) {
   $('[name="wall"]').value = spec.wall; $('[name="floor"]').value = spec.floor;
   $('#lid-enabled').checked = Boolean(spec.lid);
   for (const [key, value] of Object.entries({ lidThickness: spec.lid?.thickness ?? 2.5, lidSkirtDepth: spec.lid?.skirtDepth ?? 3, lidSkirtWall: spec.lid?.skirtWall ?? 2, lidClearance: spec.lid?.clearance ?? .5 })) $(`[name="${key}"]`).value = value;
+  $('#lid-window-enabled').checked = Boolean(spec.lid?.window);
+  for (const [key, value] of Object.entries({ windowX: spec.lid?.window?.x ?? 6, windowY: spec.lid?.window?.y ?? 27, windowLength: spec.lid?.window?.length ?? 54, windowWidth: spec.lid?.window?.width ?? 14 })) $(`[name="${key}"]`).value = value;
   syncCoverInputs();
   $('#mounts').innerHTML = spec.mounts.map(mountRow).join('') || '<div class="empty">No bosses. Add measured mounting points if needed.</div>';
   $('#cutouts').innerHTML = spec.cutouts.map(cutoutRow).join('') || '<div class="empty">No openings. Add access for connectors, airflow or cables if needed.</div>';
@@ -183,6 +187,10 @@ function syncCoverInputs() {
   const enabled = $('#lid-enabled').checked;
   $('#lid-fields').classList.toggle('is-disabled', !enabled);
   $('#lid-fields').querySelectorAll('input').forEach(input => { input.disabled = !enabled; });
+  $('#lid-window-enabled').disabled = !enabled;
+  const windowEnabled = enabled && $('#lid-window-enabled').checked;
+  $('#lid-window-fields').classList.toggle('is-disabled', !windowEnabled);
+  $('#lid-window-fields').querySelectorAll('input').forEach(input => { input.disabled = !windowEnabled; });
 }
 function appendRow(kind) {
   const container = kind === 'mount' ? $('#mounts') : $('#cutouts');
@@ -211,7 +219,7 @@ function initialize() {
   populate(initial);
   void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());
-  $('#tray-form').addEventListener('input', event => { if (event.target.id === 'lid-enabled') syncCoverInputs(); show(); });
+  $('#tray-form').addEventListener('input', event => { if (event.target.id === 'lid-enabled' || event.target.id === 'lid-window-enabled') syncCoverInputs(); show(); });
   $('#fit-components').addEventListener('input', resetFitReport);
   $('#fit-components').addEventListener('change', resetFitReport);
   $('#add-fit-component').addEventListener('click', () => {
@@ -232,7 +240,7 @@ function initialize() {
     try { await runFit(); }
     catch (error) { $('#fit-status').textContent = error.name === 'TimeoutError' ? 'Fit check timed out. Inspect the local server terminal.' : error.message; $('#fit-status').classList.add('error'); }
   });
-  $('#tray-form').addEventListener('change', event => { if (event.target.id === 'lid-enabled') syncCoverInputs(); if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
+  $('#tray-form').addEventListener('change', event => { if (event.target.id === 'lid-enabled' || event.target.id === 'lid-window-enabled') syncCoverInputs(); if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
   $('#add-mount').addEventListener('click', () => appendRow('mount'));
   $('#add-cutout').addEventListener('click', () => appendRow('cutout'));
   document.addEventListener('click', event => {

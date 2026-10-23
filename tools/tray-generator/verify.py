@@ -15,13 +15,14 @@ from OCP.BRepAlgoAPI import BRepAlgoAPI_Common
 from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepGProp import BRepGProp
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeBox
 from OCP.Bnd import Bnd_Box
 from OCP.GProp import GProp_GProps
 from OCP.IFSelect import IFSelect_RetDone
 from OCP.STEPControl import STEPControl_Reader
 from OCP.TopAbs import TopAbs_SOLID
 from OCP.TopExp import TopExp_Explorer
-from OCP.gp import gp_Trsf, gp_Vec
+from OCP.gp import gp_Pnt, gp_Trsf, gp_Vec
 
 
 def sha256(path):
@@ -142,9 +143,22 @@ def main():
         shifted_overlap = overlap_volume(shape, shifted)
         if shifted_overlap <= .01:
             raise RuntimeError('Shifted lid did not detect the expected tray interference')
+        window_result = None
+        if spec['lid'].get('window'):
+            opening = spec['lid']['window']
+            x, y, run, breadth = (opening[key] for key in ('x', 'y', 'length', 'width'))
+            z = spec['outer']['height'] + .1
+            depth = spec['lid']['thickness'] - .2
+            aperture_probe = BRepPrimAPI_MakeBox(gp_Pnt(x + .25, y + .25, z), run - .5, breadth - .5, depth).Shape()
+            solid_probe = BRepPrimAPI_MakeBox(gp_Pnt(x - .75, y + breadth / 2 - .25, z), .5, .5, depth).Shape()
+            aperture_overlap = overlap_volume(lid, aperture_probe)
+            neighbor_overlap = overlap_volume(lid, solid_probe)
+            if aperture_overlap > .01 or neighbor_overlap < .05:
+                raise RuntimeError('Lid window void or neighboring plate is not present at the requested coordinates')
+            window_result = {'opening_mm': opening, 'aperture_probe_overlap_mm3': aperture_overlap, 'neighbor_plate_probe_overlap_mm3': neighbor_overlap}
         lid_result = {'solid_count': 1, 'outer_span_mm': lid_span, 'volume_mm3': lid_volume, 'stl_triangles': lid_triangles,
                       'stl_outer_span_mm': lid_mesh_span, 'seated_overlap_mm3': seated_overlap, 'shifted_overlap_mm3': shifted_overlap,
-                      'nominal_side_clearance_mm': spec['lid']['clearance']}
+                      'nominal_side_clearance_mm': spec['lid']['clearance'], 'window': window_result}
         names.extend(['lid.step', 'lid.stl'])
     result = {
         'status': 'fresh-process same-kernel readback passed; physical fit untested',

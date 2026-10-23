@@ -5,6 +5,7 @@ import { validateTraySpec } from '../tray-spec.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-tray.json', import.meta.url)));
 const coverFixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-cover-study.json', import.meta.url)));
+const windowFixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-window-cover.json', import.meta.url)));
 
 test('the browser workbench accepts the CAD generator example without changing its geometry', () => {
   const spec = validateTraySpec(fixture);
@@ -26,7 +27,7 @@ test('the workbench rejects overlapping bosses and cutouts through the floor', (
 
 test('the optional lift-off cover is preserved and bounded by the tray cavity', () => {
   const spec = validateTraySpec(coverFixture);
-  assert.deepEqual(spec.lid, { thickness: 2.5, skirtDepth: 3, skirtWall: 2, clearance: 0.5 });
+  assert.deepEqual(spec.lid, { thickness: 2.5, skirtDepth: 3, skirtWall: 2, clearance: 0.5, window: null });
   const invalid = structuredClone(coverFixture);
   invalid.lid.skirtDepth = 12;
   assert.throws(() => validateTraySpec(invalid), /reaches the floor/);
@@ -35,4 +36,15 @@ test('the optional lift-off cover is preserved and bounded by the tray cavity', 
   assert.throws(() => validateTraySpec(invalid), /Cover side clearance/);
   invalid.lid.clearance = true;
   assert.throws(() => validateTraySpec(invalid), /Cover side clearance/);
+});
+
+test('cover light opening stays inside the rim and survives normalization', () => {
+  const spec = validateTraySpec(windowFixture);
+  assert.deepEqual(spec.lid.window, { x: 6, y: 27, length: 54, width: 14 });
+  const rim = structuredClone(windowFixture);
+  rim.lid.window.y = 30;
+  assert.throws(() => validateTraySpec(rim), /inside every tray wall/);
+  const slit = structuredClone(windowFixture);
+  slit.lid.window.width = 2;
+  assert.throws(() => validateTraySpec(slit), /Window width/);
 });

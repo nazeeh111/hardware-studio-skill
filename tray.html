@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Tray workbench — Hardware Studio</title>
-  <link rel="stylesheet" href="./tray.css?v=4">
+  <link rel="stylesheet" href="./tray.css?v=5">
 </head>
 <body>
   <header class="bar"><a class="brand" href="./index.html"><span class="mark">H<span>+</span></span> HARDWARE <em>/ STUDIO</em></a><span class="edition">MECHANICAL WORKBENCH / 001</span><a class="back" href="./index.html">← Return to studio</a></header>
@@ -35,6 +35,14 @@
             <label>Skirt wall<input name="lidSkirtWall" type="number" min="0.6" max="10" step="0.1" value="2" disabled><small>mm</small></label>
             <label>Side clearance<input name="lidClearance" type="number" min="0.1" max="5" step="0.1" value="0.5" disabled><small>mm</small></label>
           </div>
+          <label class="cover-toggle window-toggle"><input id="lid-window-enabled" type="checkbox" disabled> Cut a rectangular light opening through the plate</label>
+          <div id="lid-window-fields" class="measure-grid cover-fields is-disabled">
+            <label>Opening X<input name="windowX" type="number" min="0.1" max="500" step="0.1" value="6" disabled><small>mm</small></label>
+            <label>Opening Y<input name="windowY" type="number" min="0.1" max="500" step="0.1" value="27" disabled><small>mm</small></label>
+            <label>Opening length<input name="windowLength" type="number" min="2.1" max="500" step="0.1" value="54" disabled><small>mm</small></label>
+            <label>Opening width<input name="windowWidth" type="number" min="2.1" max="500" step="0.1" value="14" disabled><small>mm</small></label>
+          </div>
+          <p class="cover-window-note">Opening coordinates use the tray's X/Y origin. Keep a plate web inside every wall. No diffuser or optical behavior is modeled.</p>
         </form>
       </div>
       <aside class="output">
@@ -57,6 +65,6 @@
     </section>
     <footer>HARDWARE / STUDIO <span>Modeled geometry is not physical fit or fabrication approval.</span></footer>
   </main>
-  <script type="module" src="./tray-workbench.js?v=11"></script>
+  <script type="module" src="./tray-workbench.js?v=12"></script>
 </body>
 </html>

@@ -1,0 +1,89 @@
+{
+  "schema": "hardware-studio-tray-v1",
+  "title": "Pico + NeoPixel open-window cover study",
+  "units": "mm",
+  "outer": {
+    "length": 66,
+    "width": 45,
+    "height": 14
+  },
+  "wall": 2.5,
+  "floor": 2.5,
+  "cutouts": [
+    {
+      "edge": "left",
+      "start": 7,
+      "end": 22,
+      "bottom": 3,
+      "top": 14
+    }
+  ],
+  "mounts": [
+    {
+      "id": "pico-a",
+      "x": 11,
+      "y": 8.8,
+      "bossRadius": 2.2,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    },
+    {
+      "id": "pico-b",
+      "x": 11,
+      "y": 20.2,
+      "bossRadius": 2.2,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    },
+    {
+      "id": "pico-c",
+      "x": 58,
+      "y": 8.8,
+      "bossRadius": 2.2,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    },
+    {
+      "id": "pico-d",
+      "x": 58,
+      "y": 20.2,
+      "bossRadius": 2.2,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    },
+    {
+      "id": "stick-a",
+      "x": 20.3,
+      "y": 36.628,
+      "bossRadius": 1.7,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    },
+    {
+      "id": "stick-b",
+      "x": 45.7,
+      "y": 36.628,
+      "bossRadius": 1.7,
+      "bossTopZ": 8,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2
+    }
+  ],
+  "lid": {
+    "thickness": 2.5,
+    "skirtDepth": 3,
+    "skirtWall": 2,
+    "clearance": 0.5,
+    "window": {
+      "x": 6,
+      "y": 27,
+      "length": 54,
+      "width": 14
+    }
+  }
+}

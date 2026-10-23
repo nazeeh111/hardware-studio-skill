@@ -10,11 +10,12 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from generate import bounds, make_tray, validate, volume
+from generate import bounds, make_lid, make_tray, validate, volume
 
 
 EXAMPLE = Path(__file__).resolve().parents[1] / 'examples' / 'pico-neopixel-tray.json'
 COVER_EXAMPLE = EXAMPLE.with_name('pico-neopixel-cover-study.json')
+WINDOW_EXAMPLE = EXAMPLE.with_name('pico-neopixel-window-cover.json')
 
 
 class TrayGeneratorTests(unittest.TestCase):
@@ -56,6 +57,19 @@ class TrayGeneratorTests(unittest.TestCase):
             self.assertNotEqual(check.returncode, 0)
             self.assertIn('non-finite coordinate', check.stderr)
 
+    def test_cover_window_removes_the_expected_plate_volume_and_survives_step_readback(self):
+        closed = make_lid(validate(json.loads(COVER_EXAMPLE.read_text())))
+        opened = make_lid(validate(json.loads(WINDOW_EXAMPLE.read_text())))
+        self.assertAlmostEqual(volume(closed) - volume(opened), 54 * 14 * 2.5, places=3)
+        root = EXAMPLE.parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / 'window-cover'
+            subprocess.run([sys.executable, str(root / 'generate.py'), '--spec', str(WINDOW_EXAMPLE), '--out', str(package)], check=True, capture_output=True, text=True)
+            report = json.loads((package / 'verification.json').read_text())['lid']
+            self.assertEqual(report['window']['opening_mm'], {'x': 6.0, 'y': 27.0, 'length': 54.0, 'width': 14.0})
+            self.assertEqual(report['window']['aperture_probe_overlap_mm3'], 0)
+            self.assertGreater(report['window']['neighbor_plate_probe_overlap_mm3'], .05)
+
     def test_through_hole_removes_material_without_changing_outer_size(self):
         raw = {'schema': 'hardware-studio-tray-v1', 'units': 'mm', 'outer': {'length': 40, 'width': 30, 'height': 10}, 'wall': 2, 'floor': 2,
                'mounts': [{'id': 'a', 'x': 20, 'y': 15, 'bossRadius': 3, 'bossTopZ': 6}], 'cutouts': []}
@@ -74,6 +88,7 @@ class TrayGeneratorTests(unittest.TestCase):
         case = copy.deepcopy(template); case['mounts'][0]['holeRadius'] = 1; cases.append(case)
         case = copy.deepcopy(template); case['cutouts'][0]['bottom'] = 1; cases.append(case)
         case = json.loads(COVER_EXAMPLE.read_text()); case['lid']['skirtDepth'] = 12; cases.append(case)
+        case = json.loads(WINDOW_EXAMPLE.read_text()); case['lid']['window']['y'] = 30; cases.append(case)
         for candidate in cases:
             with self.subTest(candidate=candidate):
                 with self.assertRaises(ValueError):
