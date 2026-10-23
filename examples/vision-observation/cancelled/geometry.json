@@ -1,0 +1,115 @@
+{
+  "schema": "hardware-studio-inspection-sheet-v1",
+  "units": "mm (assumed from STL coordinates)",
+  "visibleMeshesOnly": true,
+  "displayLiftIncluded": false,
+  "positions": "original shared mesh positions",
+  "projection": "orthographic; no perspective",
+  "pixelsPerAssumedMm": 6.76056338028169,
+  "bounds": {
+    "min": [
+      -2.5,
+      -2.5,
+      0
+    ],
+    "max": [
+      68.5,
+      47.5,
+      16.5
+    ],
+    "spans": [
+      71,
+      50,
+      16.5
+    ]
+  },
+  "views": [
+    {
+      "name": "TOP",
+      "axes": "X → / Y ↑ · looking from +Z",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "FRONT",
+      "axes": "X → / Z ↑ · looking from −Y",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "RIGHT",
+      "axes": "Y → / Z ↑ · looking from +X",
+      "rotationColumnMajor": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "geometryEncoding": "Float32 little-endian interleaved x,y,z,nx,ny,nz for each rendered vertex",
+  "meshes": [
+    {
+      "name": "Pico prototype tray",
+      "triangles": 4076,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          66,
+          45,
+          14
+        ]
+      },
+      "geometrySha256": "48a6d81c09803ef7e0e9d57f2e8c3c36c6eac5aa8072e0e74898ba5e9a638b7b"
+    },
+    {
+      "name": "Window cover",
+      "triangles": 72,
+      "bounds": {
+        "min": [
+          -2.5,
+          -2.5,
+          11
+        ],
+        "max": [
+          68.5,
+          47.5,
+          16.5
+        ]
+      },
+      "geometrySha256": "bc416c5686c070636662540e5d287168a09159a42039c7de1cbf17906587644f"
+    }
+  ],
+  "limits": [
+    "Rendered mesh surfaces only; hidden cavities may not be visible.",
+    "Not a dimensioned engineering drawing or evidence of solid validity, fit, strength, tolerances or physical manufacture.",
+    "Pixel scale applies to the original PNG, not a resized or printed image."
+  ]
+}

@@ -1,0 +1,165 @@
+{
+  "schema": "hardware-studio-vision-observation-v1",
+  "status": "observations",
+  "capturedAt": "2026-10-23T22:38:33.322Z",
+  "context": {
+    "request": "A concave L-shaped outline\nOne circular opening\nThree separate circular openings",
+    "model": "qwen3-vl:4b-instruct",
+    "viewerVersion": 1
+  },
+  "requirements": [
+    {
+      "id": "f1",
+      "text": "A concave L-shaped outline"
+    },
+    {
+      "id": "f2",
+      "text": "One circular opening"
+    },
+    {
+      "id": "f3",
+      "text": "Three separate circular openings"
+    }
+  ],
+  "model": {
+    "name": "qwen3-vl:4b-instruct",
+    "digest": "84f7ed8042fa7cdbd902f7dcb7d0370e032095047cc3244179f263b77b5bc318",
+    "identityCheckedBeforeAndAfter": true
+  },
+  "imageSha256": "e8d9ccd3d844131ff3693a497a7ff820afb3e010f004272671aef048d8b6c883",
+  "geometry": {
+    "schema": "hardware-studio-inspection-sheet-v1",
+    "units": "mm (assumed from STL coordinates)",
+    "visibleMeshesOnly": true,
+    "displayLiftIncluded": false,
+    "positions": "original shared mesh positions",
+    "projection": "orthographic; no perspective",
+    "pixelsPerAssumedMm": 8,
+    "bounds": {
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "max": [
+        60,
+        40,
+        4
+      ],
+      "spans": [
+        60,
+        40,
+        4
+      ]
+    },
+    "views": [
+      {
+        "name": "TOP",
+        "axes": "X → / Y ↑ · looking from +Z",
+        "rotationColumnMajor": [
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "name": "FRONT",
+        "axes": "X → / Z ↑ · looking from −Y",
+        "rotationColumnMajor": [
+          1,
+          0,
+          0,
+          0,
+          0,
+          -1,
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "name": "RIGHT",
+        "axes": "Y → / Z ↑ · looking from +X",
+        "rotationColumnMajor": [
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]
+      }
+    ],
+    "geometryEncoding": "Float32 little-endian interleaved x,y,z,nx,ny,nz for each rendered vertex",
+    "meshes": [
+      {
+        "name": "solid.stl",
+        "triangles": 360,
+        "bounds": {
+          "min": [
+            0,
+            0,
+            0
+          ],
+          "max": [
+            60,
+            40,
+            4
+          ]
+        },
+        "geometrySha256": "a3d5974de816b2027ae337f5fa000eba32882e11d7e969013b43fb2a551d21cd"
+      }
+    ],
+    "limits": [
+      "Rendered mesh surfaces only; hidden cavities may not be visible.",
+      "Not a dimensioned engineering drawing or evidence of solid validity, fit, strength, tolerances or physical manufacture.",
+      "Pixel scale applies to the original PNG, not a resized or printed image."
+    ]
+  },
+  "observations": [
+    {
+      "id": "f1",
+      "state": "visible",
+      "views": [
+        "TOP",
+        "FRONT",
+        "RIGHT"
+      ],
+      "detail": "A concave L-shaped outline is visible in the TOP view as a green polygon with a cutout. In FRONT and RIGHT views, it appears as a horizontal bar, indicating a projection of the L-shape's outer contour."
+    },
+    {
+      "id": "f2",
+      "state": "visible",
+      "views": [
+        "TOP"
+      ],
+      "detail": "One circular opening is visible in the TOP view as a white circle centered within the L-shape. It is not visible in FRONT or RIGHT views due to projection and occlusion."
+    },
+    {
+      "id": "f3",
+      "state": "not-visible",
+      "views": [
+        "TOP",
+        "FRONT",
+        "RIGHT"
+      ],
+      "detail": "Three separate circular openings are not discernible in any view; only one circular opening is visible in the TOP view, consistent with the image data."
+    }
+  ],
+  "error": null,
+  "limits": [
+    "Model text is advisory and may misidentify visible features.",
+    "No CAD source, project fields or review marks are changed.",
+    "Images cannot verify exact dimensions, material, strength, safety, hidden features or physical fit."
+  ],
+  "completedAt": "2026-10-23T22:39:33.786Z"
+}

@@ -1,0 +1,98 @@
+{
+  "schema": "hardware-studio-inspection-sheet-v1",
+  "units": "mm (assumed from STL coordinates)",
+  "visibleMeshesOnly": true,
+  "displayLiftIncluded": false,
+  "positions": "original shared mesh positions",
+  "projection": "orthographic; no perspective",
+  "pixelsPerAssumedMm": 8,
+  "bounds": {
+    "min": [
+      0,
+      0,
+      0
+    ],
+    "max": [
+      60,
+      40,
+      4
+    ],
+    "spans": [
+      60,
+      40,
+      4
+    ]
+  },
+  "views": [
+    {
+      "name": "TOP",
+      "axes": "X → / Y ↑ · looking from +Z",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "FRONT",
+      "axes": "X → / Z ↑ · looking from −Y",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "RIGHT",
+      "axes": "Y → / Z ↑ · looking from +X",
+      "rotationColumnMajor": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "geometryEncoding": "Float32 little-endian interleaved x,y,z,nx,ny,nz for each rendered vertex",
+  "meshes": [
+    {
+      "name": "solid.stl",
+      "triangles": 360,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          60,
+          40,
+          4
+        ]
+      },
+      "geometrySha256": "a3d5974de816b2027ae337f5fa000eba32882e11d7e969013b43fb2a551d21cd"
+    }
+  ],
+  "limits": [
+    "Rendered mesh surfaces only; hidden cavities may not be visible.",
+    "Not a dimensioned engineering drawing or evidence of solid validity, fit, strength, tolerances or physical manufacture.",
+    "Pixel scale applies to the original PNG, not a resized or printed image."
+  ]
+}

@@ -1,12 +1,13 @@
-import { INSPECTION_VIEWS, inspectionScene, inspectionManifest } from './inspection-sheet.js?v=1';
+import { installVisionPanel } from './vision-panel.js?v=3';
+import { INSPECTION_VIEWS, inspectionScene, inspectionManifest } from './inspection-sheet.js?v=2';
 import { createZip } from './zip.js?v=1';
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
 import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
 import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=3';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
-let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, pointers=new Map();
-let previewRecord=null,generatedBusy=false,sheetBusy=false;
+let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, geometryRevision=0, pointers=new Map();
+let previewRecord=null,generatedBusy=false,sheetBusy=false,visionPanel=null;
 const palette=[[.53,.67,.35],[.87,.84,.64],[.65,.76,.75],[.77,.51,.34]];
 function status(text,error=false){$('#viewer-status').textContent=text;$('#viewer-status').classList.toggle('error',error);}
 function shader(type,source){const value=gl.createShader(type);gl.shaderSource(value,source);gl.compileShader(value);if(!gl.getShaderParameter(value,gl.COMPILE_STATUS))throw new Error('Your browser could not prepare the 3D renderer.');return value;}
@@ -41,10 +42,10 @@ function draw(){
 function reset(){yaw=-.65;pitch=.72;zoom=1;draw();}
 function controls(){
   const list=$('#mesh-list');list.replaceChildren();
-  for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible=check.checked;$('#export-glb').disabled=!meshes.some(m=>m.visible);$('#export-sheet').disabled=sheetBusy||!meshes.some(m=>m.visible);draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
+  for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible=check.checked;$('#export-glb').disabled=!meshes.some(m=>m.visible);$('#export-sheet').disabled=sheetBusy||!meshes.some(m=>m.visible);geometryRevision++;visionPanel?.geometryChanged();draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
   $('#empty-view').hidden=meshes.length>0;$('#export-glb').disabled=!meshes.length;$('#export-sheet').disabled=sheetBusy||!meshes.length;$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').closest('label').hidden=!meshes.some(m=>m.cover);$('#explode').checked=false;$('#glb-note').textContent='GLB uses meters and a Y-up scene. It preserves original mesh positions. '+(meshes.some(m=>m.cover)?'The lifted display offset is excluded. ':'')+'Mesh dimensions do not establish fit or manufacturing quality.';reset();
 }
-function replaceMeshes(next){for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=next.map((mesh,i)=>{const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);return {...mesh,buffer,color:palette[i],visible:true};});controls();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);}
+function replaceMeshes(next){for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=next.map((mesh,i)=>{const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);return {...mesh,buffer,color:palette[i],visible:true};});geometryRevision++;controls();visionPanel?.geometryChanged();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);}
 async function loadExample(){
   leaveGeneratedMode();
   const token=++sequence;if(!gl||!program)return;status('Loading the worked tray and cover…');
@@ -79,12 +80,10 @@ function sheetRaster(scene,rotation,size=600){
 function sheetText(ctx,text,x,y,maxWidth,lineHeight){
   let line='';for(const word of String(text).split(/\s+/)){const next=line?line+' '+word:word;if(ctx.measureText(next).width>maxWidth&&line){ctx.fillText(line,x,y);y+=lineHeight;line=word;}else line=next;}ctx.fillText(line,x,y);return y+lineHeight;
 }
-$('#export-sheet').addEventListener('click',async()=>{
-  if(sheetBusy||!gl||!program)return;
-  sheetBusy=true;$('#export-sheet').disabled=true;status('Preparing top, front and right views of visible meshes…');
-  try {
-    const scene=inspectionScene(meshes),token=sequence,manifest=await inspectionManifest(scene);
-    if(token!==sequence||scene.meshes.length!==meshes.filter(m=>m.visible).length||scene.meshes.some(m=>!meshes.includes(m)||!m.visible))throw new Error('Visible geometry changed while preparing the sheet. Export again from the current meshes.');
+async function captureInspection(){
+  if(!gl||!program||gl.isContextLost())throw new Error('Load visible geometry with an available graphics context first.');
+  const scene=inspectionScene(meshes),token=geometryRevision,manifest=await inspectionManifest(scene);
+  if(token!==geometryRevision||scene.meshes.length!==meshes.filter(m=>m.visible).length||scene.meshes.some(m=>!meshes.includes(m)||!m.visible))throw new Error('Visible geometry changed during capture. Capture the current meshes again.');
     const sheet=document.createElement('canvas');sheet.width=2100;sheet.height=950+scene.meshes.length*96;
     const ctx=sheet.getContext('2d');ctx.fillStyle='#f4f3eb';ctx.fillRect(0,0,sheet.width,sheet.height);
     ctx.fillStyle='#19362b';ctx.fillRect(0,0,sheet.width,143);ctx.fillStyle='#dcef75';ctx.font='500 18px monospace';ctx.fillText('HARDWARE / STUDIO     GEOMETRY INSPECTION',50,44);ctx.fillStyle='#fffef5';ctx.font='500 37px sans-serif';ctx.fillText('Three views. One mesh record.',50,100);
@@ -98,14 +97,25 @@ $('#export-sheet').addEventListener('click',async()=>{
     }
     let y=922;
     for(const mesh of manifest.meshes){ctx.fillStyle='#213c2d';ctx.font='bold 16px monospace';y=sheetText(ctx,mesh.name+' / '+mesh.triangles.toLocaleString()+' triangles',50,y,1950,23);ctx.fillStyle='#5b6c55';ctx.font='14px monospace';ctx.fillText('GEOMETRY SHA-256  '+mesh.geometrySha256,50,y);y+=43;}
-    ctx.fillStyle='#5b6c55';ctx.font='15px monospace';ctx.fillText('Same pixel scale in all views · original positions · visible meshes only · display lift excluded',50,sheet.height-49);ctx.fillText('STL coordinates assumed mm. Not an engineering drawing or physical fit check. No AI inspection run.',50,sheet.height-23);
+    ctx.fillStyle='#5b6c55';ctx.font='15px monospace';ctx.fillText('Same pixel scale in all views · original positions · visible meshes only · display lift excluded',50,sheet.height-49);ctx.fillText('STL coordinates assumed mm. Surface views only; no model observations or physical test results included.',50,sheet.height-23);
     const png=await new Promise((resolve,reject)=>sheet.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG encoding failed. Your meshes are unchanged.')),'image/png'));
-    const zip=createZip([{name:'inspection.png',data:new Uint8Array(await png.arrayBuffer())},{name:'inspection.json',data:JSON.stringify(manifest,null,2)+'\n'},{name:'README.txt',data:'Three orthographic views of the visible rendered STL triangles.\nThe accompanying manifest identifies geometry with SHA-256 of Float32 little-endian interleaved x,y,z,nx,ny,nz vertex data after STL parsing. It is not the hash of the original STL file. All views use one pixel scale and original shared positions; hidden meshes and display-only lift are excluded.\nSTL units are assumed millimeters. This is a surface inspection sheet, not a dimensioned drawing, solid validity check, collision check or physical engineering test. No AI inspection was run.\n'}]);
+
+  const imageBytes=new Uint8Array(await png.arrayBuffer());
+  const imageSha256=[...new Uint8Array(await crypto.subtle.digest('SHA-256',imageBytes))].map(n=>n.toString(16).padStart(2,'0')).join('');
+  return {imageBytes,imageSha256,manifest,viewerVersion:token};
+}
+$('#export-sheet').addEventListener('click',async()=>{
+  if(sheetBusy||!gl||!program)return;
+  sheetBusy=true;$('#export-sheet').disabled=true;status('Preparing top, front and right views of visible meshes…');
+  try {
+    const {imageBytes,manifest}=await captureInspection();
+    const zip=createZip([{name:'inspection.png',data:imageBytes},{name:'inspection.json',data:JSON.stringify(manifest,null,2)+'\n'},{name:'README.txt',data:'Three orthographic views of the visible rendered STL triangles.\nThe accompanying manifest identifies geometry with SHA-256 of Float32 little-endian interleaved x,y,z,nx,ny,nz vertex data after STL parsing. It is not the hash of the original STL file. All views use one pixel scale and original shared positions; hidden meshes and display-only lift are excluded.\nSTL units are assumed millimeters. This is a surface inspection sheet, not a dimensioned drawing, solid validity check, collision check or physical engineering test. This export does not run AI.\n'}]);
     const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'})),link=document.createElement('a');link.href=url;link.download='hardware-studio-inspection.zip';link.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
-    status('Inspection ZIP downloaded: three-view PNG and geometry identity manifest. No AI or physical inspection was run.');
+    status('Inspection ZIP downloaded: three-view PNG and geometry identity manifest. This export does not run AI or physical checks.');
   }catch(error){status(error.message||'Inspection export failed. Your meshes are unchanged.',true);}
   finally{sheetBusy=false;$('#export-sheet').disabled=!meshes.some(m=>m.visible)||!gl||gl.isContextLost();}
 });
+visionPanel=installVisionPanel({capture:captureInspection,viewerVersion:()=>geometryRevision,hasGeometry:()=>meshes.some(m=>m.visible)&&!!program&&!gl.isContextLost()});
 $('#reset-view').addEventListener('click',reset);$('#top-view').addEventListener('click',()=>{yaw=0;pitch=Math.PI/2;draw();});$('#front-view').addEventListener('click',()=>{yaw=0;pitch=0;draw();});$('#explode').addEventListener('change',draw);
 function scale(factor){zoom=Math.max(.2,Math.min(6,zoom*factor));draw();}$('#zoom-in').addEventListener('click',()=>scale(1.2));$('#zoom-out').addEventListener('click',()=>scale(1/1.2));
 canvas.addEventListener('wheel',event=>{event.preventDefault();scale(Math.exp(-event.deltaY*.001));},{passive:false});
@@ -113,7 +123,7 @@ canvas.addEventListener('pointerdown',event=>{canvas.focus();canvas.setPointerCa
 canvas.addEventListener('pointermove',event=>{const previous=pointers.get(event.pointerId);if(!previous)return;const points=[...pointers.values()],oldDistance=points.length===2?Math.hypot(points[0][0]-points[1][0],points[0][1]-points[1][1]):0;pointers.set(event.pointerId,[event.clientX,event.clientY]);if(points.length===2){const next=[...pointers.values()],distance=Math.hypot(next[0][0]-next[1][0],next[0][1]-next[1][1]);if(oldDistance>0)scale(distance/oldDistance);}else{yaw+=(event.clientX-previous[0])*.008;pitch=Math.max(-1.5,Math.min(1.5,pitch+(event.clientY-previous[1])*.008));draw();}});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,event=>pointers.delete(event.pointerId));
 canvas.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','+','=','-'].includes(event.key))return;event.preventDefault();if(event.key==='Home')return reset();if(['+','='].includes(event.key))return scale(1.2);if(event.key==='-')return scale(1/1.2);yaw+=event.key==='ArrowLeft'?-.15:event.key==='ArrowRight'?.15:0;pitch=Math.max(-1.5,Math.min(1.5,pitch+(event.key==='ArrowUp'?-.15:event.key==='ArrowDown'?.15:0)));draw();});
-canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();status('The graphics context was lost. Reload this page to restore the viewer; your files are unchanged.',true);$('#export-glb').disabled=true;$('#export-sheet').disabled=true;});
+canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();status('The graphics context was lost. Reload this page to restore the viewer; your files are unchanged.',true);$('#export-glb').disabled=true;$('#export-sheet').disabled=true;geometryRevision++;visionPanel?.geometryChanged();});
 new ResizeObserver(draw).observe(canvas);draw();
 
 function leaveGeneratedMode(){
