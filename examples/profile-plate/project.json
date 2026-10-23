@@ -1,0 +1,226 @@
+{
+  "id": "profile-plate-study",
+  "title": "Concave mounting plate study",
+  "brief": "A 60 \u00d7 40 \u00d7 4 mm mounting plate, with a 24 \u00d7 24 mm corner removed and a 6 mm diameter through-hole centered at X14, Y20. Application, loads, material and mating hardware remain unspecified.",
+  "summary": "An editable polygon-extrusion study with checked STEP/STL and selected material/void regions. Geometry readback is available; physical fit and strength remain untested.",
+  "starterId": "blank",
+  "createdAt": "2026-10-23T20:49:58.024Z",
+  "updatedAt": "2026-10-23T20:49:58.025Z",
+  "parts": [
+    {
+      "id": "plate",
+      "name": "Custom concave mounting plate",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "60 \u00d7 40 \u00d7 4 mm; 24 \u00d7 24 mm corner notch; 6 mm diameter hole at X14/Y20. Material, manufacturing tolerance and mating dimensions need selection.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [],
+  "steps": [
+    {
+      "phase": "Prepare",
+      "title": "Define the application and mating parts",
+      "detail": "Record loads, environment, fasteners and measured mating dimensions before choosing this shape.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    },
+    {
+      "phase": "Test",
+      "title": "Inspect the source and generated solid",
+      "detail": "Compare the polygon, through-hole and selected checks to the intended design. Rebuild and inspect after every source change.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    },
+    {
+      "phase": "Fabricate",
+      "title": "Choose material and a suitable manufacturing process",
+      "detail": "Set strength, tolerance and process requirements before fabrication. The current study does not define these.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    },
+    {
+      "phase": "Assemble",
+      "title": "Measure and test the physical fit",
+      "detail": "Compare the finished part with actual hardware and revise the source if the fit or function is wrong.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    }
+  ],
+  "powerRails": [],
+  "tools": [
+    "CAD inspection tool",
+    "Calipers for mating-part measurements"
+  ],
+  "assumptions": [
+    "This study has no defined load, material, fastener or mating assembly.",
+    "The CAD checks cover source validity, connected geometry, selected regions and export readback."
+  ],
+  "notes": "",
+  "cadUrl": "https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/profile-plate",
+  "wiringUrl": "",
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": {
+    "schema": "hardware-studio-solid-v1",
+    "title": "Concave mounting plate with a through-hole",
+    "units": "mm",
+    "features": [
+      {
+        "id": "concave-plate",
+        "operation": "add",
+        "shape": "profile",
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "axis": "z",
+        "height": 4,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            60,
+            0
+          ],
+          [
+            60,
+            16
+          ],
+          [
+            36,
+            16
+          ],
+          [
+            36,
+            40
+          ],
+          [
+            0,
+            40
+          ]
+        ]
+      },
+      {
+        "id": "through-hole",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          14,
+          20,
+          -1
+        ],
+        "axis": "z",
+        "radius": 3,
+        "height": 6
+      }
+    ],
+    "probes": [
+      {
+        "id": "plate-material",
+        "expect": "material",
+        "shape": "profile",
+        "origin": [
+          4,
+          4,
+          0
+        ],
+        "axis": "z",
+        "height": 4,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            0,
+            6
+          ]
+        ]
+      },
+      {
+        "id": "concavity-is-void",
+        "expect": "void",
+        "shape": "profile",
+        "origin": [
+          40,
+          24,
+          0
+        ],
+        "axis": "z",
+        "height": 4,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            10,
+            0
+          ],
+          [
+            10,
+            10
+          ],
+          [
+            0,
+            10
+          ]
+        ]
+      },
+      {
+        "id": "hole-is-open",
+        "expect": "void",
+        "shape": "profile",
+        "origin": [
+          13.5,
+          19.5,
+          0
+        ],
+        "axis": "z",
+        "height": 4,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      }
+    ]
+  },
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

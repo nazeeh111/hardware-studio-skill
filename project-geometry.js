@@ -1,5 +1,5 @@
 import {validateTraySpec} from './tray-spec.js';
-import {validateSolidSpec} from './solid-spec.js';
+import {validateSolidSpec} from './solid-spec.js?v=2';
 import {WorkspaceConflictError} from './workspace-store.js';
 
 export const trayKey = id => `hardware-studio-tray-${id}`;

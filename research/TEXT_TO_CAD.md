@@ -31,3 +31,10 @@ This is text editing of a constrained tray model. It does not establish arbitrar
 ## Local trial
 
 The [retained trial package](../examples/text-edited-tray/README.md) records the actual prompt, installed model digest, one rejected free-form JSON response, accepted schema-constrained parameters and fresh-process CAD readback. The resulting 120 × 80 × 25 mm tray had one solid and matching STEP/STL spans. This verifies one simple local edit through browser export and the CAD generator, without a general model-quality claim.
+
+
+## Extending geometry without executing model programs
+
+On 23 October, a further review compared the current bounded primitive route with the official [CadQuery topology/API explanation](https://cadquery.readthedocs.io/en/latest/primer.html) and [build123d introductory examples](https://build123d.readthedocs.io/en/latest/introductory_examples.html). CadQuery documents its OpenCascade boundary representation and higher-level interfaces. The build123d examples demonstrate sketch extrusion, point-list profiles, selectors, fillets and chamfers. Those are stronger authoring routes for broader CAD than adding every feature manually to a custom wrapper; neither library was installed or benchmarked here.
+
+For the immediate missing capability, the installed OCP binding already supports a polygon wire, planar face and prism. Hardware Studio now accepts a bounded simple polygon as data, with matching JS/Python checks, explicit local axes, winding normalization, and topology rejection. The static builder extrudes it and retains the existing connected-solid, material-effect, region-check and fresh-process readback gates. This extends custom straight-edged outlines without introducing model-authored executable code or a new shared runtime dependency. It does not add arbitrary sketch interpretation, curved profiles, fillets, constraints, lofts or assemblies. Reassess a maintained higher-level CAD library when those operations become the next demonstrated requirement.

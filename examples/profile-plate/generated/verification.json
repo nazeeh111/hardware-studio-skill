@@ -1,0 +1,46 @@
+{
+  "status": "fresh-process same-kernel readback passed; physical fit untested",
+  "solid_count": 1,
+  "outer_span_mm": [
+    60.0,
+    40.0,
+    4.0
+  ],
+  "volume_mm3": 7182.902664470788,
+  "stl_outer_span_mm": [
+    60.0,
+    40.0,
+    4.0
+  ],
+  "stl_triangles": 360,
+  "probes": [
+    {
+      "id": "plate-material",
+      "expect": "material",
+      "material_fraction": 1.0,
+      "passed": true
+    },
+    {
+      "id": "concavity-is-void",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    },
+    {
+      "id": "hole-is-open",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    }
+  ],
+  "sha256": {
+    "spec.json": "802e810498606fb3446bf6b88eb46378ea595ab1e19a47a76d715c5d30f650a9",
+    "solid.step": "042f7eb5da1a09c5a7bfe006fbae3eaa8819a97d1005d98724c4764c173060f4",
+    "solid.stl": "8fe536e93b4fee32811b597d080a22b984da5ce1e3fee5b36c940b424aeeb9e6"
+  },
+  "limits": [
+    "STEP writer and reader use the same OpenCascade kernel.",
+    "Probe checks test only the supplied regions, not full instruction fidelity.",
+    "No strength, tolerances, wall thickness, fastener fit, fabrication or physical measurements were validated."
+  ]
+}

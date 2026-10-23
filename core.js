@@ -1,5 +1,5 @@
 import { validateTraySpec } from './tray-spec.js';
-import { validateSolidSpec } from './solid-spec.js';
+import { validateSolidSpec } from './solid-spec.js?v=2';
 import { validateSketch } from './sketch-data.js?v=1';
 
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
@@ -200,6 +200,13 @@ export function partReviewRecorded(part) {
   return Boolean(part.verified && /^https?:\/\//i.test(String(part.specUrl || '')) && typeof part.checkedAt === 'string' && Number.isFinite(Date.parse(part.checkedAt)));
 }
 
+// Only explicit mechanical categories with no electrical data can omit
+// electrical review prompts. Unknown categories retain the existing checks.
+export function mechanicalOnly(project) {
+  return project.parts.length > 0 && !String(project.wiringUrl || '').trim() && !project.wires.length && !(project.powerRails || []).length && project.parts.every(part =>
+    /^(mechanical|structural|enclosure|fastener)$/i.test(String(part.category || '').trim()) && !String(part.voltage || '').trim() && !(part.pins || []).length);
+}
+
 export function validate(project) {
   const issues = [];
   const ids = new Set();
@@ -273,12 +280,12 @@ export function validate(project) {
   }
   if (!project.parts.length) issues.push({ kind: 'todo', text: 'Add parts before calling this a design.' });
   if (String(project.brief || '').includes('Open design questions; do not invent exact specifications:')) issues.push({ kind: 'todo', text: 'Resolve the design questions recorded in the brief before finalizing the build.' });
-  if (!project.wires.length) issues.push({ kind: 'todo', text: 'Add and verify the electrical connections.' });
+  if (!project.wires.length && !mechanicalOnly(project)) issues.push({ kind: 'todo', text: 'Add and verify the electrical connections.' });
   if (!project.steps.length) issues.push({ kind: 'todo', text: 'Add a build and test sequence.' });
   if (project.parts.some(part => /mechanical|structural|enclosure/i.test(part.category)) && !(project.mechanicalConnections || []).length) issues.push({ kind: 'todo', text: 'Record how mechanical parts mount or fit with the rest of the build.' });
   if (project.parts.some(p => !p.verified)) issues.push({ kind: 'review', text: 'Part specifications and availability are not all verified.' });
   if (project.parts.some(p => !p.sourceUrl)) issues.push({ kind: 'review', text: 'Some parts have no verified supplier link. Costs are planning estimates.' });
-  if (!project.review.electrical) issues.push({ kind: 'review', text: 'Electrical ratings, pinouts and current budget need independent review.' });
+  if (!project.review.electrical && !mechanicalOnly(project)) issues.push({ kind: 'review', text: 'Electrical ratings, pinouts and current budget need independent review.' });
   if (!project.review.mechanical) issues.push({ kind: 'review', text: 'Dimensions, fit, material and clearances need independent review.' });
   if (!project.review.sourcing) issues.push({ kind: 'review', text: 'Supplier listings, stock, region and prices need a fresh check.' });
   return issues;

@@ -1,17 +1,48 @@
 export const SOLID_SCHEMA='hardware-studio-solid-v1';
 const allowed=(value,keys,label)=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!keys.includes(k)))throw new Error(`${label} has unsupported fields.`);};
 const number=(n,label,positive=false)=>{if(typeof n!=='number'||!Number.isFinite(n)||Math.abs(n)>500||(positive&&n<.01))throw new Error(`${label} must be a finite number ${positive?'at least 0.01 mm and ':''}within 500 mm.`);return n;};
+// Keep polygon topology checks and winding normalization identical to solid.py.
+const PROFILE_EPS=1e-9;
+const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+const onSegment=(a,b,p)=>Math.abs(cross(a,b,p))<=PROFILE_EPS&&p[0]>=Math.min(a[0],b[0])-PROFILE_EPS&&p[0]<=Math.max(a[0],b[0])+PROFILE_EPS&&p[1]>=Math.min(a[1],b[1])-PROFILE_EPS&&p[1]<=Math.max(a[1],b[1])+PROFILE_EPS;
+function segmentsTouch(a,b,c,d){
+ const abC=cross(a,b,c),abD=cross(a,b,d),cdA=cross(c,d,a),cdB=cross(c,d,b);
+ return ((abC>PROFILE_EPS&&abD<-PROFILE_EPS||abC<-PROFILE_EPS&&abD>PROFILE_EPS)&&(cdA>PROFILE_EPS&&cdB<-PROFILE_EPS||cdA<-PROFILE_EPS&&cdB>PROFILE_EPS))||onSegment(a,b,c)||onSegment(a,b,d)||onSegment(c,d,a)||onSegment(c,d,b);
+}
+function profilePoints(raw,label){
+ if(!Array.isArray(raw)||raw.length<3||raw.length>64)throw new Error(`${label} needs 3–64 polygon vertices, with implicit closure and no holes.`);
+ const points=raw.map(p=>{if(!Array.isArray(p)||p.length!==2)throw new Error(`${label} vertices need two coordinates.`);return p.map(n=>number(n,`${label}.points`));});
+ let area2=0;
+ for(let i=0;i<points.length;i++){
+  const a=points[i],b=points[(i+1)%points.length],c=points[(i+2)%points.length];
+  const dx=b[0]-a[0],dy=b[1]-a[1];
+  if(dx*dx+dy*dy<.01*.01)throw new Error(`${label} polygon edges must be at least 0.01 mm.`);
+  if(Math.abs(cross(a,b,c))<=PROFILE_EPS)throw new Error(`${label} polygon has adjacent collinear corners.`);
+  area2+=a[0]*b[1]-b[0]*a[1];
+  for(let j=i+1;j<points.length;j++){
+   const d=points[j],ex=d[0]-a[0],ey=d[1]-a[1];
+   if(ex*ex+ey*ey<=PROFILE_EPS*PROFILE_EPS)throw new Error(`${label} polygon has repeated vertices; closure is implicit.`);
+   if(j!==i+1&&!(i===0&&j===points.length-1)&&segmentsTouch(a,b,d,points[(j+1)%points.length]))throw new Error(`${label} polygon edges cross or touch.`);
+  }
+ }
+ if(Math.abs(area2)<=PROFILE_EPS)throw new Error(`${label} polygon needs nonzero area.`);
+ return area2<0?[points[0],...points.slice(1).reverse()]:points;
+}
 function primitive(raw,label,metadata=[]){
- allowed(raw,['shape','origin','size','axis','radius','height',...metadata],label);
+ allowed(raw,['shape','origin','size','axis','radius','height','points',...metadata],label);
  if(!Array.isArray(raw.origin)||raw.origin.length!==3)throw new Error(`${label} needs three origin coordinates.`);
  const value={shape:raw.shape,origin:raw.origin.map(n=>number(n,`${label}.origin`))};
  if(raw.shape==='box'){
-  if(['axis','radius','height'].some(k=>k in raw)||!Array.isArray(raw.size)||raw.size.length!==3)throw new Error(`${label} box needs size only.`);
+  if(['axis','radius','height','points'].some(k=>k in raw)||!Array.isArray(raw.size)||raw.size.length!==3)throw new Error(`${label} box needs size only.`);
   value.size=raw.size.map(n=>number(n,`${label}.size`,true));
  }else if(raw.shape==='cylinder'){
-  if('size'in raw||!['x','y','z'].includes(raw.axis))throw new Error(`${label} cylinder needs an x, y or z axis.`);
+  if('size'in raw||'points'in raw||!['x','y','z'].includes(raw.axis))throw new Error(`${label} cylinder needs an x, y or z axis.`);
   Object.assign(value,{axis:raw.axis,radius:number(raw.radius,`${label}.radius`,true),height:number(raw.height,`${label}.height`,true)});
- }else throw new Error(`${label} supports box or cylinder only.`);
+ }else if(raw.shape==='profile'){
+  if('size'in raw||'radius'in raw||!['x','y','z'].includes(raw.axis))throw new Error(`${label} profile needs points and an x, y or z axis.`);
+  // Right-handed local axes: x => U=Y,V=Z; y => U=Z,V=X; z => U=X,V=Y.
+  Object.assign(value,{axis:raw.axis,height:number(raw.height,`${label}.height`,true),points:profilePoints(raw.points,label)});
+ }else throw new Error(`${label} supports box, cylinder or profile only.`);
  return value;
 }
 export function validateSolidSpec(raw){

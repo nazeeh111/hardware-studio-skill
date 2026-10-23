@@ -1,0 +1,142 @@
+{
+  "schema": "hardware-studio-solid-v1",
+  "title": "Concave mounting plate with a through-hole",
+  "units": "mm",
+  "features": [
+    {
+      "id": "concave-plate",
+      "operation": "add",
+      "shape": "profile",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "z",
+      "height": 4.0,
+      "points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          60.0,
+          0.0
+        ],
+        [
+          60.0,
+          16.0
+        ],
+        [
+          36.0,
+          16.0
+        ],
+        [
+          36.0,
+          40.0
+        ],
+        [
+          0.0,
+          40.0
+        ]
+      ]
+    },
+    {
+      "id": "through-hole",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        14.0,
+        20.0,
+        -1.0
+      ],
+      "axis": "z",
+      "radius": 4.0,
+      "height": 6.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "plate-material",
+      "expect": "material",
+      "shape": "profile",
+      "origin": [
+        4.0,
+        4.0,
+        0.0
+      ],
+      "axis": "z",
+      "height": 4.0,
+      "points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          6.0,
+          0.0
+        ],
+        [
+          0.0,
+          6.0
+        ]
+      ]
+    },
+    {
+      "id": "concavity-is-void",
+      "expect": "void",
+      "shape": "profile",
+      "origin": [
+        40.0,
+        24.0,
+        0.0
+      ],
+      "axis": "z",
+      "height": 4.0,
+      "points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          10.0,
+          0.0
+        ],
+        [
+          10.0,
+          10.0
+        ],
+        [
+          0.0,
+          10.0
+        ]
+      ]
+    },
+    {
+      "id": "hole-is-open",
+      "expect": "void",
+      "shape": "profile",
+      "origin": [
+        13.5,
+        19.5,
+        0.0
+      ],
+      "axis": "z",
+      "height": 4.0,
+      "points": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ]
+    }
+  ]
+}

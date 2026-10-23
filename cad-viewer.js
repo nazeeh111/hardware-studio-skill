@@ -1,6 +1,6 @@
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
 import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
-import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=2';
+import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=3';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
 let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, pointers=new Map();

@@ -1,5 +1,5 @@
-import {solidContext} from './project-geometry.js?v=1';
-import {validateSolidSpec} from './solid-spec.js?v=1';
+import {solidContext} from './project-geometry.js?v=2';
+import {validateSolidSpec} from './solid-spec.js?v=2';
 import {parseStl} from './stl.js?v=1';
 export const SOLID_PREVIEW_KEY='hardware-studio-solid-snapshot-v1';
 export function solidSnapshot(spec,now=Date.now(),search=''){return {schema:SOLID_PREVIEW_KEY,at:now,spec:validateSolidSpec(spec),returnTo:solidContext(search).returnTo};}

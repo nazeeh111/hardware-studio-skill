@@ -1,0 +1,54 @@
+{
+  "schema": "hardware-studio-solid-v1",
+  "title": "Concave mounting plate with a through-hole",
+  "units": "mm",
+  "features": [
+    {
+      "id": "concave-plate",
+      "operation": "add",
+      "shape": "profile",
+      "origin": [0, 0, 0],
+      "axis": "z",
+      "height": 4,
+      "points": [[0, 0], [60, 0], [60, 16], [36, 16], [36, 40], [0, 40]]
+    },
+    {
+      "id": "through-hole",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [14, 20, -1],
+      "axis": "z",
+      "radius": 3,
+      "height": 6
+    }
+  ],
+  "probes": [
+    {
+      "id": "plate-material",
+      "expect": "material",
+      "shape": "profile",
+      "origin": [4, 4, 0],
+      "axis": "z",
+      "height": 4,
+      "points": [[0, 0], [6, 0], [0, 6]]
+    },
+    {
+      "id": "concavity-is-void",
+      "expect": "void",
+      "shape": "profile",
+      "origin": [40, 24, 0],
+      "axis": "z",
+      "height": 4,
+      "points": [[0, 0], [10, 0], [10, 10], [0, 10]]
+    },
+    {
+      "id": "hole-is-open",
+      "expect": "void",
+      "shape": "profile",
+      "origin": [13.5, 19.5, 0],
+      "axis": "z",
+      "height": 4,
+      "points": [[0, 0], [1, 0], [0, 1]]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-23",
+  "model": "qwen3-vl:4b-instruct",
+  "instruction": "Increase only the through-hole radius from 3 mm to 4 mm. Keep its position, height, plate outline, plate thickness, title, all IDs and every probe unchanged.",
+  "result": "Actual browser proposal changed only the requested normalized radius field.",
+  "download": "hardware-studio-feature-cad (1).zip",
+  "crcPassed": true,
+  "analyticVolumeMm3": 7094.938070170253,
+  "readbackVolumeMm3": 7094.9380701702785,
+  "stepStlSpansMm": [
+    60.0,
+    40.0,
+    4.0
+  ],
+  "limits": [
+    "One successful edit, not a model-quality benchmark.",
+    "Same-kernel STEP readback; no physical fit or fabrication test."
+  ],
+  "modelDigest": "84f7ed8042fa7cdbd902f7dcb7d0370e032095047cc3244179f263b77b5bc318"
+}

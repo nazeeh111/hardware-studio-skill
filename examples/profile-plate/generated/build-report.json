@@ -1,0 +1,52 @@
+{
+  "outer_span_mm": [
+    60.0,
+    40.0,
+    4.0
+  ],
+  "volume_mm3": 7182.902664470767,
+  "feature_history": [
+    {
+      "id": "concave-plate",
+      "operation": "add",
+      "volume_mm3": 7296.0,
+      "volume_delta_mm3": 7296.0,
+      "span_mm": [
+        60.0,
+        40.0,
+        4.0
+      ]
+    },
+    {
+      "id": "through-hole",
+      "operation": "cut",
+      "volume_mm3": 7182.902664470767,
+      "volume_delta_mm3": -113.09733552923262,
+      "span_mm": [
+        60.0,
+        40.0,
+        4.0
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "id": "plate-material",
+      "expect": "material",
+      "material_fraction": 1.0,
+      "passed": true
+    },
+    {
+      "id": "concavity-is-void",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    },
+    {
+      "id": "hole-is-open",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    }
+  ]
+}

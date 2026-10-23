@@ -167,7 +167,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1']})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1']})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()

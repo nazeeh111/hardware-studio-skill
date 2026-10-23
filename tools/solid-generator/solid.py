@@ -1,4 +1,4 @@
-"""Original bounded feature-solid builder. Data only: boxes/cylinders, add/cut, probes."""
+"""Bounded data-only feature solids: boxes, cylinders, polygon extrusions and probes."""
 import argparse
 import hashlib
 import json
@@ -15,10 +15,12 @@ from generate import export, boolean, box
 from verify import read_step, bounds, volume, solid_count, checked_stl_span, overlap_volume
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse, BRepAlgoAPI_Cut
-from OCP.BRepPrimAPI import BRepPrimAPI_MakeCylinder
-from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt
+from OCP.BRepBuilderAPI import BRepBuilderAPI_MakePolygon, BRepBuilderAPI_MakeFace
+from OCP.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakePrism
+from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Vec
 
 SCHEMA = 'hardware-studio-solid-v1'
+PROFILE_EPS = 1e-9
 
 def number(value, label, positive=False):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or abs(value) > 500 or not math.isfinite(value) or (positive and value < .01):
@@ -29,23 +31,70 @@ def keys(value, allowed, label):
     if not isinstance(value, dict) or set(value) - set(allowed):
         raise ValueError(f'{label} has unsupported fields.')
 
+def cross(a, b, c):
+    return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+def on_segment(a, b, p):
+    return (abs(cross(a, b, p)) <= PROFILE_EPS
+            and min(a[0], b[0]) - PROFILE_EPS <= p[0] <= max(a[0], b[0]) + PROFILE_EPS
+            and min(a[1], b[1]) - PROFILE_EPS <= p[1] <= max(a[1], b[1]) + PROFILE_EPS)
+
+def segments_touch(a, b, c, d):
+    ab_c, ab_d, cd_a, cd_b = cross(a, b, c), cross(a, b, d), cross(c, d, a), cross(c, d, b)
+    return (((ab_c > PROFILE_EPS and ab_d < -PROFILE_EPS or ab_c < -PROFILE_EPS and ab_d > PROFILE_EPS)
+             and (cd_a > PROFILE_EPS and cd_b < -PROFILE_EPS or cd_a < -PROFILE_EPS and cd_b > PROFILE_EPS))
+            or on_segment(a, b, c) or on_segment(a, b, d) or on_segment(c, d, a) or on_segment(c, d, b))
+
+def profile_points(raw, label):
+    # Keep topology checks and winding normalization identical to solid-spec.js.
+    if not isinstance(raw, list) or not 3 <= len(raw) <= 64:
+        raise ValueError(f'{label} needs 3–64 polygon vertices, with implicit closure and no holes.')
+    points = []
+    for point in raw:
+        if not isinstance(point, list) or len(point) != 2:
+            raise ValueError(f'{label} vertices need two coordinates.')
+        points.append([number(n, f'{label}.points') for n in point])
+    area2 = 0
+    for i, a in enumerate(points):
+        b, c = points[(i + 1) % len(points)], points[(i + 2) % len(points)]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        if dx * dx + dy * dy < .01 * .01:
+            raise ValueError(f'{label} polygon edges must be at least 0.01 mm.')
+        if abs(cross(a, b, c)) <= PROFILE_EPS:
+            raise ValueError(f'{label} polygon has adjacent collinear corners.')
+        area2 += a[0] * b[1] - b[0] * a[1]
+        for j in range(i + 1, len(points)):
+            d = points[j]
+            ex, ey = d[0] - a[0], d[1] - a[1]
+            if ex * ex + ey * ey <= PROFILE_EPS * PROFILE_EPS:
+                raise ValueError(f'{label} polygon has repeated vertices; closure is implicit.')
+            if j != i + 1 and not (i == 0 and j == len(points) - 1) and segments_touch(a, b, d, points[(j + 1) % len(points)]):
+                raise ValueError(f'{label} polygon edges cross or touch.')
+    if abs(area2) <= PROFILE_EPS:
+        raise ValueError(f'{label} polygon needs nonzero area.')
+    return [points[0], *reversed(points[1:])] if area2 < 0 else points
+
 def primitive(raw, label, metadata=()):
-    keys(raw, ['shape', 'origin', 'size', 'axis', 'radius', 'height', *metadata], label)
+    keys(raw, ['shape', 'origin', 'size', 'axis', 'radius', 'height', 'points', *metadata], label)
     shape = raw.get('shape')
     origin = raw.get('origin')
     if not isinstance(origin, list) or len(origin) != 3:
         raise ValueError(f'{label} needs three origin coordinates.')
     result = {'shape': shape, 'origin': [number(n, f'{label}.origin') for n in origin]}
     if shape == 'box':
-        if any(key in raw for key in ('axis', 'radius', 'height')) or not isinstance(raw.get('size'), list) or len(raw['size']) != 3:
+        if any(key in raw for key in ('axis', 'radius', 'height', 'points')) or not isinstance(raw.get('size'), list) or len(raw['size']) != 3:
             raise ValueError(f'{label} box needs size only.')
         result['size'] = [number(n, f'{label}.size', True) for n in raw['size']]
     elif shape == 'cylinder':
-        if 'size' in raw or raw.get('axis') not in ('x', 'y', 'z'):
+        if 'size' in raw or 'points' in raw or raw.get('axis') not in ('x', 'y', 'z'):
             raise ValueError(f'{label} cylinder needs an x, y or z axis.')
         result.update(axis=raw['axis'], radius=number(raw.get('radius'), f'{label}.radius', True), height=number(raw.get('height'), f'{label}.height', True))
+    elif shape == 'profile':
+        if 'size' in raw or 'radius' in raw or raw.get('axis') not in ('x', 'y', 'z'):
+            raise ValueError(f'{label} profile needs points and an x, y or z axis.')
+        result.update(axis=raw['axis'], height=number(raw.get('height'), f'{label}.height', True), points=profile_points(raw.get('points'), label))
     else:
-        raise ValueError(f'{label} supports box or cylinder only.')
+        raise ValueError(f'{label} supports box, cylinder or profile only.')
     return result
 
 def validate(raw):
@@ -86,6 +135,26 @@ def make_primitive(feature):
     if feature['shape'] == 'box':
         return box(*feature['origin'], *feature['size'])
     direction = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[feature['axis']]
+    if feature['shape'] == 'profile':
+        x, y, z = feature['origin']
+        polygon = BRepBuilderAPI_MakePolygon()
+        for index, (u, v) in enumerate(feature['points']):
+            # Right-handed axes: x U=Y,V=Z; y U=Z,V=X; z U=X,V=Y.
+            point = {'x': (x, y + u, z + v), 'y': (x + v, y, z + u), 'z': (x + u, y + v, z)}[feature['axis']]
+            polygon.Add(gp_Pnt(*point))
+            # Added() reports a new edge; the first point only starts the wire.
+            if index > 0 and not polygon.Added():
+                raise ValueError('Profile polygon edge construction failed.')
+        polygon.Close()
+        if not polygon.IsDone() or not polygon.Added():
+            raise ValueError('Profile polygon construction failed.')
+        face = BRepBuilderAPI_MakeFace(polygon.Wire(), True)
+        if not face.IsDone():
+            raise ValueError('Profile planar face construction failed.')
+        prism = BRepPrimAPI_MakePrism(face.Face(), gp_Vec(*(n * feature['height'] for n in direction)))
+        if not prism.IsDone() or prism.Shape().IsNull() or not BRepCheck_Analyzer(prism.Shape()).IsValid():
+            raise ValueError('Profile extrusion construction failed.')
+        return prism.Shape()
     return BRepPrimAPI_MakeCylinder(gp_Ax2(gp_Pnt(*feature['origin']), gp_Dir(*direction)), feature['radius'], feature['height']).Shape()
 
 def check_shape(shape):

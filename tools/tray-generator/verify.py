@@ -77,7 +77,8 @@ def checked_stl_span(path, expected):
     if len(stl) < 84:
         raise RuntimeError(f'{path.name} is incomplete')
     triangle_count = struct.unpack_from('<I', stl, 80)[0]
-    if triangle_count < 12 or len(stl) != 84 + triangle_count * 50:
+    # Four triangles are the minimum closed polyhedron; triangular prisms use eight.
+    if triangle_count < 4 or len(stl) != 84 + triangle_count * 50:
         raise RuntimeError(f'{path.name} triangle count or byte length is invalid')
     span = stl_bounds(stl, triangle_count)
     if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(span, expected)):
