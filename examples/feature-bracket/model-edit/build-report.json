@@ -1,0 +1,85 @@
+{
+  "outer_span_mm": [
+    60.0,
+    30.0,
+    40.0
+  ],
+  "volume_mm3": 11180.707993412307,
+  "feature_history": [
+    {
+      "id": "base",
+      "operation": "add",
+      "volume_mm3": 7200.0,
+      "volume_delta_mm3": 7200.0,
+      "span_mm": [
+        60.0,
+        30.0,
+        4.0
+      ]
+    },
+    {
+      "id": "upright",
+      "operation": "add",
+      "volume_mm3": 11520.000000000002,
+      "volume_delta_mm3": 4320.000000000002,
+      "span_mm": [
+        60.0,
+        30.0,
+        40.0
+      ]
+    },
+    {
+      "id": "base-hole-a",
+      "operation": "cut",
+      "volume_mm3": 11406.902664470768,
+      "volume_delta_mm3": -113.09733552923353,
+      "span_mm": [
+        60.0,
+        30.0,
+        40.0
+      ]
+    },
+    {
+      "id": "base-hole-b",
+      "operation": "cut",
+      "volume_mm3": 11293.805328941533,
+      "volume_delta_mm3": -113.09733552923535,
+      "span_mm": [
+        60.0,
+        30.0,
+        40.0
+      ]
+    },
+    {
+      "id": "upright-hole",
+      "operation": "cut",
+      "volume_mm3": 11180.707993412307,
+      "volume_delta_mm3": -113.09733552922626,
+      "span_mm": [
+        60.0,
+        30.0,
+        40.0
+      ]
+    }
+  ],
+  "probes": [
+    {
+      "id": "base-hole-is-open",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    },
+    {
+      "id": "upright-hole-is-open",
+      "expect": "void",
+      "material_fraction": 0.0,
+      "passed": true
+    },
+    {
+      "id": "base-remains",
+      "expect": "material",
+      "material_fraction": 1.0,
+      "passed": true
+    }
+  ]
+}

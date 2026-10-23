@@ -31,8 +31,8 @@ The scan did not find a source-backed XSS, CSV formula injection, ZIP traversal,
 
 ## Verification after fixes
 
-- Node app tests: **43 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
-- OpenCascade generator, fit and loopback-server tests: **12 passed**, including the new GET/HEAD Host and directory checks.
+- Node app tests: **46 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
+- OpenCascade tray/fit/server tests: **13 passed**; feature-solid generator tests: **3 passed**, including the new GET/HEAD Host and directory checks.
 - The app's source syntax, example structural checks, Markdown links, live Pages bytes and installed skill copy should be rechecked at each new publication; a successful local test is not a deployed revision.
 
 The 3D viewer was checked in a local browser with the 4,148-triangle tray/cover example, cover lift, local STL file selection and browser GLB download. A 390-pixel viewport had no horizontal overflow. Blender 5.1.2 imported the downloaded GLB with two separate meshes and the correct world-space spans of 66 × 45 × 14 mm and 71 × 50 × 5.5 mm. The GLB excludes the display-only lift. These later viewer files were not part of the earlier sealed security scan.
@@ -64,3 +64,14 @@ An isolated two-tab browser test created a project in one tab, blocked project c
 ## Local text-to-tray trial
 
 The real installed qwen3:4b model first returned unsupported fields, which were rejected while retaining dimensions. A schema-constrained request returned 120 × 80 × 25 mm with 3 mm wall/floor. The complete proposal was visible; a changed form blocked acceptance. After acceptance, its actual browser-downloaded spec matched those numbers. The original generator built it and a fresh process read back one solid, matching STEP/STL spans, 28 triangles and 54,408 mm³ volume. The model assumption contained a textual width typo while the numeric parameter was correct. See [trial evidence and limits](examples/text-edited-tray/README.md). This is one simple case, not general model-quality or arbitrary CAD verification. Node43/43 passed; unchanged CAD/server12/12 passed earlier in this review.
+
+
+## Feature-solid modeler
+
+The original data-only box/cylinder builder supports 1–32 ordered add/cut features and up to 16 selected material/void probes. Every operation must change material and leave one valid connected solid within the size bound. Lengths below 0.01 mm, invalid/non-finite values, unsupported keys, missed cuts and disconnected additions are rejected. The local API shares the existing same-origin gate, size limit, build lock, fixed subprocess paths and timeout. An overlong JSON integer now returns a controlled 400 response instead of escaping the parse handler. Submitted records cannot supply Python or output paths.
+
+The base bracket's independently calculated volume agrees with fresh-process STEP readback. A missing-hole negative case fails its void probe; X/Y/Z cylinder fixtures check axis spans. Browser mesh checks require normalized source, hashes, triangle counts, matching STEP/STL spans, positive volume and passing supplied probe results. Tests cover tampered mesh bytes, dimensions, probes, snapshots and invalid source. This is same-kernel readback and selected-region validation, not general semantic or physical verification.
+
+A real local qwen3-vl:4b-instruct trial changed only the requested three radii. Its actual downloaded ZIP passed CRC, normalized source equality, hashes and an independent 11,180.70799341 mm³ volume calculation. The 60 × 30 × 40 mm model rendered as one 1,048-triangle mesh. Undo/redo and reload were exercised. An incomplete unapplied source survived reload and disabled generation; restoring valid source recovered the editor. A stale second tab could not overwrite the latest stored title, and its original-byte backup contained the newer stored record. The first qwen3:4b attempt was rejected for a malformed missing-information list. See [the retained trial](examples/feature-bracket/README.md).
+
+These additions have not received a new Codex Security scan or final independent reviewer pass. Feature models remain standalone from main project JSON/ZIP; fillets, threads, arbitrary sketch extrusion, assemblies, fabrication tolerances, loads and physical fit remain outside the demonstrated result.

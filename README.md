@@ -24,6 +24,12 @@ On the local CAD server, the workbench's **Generate and inspect in 3D** action o
 
 The [tray workbench](tray.html) provides a scaled browser plan and controls for dimensions, bosses, locators, through-holes, edge openings and an optional lift-off cover with an outside skirt and measured light opening. It saves a valid draft with its project, in project JSON, and as `tray-spec.json` in a project ZIP. Run `sh tools/tray-generator/run-local.sh --port 4174` and open `http://127.0.0.1:4174/tray.html` to generate and download tray and cover STEP/STL using local OpenCascade. On that local origin, you can choose up to four exact-part STEP models, enter their source-axis orientation and measured X/Y/Z placement, and download a nominal collision report against the tray and seated cover. The selected STEP files go only to the loopback server and are removed from its temporary directory after the check. The launcher uses this Mac's installed OCP environment, an OCP-enabled `python3`, or `HARDWARE_STUDIO_PYTHON` when set. The browser preview, generated geometry and clear fit report are not physical-fit checks. GitHub Pages can prepare the spec but cannot execute Python.
 
+## Feature solids beyond trays
+
+The [solid modeler](solid.html) builds connected parts from ordered box/cylinder additions and cuts, with editable source and optional local text proposals. It supports selected material/void checks, checked STEP/STL packages and the existing 3D viewer/GLB export. A [three-hole bracket example](examples/feature-bracket/README.md) matches an independently calculated volume and catches missing hole cuts. See the [format and CLI guide](tools/solid-generator/README.md).
+
+The feature model is standalone in this version; its source and CAD package are exported separately from the main project's JSON/ZIP. Axis-aligned primitives do not cover fillets, threads, lofts, arbitrary sketch extrusion or assemblies. A valid source becomes geometry only after generation and readback. Physical engineering checks remain open.
+
 ## Run
 
 From this folder:

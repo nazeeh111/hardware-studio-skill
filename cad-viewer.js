@@ -1,5 +1,6 @@
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
 import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
+import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=1';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
 let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, pointers=new Map();
@@ -35,7 +36,7 @@ function reset(){yaw=-.65;pitch=.72;zoom=1;draw();}
 function controls(){
   const list=$('#mesh-list');list.replaceChildren();
   for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible=check.checked;$('#export-glb').disabled=!meshes.some(m=>m.visible);draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
-  $('#empty-view').hidden=meshes.length>0;$('#export-glb').disabled=!meshes.length;$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').checked=false;reset();
+  $('#empty-view').hidden=meshes.length>0;$('#export-glb').disabled=!meshes.length;$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').closest('label').hidden=!meshes.some(m=>m.cover);$('#explode').checked=false;$('#glb-note').textContent='GLB uses meters and a Y-up scene. It preserves original mesh positions. '+(meshes.some(m=>m.cover)?'The lifted display offset is excluded. ':'')+'Mesh dimensions do not establish fit or manufacturing quality.';reset();
 }
 function replaceMeshes(next){for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=next.map((mesh,i)=>{const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);return {...mesh,buffer,color:palette[i],visible:true};});controls();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);}
 async function loadExample(){
@@ -62,7 +63,7 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();status
 new ResizeObserver(draw).observe(canvas);draw();
 
 function leaveGeneratedMode(){
-  previewRecord=null;$('#generated-controls').hidden=true;
+  previewRecord=null;$('#generated-controls').hidden=true;$('#geometry-inputs').open=true;document.querySelector('.viewer-tools').insertBefore($('#geometry-inputs'),$('#viewer-status'));document.querySelector('.viewer-tools h2').textContent='A closer look.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / LOAD GEOMETRY';
   const url=new URL(location.href);if(url.searchParams.has('generated')){url.searchParams.delete('generated');history.replaceState(null,'',url);}
 }
 function generatedButtons(){ $('#retry-generated').disabled=generatedBusy;$('#download-generated').disabled=generatedBusy||!previewRecord||!meshes.length; }
@@ -70,14 +71,14 @@ async function generatePreview(){
   if(!previewRecord||generatedBusy||!gl||!program)return;
   const record=previewRecord,token=++sequence;generatedBusy=true;generatedButtons();
   status('Generating fresh STEP/STL and reopening the exports locally…');
-  $('#generated-status').textContent=`Frozen tray: ${record.spec.title}. This preview uses the workbench dimensions captured when you opened it.`;
+  $('#generated-status').textContent=`Frozen model: ${record.spec.title}. This preview uses the workbench dimensions captured when you opened it.`;
   try {
-    const response=await fetch('./api/tray-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    const response=await fetch(record.schema===SOLID_PREVIEW_KEY?'./api/solid-preview':'./api/tray-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
     if(!response.ok){let message='The local CAD service could not generate the preview.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}
-    const next=await previewMeshes(await response.json(),record.spec);
+    const next=await (record.schema===SOLID_PREVIEW_KEY?solidMeshes:previewMeshes)(await response.json(),record.spec);
     if(token!==sequence||previewRecord!==record)return;
     replaceMeshes(next);
-    $('#generated-status').textContent=`${record.spec.title} · STL hashes, triangle counts and dimensions match fresh-process readback. Physical fit remains untested.`;
+    $('#generated-status').textContent='Readback matched: STL hash, triangle count and dimensions. Physical fit remains untested.';
   }catch(error){if(token===sequence&&previewRecord===record){status(error.name==='TimeoutError'?'Preview timed out. Check the local server before retrying.':error.message,true);$('#generated-status').textContent='Preview unavailable. Return to the workbench or retry with the same frozen dimensions.';}}
   finally{generatedBusy=false;generatedButtons();}
 }
@@ -87,7 +88,7 @@ $('#download-generated').addEventListener('click',async()=>{
   const record=previewRecord;generatedBusy=true;generatedButtons();
   $('#generated-status').textContent='Regenerating a CAD ZIP from these frozen dimensions…';
   try{
-    const response=await fetch('./api/tray',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    const response=await fetch(record.schema===SOLID_PREVIEW_KEY?'./api/solid':'./api/tray',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
     if(!response.ok){let detail='CAD ZIP generation failed.';try{detail=(await response.json()).error||detail;}catch{}throw new Error(detail);}
     if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('The local service did not return a CAD ZIP.');
     const blob=await response.blob();if(previewRecord!==record)return;
@@ -96,7 +97,9 @@ $('#download-generated').addEventListener('click',async()=>{
   }catch(error){if(previewRecord===record)$('#generated-status').textContent=error.name==='TimeoutError'?'CAD ZIP timed out. Check the local server.':error.message;}
   finally{generatedBusy=false;generatedButtons();}
 });
-if(new URL(location.href).searchParams.get('generated')==='1'){
-  try{previewRecord=readPreviewSnapshot(sessionStorage.getItem(PREVIEW_KEY));document.querySelector('.back').href=previewRecord.returnTo;$('#generated-controls').hidden=false;void generatePreview();}
+const generatedMode=new URL(location.href).searchParams.get('generated');
+if(generatedMode==='1'||generatedMode==='solid'){
+  if(generatedMode==='solid'){document.querySelector('.back').href='./solid.html';document.querySelector('.back').textContent='SOLID MODELER ↗';}
+  try{previewRecord=generatedMode==='solid'?readSolidSnapshot(sessionStorage.getItem(SOLID_PREVIEW_KEY)):readPreviewSnapshot(sessionStorage.getItem(PREVIEW_KEY));document.querySelector('.back').href=previewRecord.returnTo;if(generatedMode==='solid')document.querySelector('.back').textContent='SOLID MODELER ↗';$('#generated-controls').hidden=false;$('#geometry-inputs').open=false;document.querySelector('.viewer-tools').append($('#geometry-inputs'));document.querySelector('.viewer-tools h2').textContent='Generated model.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / MODEL OUTPUT';void generatePreview();}
   catch(error){status(error.message,true);}
 }

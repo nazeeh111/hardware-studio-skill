@@ -25,6 +25,7 @@ import OCP  # Fail at startup if the CAD runtime is unavailable.
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = Path(__file__).with_name('generate.py')
 FIT = Path(__file__).with_name('fit.py')
+SOLID_GENERATOR = Path(__file__).resolve().parents[1] / 'solid-generator' / 'solid.py'
 MAX_REQUEST_BYTES = 65_536
 MAX_FIT_REQUEST_BYTES = 24_000_000
 MAX_STEP_BYTES = 8_000_000
@@ -58,6 +59,32 @@ def generate_package(raw, preview=False):
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
             for name in PACKAGE_FILES + extras:
+                zipped.write(package / name, arcname=name)
+        return archive.getvalue()
+
+
+
+def generate_solid_package(raw, preview=False):
+    """Build a bounded declarative feature model; never execute submitted code."""
+    with tempfile.TemporaryDirectory(prefix='hardware-studio-solid-') as temporary:
+        root = Path(temporary)
+        source = root / 'input.json'
+        source.write_bytes(raw)
+        package = root / 'package'
+        result = subprocess.run([sys.executable, str(SOLID_GENERATOR), '--spec', str(source), '--out', str(package)], capture_output=True, text=True, timeout=120)
+        if result.returncode:
+            raise ValueError('Solid generation rejected the input or a geometry check. Each feature must affect one connected solid and all material/void probes must pass.')
+        files = ('spec.json', 'solid.step', 'solid.stl', 'build-report.json', 'verification.json')
+        if preview:
+            report = json.loads((package / 'verification.json').read_text())
+            mesh = (package / 'solid.stl').read_bytes()
+            if len(mesh) > 16_000_000 or report['stl_triangles'] > 400_000:
+                raise ValueError('The generated mesh exceeds the browser preview limit.')
+            return {'schema': 'hardware-studio-solid-preview-v1', 'spec': json.loads((package / 'spec.json').read_text()), 'verification': report,
+                    'meshes': [{'name': 'solid.stl', 'dataBase64': base64.b64encode(mesh).decode('ascii')}]}
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
+            for name in files:
                 zipped.write(package / name, arcname=name)
         return archive.getvalue()
 
@@ -140,7 +167,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1']})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1']})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()
@@ -156,7 +183,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path not in ('/api/tray', '/api/tray-preview', '/api/fit'):
+        if path not in ('/api/tray', '/api/tray-preview', '/api/fit', '/api/solid', '/api/solid-preview'):
             return self._json(404, {'error': 'Unknown API route.'})
         if not self._local_origin():
             return self._json(403, {'error': 'Local origin required.'})
@@ -174,16 +201,16 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(400, {'error': 'Incomplete request.'})
         try:
             spec = json.loads(raw)
-            expected = 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-tray-v1'
+            expected = 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-solid-v1' if path.startswith('/api/solid') else 'hardware-studio-tray-v1'
             if not isinstance(spec, dict) or spec.get('schema') != expected:
                 return self._json(400, {'error': f'Expected a {expected} request.'})
-        except (UnicodeDecodeError, json.JSONDecodeError):
+        except (UnicodeDecodeError, ValueError):
             return self._json(400, {'error': 'Invalid JSON.'})
         if not build_lock.acquire(blocking=False):
             return self._json(409, {'error': 'Another CAD build is running. Try again after it finishes.'})
         try:
             try:
-                output = check_fit_request(raw) if path == '/api/fit' else generate_package(raw, preview=path == '/api/tray-preview')
+                output = check_fit_request(raw) if path == '/api/fit' else generate_solid_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/solid') else generate_package(raw, preview=path == '/api/tray-preview')
             except subprocess.TimeoutExpired:
                 return self._json(504, {'error': 'CAD generation exceeded two minutes.'})
             except ValueError as error:
@@ -193,11 +220,12 @@ class Handler(SimpleHTTPRequestHandler):
         finally:
             build_lock.release()
         try:
-            body = output if path == '/api/tray' else json.dumps(output).encode('utf-8')
+            is_archive = path in ('/api/tray', '/api/solid')
+            body = output if is_archive else json.dumps(output).encode('utf-8')
             self.send_response(200)
-            self.send_header('Content-Type', 'application/zip' if path == '/api/tray' else 'application/json; charset=utf-8')
-            if path == '/api/tray':
-                self.send_header('Content-Disposition', 'attachment; filename="hardware-studio-tray-cad.zip"')
+            self.send_header('Content-Type', 'application/zip' if is_archive else 'application/json; charset=utf-8')
+            if is_archive:
+                self.send_header('Content-Disposition', 'attachment; filename="hardware-studio-cad.zip"')
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Content-Type-Options', 'nosniff')

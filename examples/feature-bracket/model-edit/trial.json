@@ -1,0 +1,11 @@
+{
+  "model": "qwen3-vl:4b-instruct",
+  "model_digest": "84f7ed8042fa7cdbd902f7dcb7d0370e032095047cc3244179f263b77b5bc318",
+  "instruction": "Increase all three hole radii from 2.5 mm to 3 mm. Keep every other feature, origin, dimension, title and probe unchanged.",
+  "only_requested_fields_changed": true,
+  "expected_volume_mm3": 11180.707993412303,
+  "actual_volume_mm3": 11180.707993412225,
+  "zip_crc_passed": true,
+  "readback_hashes_match_downloaded_bytes": true,
+  "limits": "One specified edit on one original part; not general model quality or physical validation."
+}

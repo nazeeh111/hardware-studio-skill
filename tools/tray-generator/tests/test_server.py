@@ -27,6 +27,41 @@ WINDOW_EXAMPLE = EXAMPLE.with_name('pico-neopixel-window-cover.json')
 
 
 class LocalServerTests(unittest.TestCase):
+    def test_feature_solid_endpoints_build_verify_archive_and_reject_bad_operations(self):
+        import hashlib
+        spec = json.loads((EXAMPLE.parents[2] / 'solid-generator/examples/mounting-bracket.json').read_text())
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        base = f'http://127.0.0.1:{server.server_port}'
+        try:
+            def post(path, body=spec, origin=base):
+                request = urllib.request.Request(base+path, json.dumps(body).encode(), {'Content-Type':'application/json','Origin':origin}, method='POST')
+                return urllib.request.urlopen(request, timeout=150)
+            with self.assertRaises(urllib.error.HTTPError) as denied:post('/api/solid-preview', origin='https://outside.example')
+            self.assertEqual(denied.exception.code,403)
+            gigantic=b'{"schema":"hardware-studio-solid-v1","number":'+b'9'*5000+b'}'
+            request=urllib.request.Request(base+'/api/solid-preview',gigantic,{'Content-Type':'application/json'},method='POST')
+            with self.assertRaises(urllib.error.HTTPError) as malformed:urllib.request.urlopen(request,timeout=10)
+            self.assertEqual(malformed.exception.code,400)
+            with post('/api/solid-preview') as response:preview=json.load(response)
+            self.assertEqual(preview['schema'],'hardware-studio-solid-preview-v1')
+            self.assertEqual(preview['verification']['outer_span_mm'],[60.,30.,40.])
+            self.assertTrue(all(p['passed'] for p in preview['verification']['probes']))
+            mesh=base64.b64decode(preview['meshes'][0]['dataBase64'])
+            self.assertEqual(hashlib.sha256(mesh).hexdigest(),preview['verification']['sha256']['solid.stl'])
+            with post('/api/solid') as response:
+                self.assertEqual(response.headers.get_content_type(),'application/zip')
+                archive=zipfile.ZipFile(io.BytesIO(response.read()))
+            self.assertIsNone(archive.testzip())
+            self.assertEqual(set(archive.namelist()),{'spec.json','solid.step','solid.stl','build-report.json','verification.json'})
+            self.assertEqual(json.loads(archive.read('spec.json'))['features'],preview['spec']['features'])
+            invalid=json.loads(json.dumps(spec));invalid['features'].append({'id':'miss','operation':'cut','shape':'box','origin':[100,100,100],'size':[1,1,1]})
+            with self.assertRaises(urllib.error.HTTPError) as rejected:post('/api/solid-preview',invalid)
+            self.assertEqual(rejected.exception.code,422)
+        finally:
+            server.shutdown();server.server_close();worker.join(timeout=5)
+
     def test_generated_preview_uses_verified_meshes_and_origin_gate(self):
         import hashlib
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
