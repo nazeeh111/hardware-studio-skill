@@ -1,7 +1,7 @@
 {
   "title": "Pico + NeoPixel prototype tray",
   "brief": "An open, dimensioned tray and a provisional 5 V electrical prototype for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426.",
-  "summary": "Two-board tray checked against maker STEP models. A listed 5 V / 2 A source and two connector candidates narrow the power architecture, but junction, branch ratings, remaining loads, auxiliary fit and measurements remain open.",
+  "summary": "Two-board tray checked against maker STEP models. The proposed 5 V / 2 A source now has separate conceptual +5 V, ground, data, enable and capacitor conductor rows. Junction terminals, branch ratings, remaining loads, auxiliary fit and measurements remain open.",
   "cadUrl": "https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray",
   "wiringUrl": "https://github.com/nazeeh111/hardware-studio-skill/blob/main/examples/pico-neopixel-tray/electrical-plan.md",
   "starterId": "imported",
@@ -60,7 +60,7 @@
       "category": "Level shifting",
       "qty": 1,
       "unitCost": 0,
-      "detail": "Use gate 1: 1OE pin 1 held low, Pico GP2 to 1A pin 2, 1Y pin 3 to series resistor. VCC pin 14, GND pin 7. Tie unused inputs to a defined rail; unused outputs may float. Exact board or breadboard mounting is not in the tray CAD.",
+      "detail": "Use gate 1: Pico GP2 to 1A pin 2, 1Y pin 3 to series resistor, 1OE pin 1 low. VCC pin 14, GND pin 7. Proposed unused gates: 2OE/3OE/4OE and 2A/3A/4A tied to VCC; outputs unconnected, per TI layout example. Exact board/breadboard mounting and power-up behavior are not verified in tray CAD.",
       "voltage": "5 V VCC; 3.3 V input",
       "sourceUrl": "https://www.ti.com/product/SN74AHCT125",
       "specUrl": "https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf",
@@ -70,6 +70,12 @@
         "1OE",
         "1A",
         "1Y",
+        "2OE",
+        "2A",
+        "3OE",
+        "3A",
+        "4OE",
+        "4A",
         "VCC",
         "GND"
       ]
@@ -94,13 +100,16 @@
       "category": "Electrical",
       "qty": 1,
       "unitCost": 0,
-      "detail": "Across Stick +5 V and GND close to input; check polarity and chosen part dimensions. Not located in tray CAD.",
+      "detail": "Proposed symbolic +/− terminals across Stick 5VDC/GND at its input; check actual purchased capacitor markings, polarity, voltage rating and dimensions. Not located in tray CAD.",
       "voltage": "5 V rail",
       "sourceUrl": "",
       "specUrl": "https://learn.adafruit.com/adafruit-neopixel-uberguide/powering-neopixels",
       "checkedAt": "",
       "verified": false,
-      "pins": []
+      "pins": [
+        "+",
+        "-"
+      ]
     },
     {
       "id": "bypass",
@@ -185,86 +194,237 @@
   "wires": [
     {
       "from": "supply",
+      "fromPin": "BARREL CENTER +5V",
       "to": "barrel-368",
-      "signal": "positive-tip 5 V barrel pair",
+      "toPin": "+",
+      "signal": "Mated barrel center / +5 V",
       "voltage": "5 V",
-      "note": "Verify center-positive polarity and barrel fit before connecting any electronics."
+      "note": "Maker lists #276 center-positive. Confirm purchased supply and #368 markings with a meter."
+    },
+    {
+      "from": "supply",
+      "fromPin": "BARREL SLEEVE GND",
+      "to": "barrel-368",
+      "toPin": "-",
+      "signal": "Mated barrel sleeve / GND",
+      "voltage": "0 V",
+      "note": "Ground return in same mating barrel connector."
     },
     {
       "from": "barrel-368",
+      "fromPin": "+",
       "to": "branch-junction",
-      "signal": "marked +5 V / GND pair",
+      "toPin": "",
+      "signal": "+5 V feed to unselected junction",
       "voltage": "5 V",
-      "note": "Exact junction and wire retention/rating are open. Do not clamp three branch conductors under an unspecified adapter terminal."
+      "note": "Exact junction terminal, contact rating and wire retention remain open."
+    },
+    {
+      "from": "barrel-368",
+      "fromPin": "-",
+      "to": "branch-junction",
+      "toPin": "",
+      "signal": "GND return to unselected junction",
+      "voltage": "0 V",
+      "note": "Exact junction terminal, contact rating and wire retention remain open."
     },
     {
       "from": "branch-junction",
+      "fromPin": "",
       "to": "usb-plug-3972",
-      "signal": "Pico branch to A V+ and E GND",
+      "toPin": "A V+",
+      "signal": "Pico USB branch +5 V",
       "voltage": "5 V",
-      "note": "B/C/D stay open; exact branch wire/contact rating and plug access are unverified."
+      "note": "#3972 terminal A is USB pin 1 V+; verify branch wire and contact rating."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "usb-plug-3972",
+      "toPin": "E GND",
+      "signal": "Pico USB branch GND",
+      "voltage": "0 V",
+      "note": "#3972 terminal E is USB pin 5 GND; leave B/C/D disconnected."
     },
     {
       "from": "usb-plug-3972",
+      "fromPin": "A V+",
       "to": "pico-r3",
-      "signal": "Micro-B power plug into Pico USB socket",
+      "toPin": "",
+      "signal": "Pico Micro-B VBUS through mated plug",
       "voltage": "5 V",
-      "note": "Power-only connection; do not simultaneously connect another USB power source."
+      "note": "Pico socket contact is not named in the project pin inventory; no second USB source may be attached."
+    },
+    {
+      "from": "usb-plug-3972",
+      "fromPin": "E GND",
+      "to": "pico-r3",
+      "toPin": "",
+      "signal": "Pico Micro-B ground through mated plug",
+      "voltage": "0 V",
+      "note": "Verify continuity to Pico board ground with power disconnected."
     },
     {
       "from": "branch-junction",
+      "fromPin": "",
       "to": "neopixel-1426",
-      "signal": "separate +5 V / GND pair to input pads",
+      "toPin": "5VDC",
+      "signal": "Stick input +5 V branch",
       "voltage": "5 V",
-      "note": "Use the DIN end; confirm conductor and junction ratings and polarity."
+      "note": "Use the DIN end and check pad label on the delivered Stick revision."
     },
     {
       "from": "branch-junction",
+      "fromPin": "",
+      "to": "neopixel-1426",
+      "toPin": "GND",
+      "signal": "Stick input GND return",
+      "voltage": "0 V",
+      "note": "Ground is shared with Pico and AHCT; check delivered pad label."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
       "to": "ahct",
-      "signal": "separate +5 V / GND pair to VCC 14 / GND 7",
+      "toPin": "VCC",
+      "signal": "AHCT VCC pin 14 branch",
       "voltage": "5 V",
-      "note": "1OE pin 1 held low; define unused input levels per TI."
+      "note": "Place 0.1 µF bypass across VCC/GND close to IC."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "GND",
+      "signal": "AHCT GND pin 7 return",
+      "voltage": "0 V",
+      "note": "Verify PDIP-14 orientation on the purchased part."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "1OE",
+      "signal": "Hold gate 1 output enable low",
+      "voltage": "0 V",
+      "note": "Always-enabled proposal. TI recommends a VCC pull-up if high impedance during power-up is required; behavior remains an open review."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "2OE",
+      "signal": "Unused AHCT 2OE tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "2A",
+      "signal": "Unused AHCT 2A tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "3OE",
+      "signal": "Unused AHCT 3OE tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "3A",
+      "signal": "Unused AHCT 3A tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "4OE",
+      "signal": "Unused AHCT 4OE tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+    },
+    {
+      "from": "branch-junction",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "4A",
+      "signal": "Unused AHCT 4A tied high",
+      "voltage": "5 V",
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
     },
     {
       "from": "pico-r3",
-      "to": "ahct",
-      "signal": "GP2 → 1A pin 2; common GND",
-      "voltage": "3.3 V data",
-      "note": "Never connect a 5 V signal to Pico GPIO. Confirm exact Pico header pinout before wiring.",
       "fromPin": "GP2",
-      "toPin": "1A"
+      "to": "ahct",
+      "toPin": "1A",
+      "signal": "3.3 V data: Pico GP2 to AHCT 1A pin 2",
+      "voltage": "3.3 V",
+      "note": "The 5 V AHCT input accepts a 3.3 V high; never drive 5 V into Pico GPIO."
     },
     {
       "from": "ahct",
-      "to": "res470",
-      "signal": "1Y pin 3 → 470 Ω",
-      "voltage": "5 V data",
-      "note": "Series resistor is near Stick DIN.",
       "fromPin": "1Y",
-      "toPin": ""
+      "to": "res470",
+      "toPin": "",
+      "signal": "AHCT 1Y pin 3 to series resistor",
+      "voltage": "5 V data",
+      "note": "Choose exact resistor and identify its physical lead before wiring."
     },
     {
       "from": "res470",
-      "to": "neopixel-1426",
-      "signal": "470 Ω → DIN input pad",
-      "voltage": "5 V data",
-      "note": "DOUT is left unconnected for one Stick.",
       "fromPin": "",
-      "toPin": "DIN"
+      "to": "neopixel-1426",
+      "toPin": "DIN",
+      "signal": "Series resistor to Stick DIN",
+      "voltage": "5 V data",
+      "note": "Place near DIN; DOUT stays unconnected for one Stick."
     },
     {
       "from": "bulkcap",
+      "fromPin": "+",
       "to": "neopixel-1426",
-      "signal": "Across 5VDC/GND at input",
+      "toPin": "5VDC",
+      "signal": "Bulk capacitor positive to Stick +5 V",
       "voltage": "5 V",
-      "note": "Observe polarized capacitor polarity; positive to 5 V."
+      "note": "Choose exact capacitor and verify polarity and voltage rating."
+    },
+    {
+      "from": "bulkcap",
+      "fromPin": "-",
+      "to": "neopixel-1426",
+      "toPin": "GND",
+      "signal": "Bulk capacitor negative to Stick GND",
+      "voltage": "0 V",
+      "note": "Check actual marked negative stripe before connecting."
     },
     {
       "from": "bypass",
+      "fromPin": "",
       "to": "ahct",
-      "signal": "Across VCC 14/GND 7",
+      "toPin": "VCC",
+      "signal": "Ceramic bypass lead to AHCT VCC 14",
       "voltage": "5 V",
-      "note": "Place 0.1 µF bypass capacitor close to IC supply pins."
+      "note": "Choose exact 0.1 µF part and keep close to IC."
+    },
+    {
+      "from": "bypass",
+      "fromPin": "",
+      "to": "ahct",
+      "toPin": "GND",
+      "signal": "Ceramic bypass lead to AHCT GND 7",
+      "voltage": "0 V",
+      "note": "The ceramic capacitor is non-polar; identify leads on the physical assembly."
     }
   ],
   "powerRails": [
@@ -331,7 +491,7 @@
     {
       "phase": "Wire",
       "title": "Assemble the off-tray data interface",
-      "detail": "With power disconnected, wire Pico GP2 to SN74AHCT125N 1A, hold 1OE low, connect 1Y through 470 Ω to Stick DIN, tie unused IC inputs and add 0.1 µF bypass close to VCC/GND. Verify pin numbering for the purchased package.",
+      "detail": "With power disconnected, wire Pico GP2 to AHCT 1A, hold 1OE low, connect 1Y through 470 Ω to Stick DIN, tie unused 2/3/4 OE and A inputs to VCC, and add 0.1 µF bypass across VCC/GND. Verify purchased PDIP pin numbering and power-up behavior; unused outputs stay disconnected.",
       "done": false,
       "partIds": [
         "pico-r3",
@@ -344,7 +504,7 @@
     {
       "phase": "Wire",
       "title": "Connect power and common ground",
-      "detail": "With power disconnected, connect the #276 barrel through #368 to a separately selected insulated junction. Route three +5 V/GND pairs: #3972 A/E into Pico micro-USB, Stick 5VDC/GND, and AHCT VCC/GND. Add the bulk and bypass capacitors with correct polarity. Verify continuity, no shorts and no second USB power source before energizing.",
+      "detail": "With power disconnected, connect #276 barrel through #368 to a separately selected insulated junction. Route distinct +5 V and GND conductors to #3972 A/E and Pico micro-USB, Stick 5VDC/GND, and AHCT VCC/GND. Add bulk and bypass capacitors with correct lead assignment. Verify polarity, continuity, no shorts and no second USB source before energizing.",
       "done": false,
       "partIds": [
         "supply",
@@ -416,7 +576,7 @@
       ]
     }
   ],
-  "notes": "Mechanical STEP fit covers only Pico and Stick, not the 5 V supply, #368, #3972, distribution junction, shifter or passives. Adafruit #276 lists 5 V / 2 A; the LED full-white estimate is 480 mA, so the worksheet remains incomplete until Pico and shifter current are established. #368 has a vendor-support nominal 2 A statement; #3972 and the junction/branch assembly lack an established current rating. No wiring or physical fit was performed. Prices remain unknown.",
+  "notes": "The 26 connection rows separate electrical conductors, including the 5 V and GND branches. Several source-to-part relationships are mated connector contacts rather than loose wires. Unselected junction terminals, Pico USB socket contacts, resistor and bypass leads remain unnamed; the table is a conceptual netlist, not an approved schematic. Mechanical STEP fit covers only Pico and Stick. Adafruit #276 lists 5 V / 2 A; 480 mA LED full-white estimate is not whole-device demand. Pico and AHCT dynamic current, branch ratings and physical assembly are unverified.",
   "review": {
     "electrical": false,
     "mechanical": false,

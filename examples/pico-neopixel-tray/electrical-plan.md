@@ -16,7 +16,7 @@ This is a **source-backed wiring proposal**, separate from the two-board mechani
 | Identify a plausible supply and entry connector | [Adafruit #276](https://www.adafruit.com/product/276) lists a regulated, UL-listed 5 V / 2 A positive-tip 5.5/2.1 mm wall supply. [#368](https://www.adafruit.com/product/368) accepts that barrel size and exposes marked +/− screws; [Adafruit support](https://forums.adafruit.com/viewtopic.php?t=141620) calls its rating nominally 2 A. | The app now records **2,000 mA source capacity**, but still reports an incomplete worksheet because Pico and shifter loads are unknown. Confirm the purchased source and polarity. The #368 screws are an entry pair, not a verified three-way junction. |
 | Identify the Pico branch connection | [Adafruit #3972](https://www.adafruit.com/product/3972) is a Micro-B male terminal adapter with A = V+ (USB pin 1) and E = GND (pin 5); its listing gives 32.5 × 28 × 10.4 mm dimensions and a 26–16 AWG wire range. | Propose the junction's Pico branch to A/E, then the plug into Pico. Leave data terminals B/C/D disconnected. The listing does not establish an assembly current rating or fit with this tray. |
 
-For the 14-pin PDIP version of SN74AHCT125N, TI shows VCC at pin 14 and GND at pin 7. Its three unused channels must not have floating logic inputs: tie unused `OE` inputs high and unused `A` inputs to a defined level, following the purchased package datasheet; unused outputs can remain disconnected. The data line must never feed 5 V into a Pico GPIO. The Stick's DOUT stays disconnected in this one-Stick design.
+For the 14-pin PDIP version of SN74AHCT125N, [TI shows](https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf) VCC at pin 14 and GND at pin 7. The proposal holds `1OE` low and ties unused `2OE`, `3OE`, `4OE`, `2A`, `3A` and `4A` high to VCC, as in TI's example layout; unused outputs stay disconnected. TI separately recommends an OE pull-up when a high-impedance output is needed during power up or down. This always-enabled gate-1 proposal does not provide that behavior, so power sequencing remains an open check. The data line must never feed 5 V into a Pico GPIO. The Stick's DOUT stays disconnected in this one-Stick design.
 
 ## Proposed source-to-load path
 
@@ -27,6 +27,12 @@ For the 14-pin PDIP version of SN74AHCT125N, TI shows VCC at pin 14 and GND at p
 3. `SN74AHCT125N VCC 14/GND 7`, with 0.1 µF bypass close to the IC and `1OE` held low.
 
 The **junction and branch conductors are not selected**. Do not put three conductors under #368's screws without a specified connector and retention/rating evidence. The #3972 plug, #368 adapter and junction are external to the verified tray geometry. Polarity, strain relief, creepage around exposed contacts, wire gauge, contact current and total assembly current must be checked on exact parts before energizing.
+
+## Per-conductor review record
+
+The [26-row connection register](connections.csv) separates proposed +5 V, GND, data, enable and capacitor paths. Two rows describe each mated power connector's **electrical continuity**, not extra loose wires. Five rows have both endpoint labels in a recorded part inventory; 21 still lack at least one exact endpoint, chiefly because the distribution junction, Pico USB socket contact, resistor and ceramic-capacitor leads are not specified as exact parts. Even the five internally matched rows have not been continuity-tested or electrically validated. The app's wiring view and project ZIP export this same review register when this JSON is imported.
+
+The junction remains an abstract block. Its exact terminals, branch geometry, contact ratings and number of conductors per clamp must be selected before this can become an assembly schematic. The [#3972 maker listing](https://www.adafruit.com/product/3972) supports terminal A = V+ and E = GND; [TI's PDIP pin table](https://www.ti.com/lit/ds/symlink/sn74ahct125.pdf) supports the AHCT labels. Check the marked pads on the delivered [NeoPixel Stick](https://www.adafruit.com/product/1426), because Adafruit warns that pad order can vary across NeoPixel products.
 
 ## Power worksheet
 

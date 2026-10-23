@@ -8,7 +8,7 @@ An original, local-first hardware design workspace informed by a public study of
 
 [View the narrow layout](assets/studio-narrow.png).
 
-For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path. Its proposed 5 V / 2 A source is listed, while the power worksheet still flags missing load and branch evidence. It remains a prototype with documented open checks.
+For a dimensioned example, see the [Pico + NeoPixel prototype tray](examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path. Its [connection register](examples/pico-neopixel-tray/connections.csv) separates 26 proposed conductor paths; 21 still lack at least one exact endpoint. The proposed 5 V / 2 A source is listed, while the power worksheet flags missing load and branch evidence. It remains a prototype with documented open checks.
 
 To create a new rectangular tray, use the [parametric tray generator](tools/tray-generator/README.md) with a millimeter JSON specification. It exports fresh STEP, STL and a dimensioned layout, then reopens the exports in a separate process to check their integrity. Component fit and fabrication checks still need separate evidence.
 
