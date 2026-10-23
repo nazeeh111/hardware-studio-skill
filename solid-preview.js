@@ -1,12 +1,14 @@
+import {solidContext} from './project-geometry.js?v=1';
 import {validateSolidSpec} from './solid-spec.js?v=1';
 import {parseStl} from './stl.js?v=1';
 export const SOLID_PREVIEW_KEY='hardware-studio-solid-snapshot-v1';
-export function solidSnapshot(spec,now=Date.now()){return {schema:SOLID_PREVIEW_KEY,at:now,spec:validateSolidSpec(spec),returnTo:'./solid.html'};}
+export function solidSnapshot(spec,now=Date.now(),search=''){return {schema:SOLID_PREVIEW_KEY,at:now,spec:validateSolidSpec(spec),returnTo:solidContext(search).returnTo};}
 export function readSolidSnapshot(raw,now=Date.now()){
  if(typeof raw!=='string'||raw.length>65536)throw new Error('Feature model snapshot unavailable. Open a new preview from the solid modeler.');
  const value=JSON.parse(raw);
  if(value?.schema!==SOLID_PREVIEW_KEY||!Number.isFinite(value.at)||now-value.at>1800000||value.at>now+10000)throw new Error('Feature snapshot expired. Open a new preview from the solid modeler.');
- return solidSnapshot(value.spec,value.at);
+ if(typeof value.returnTo!=='string'||!/^\.\/solid\.html(?:\?|$)/.test(value.returnTo))throw new Error('Invalid modeler return link.');
+ return solidSnapshot(value.spec,value.at,value.returnTo.slice('./solid.html'.length));
 }
 export async function solidMeshes(payload,spec){
  spec=validateSolidSpec(spec);

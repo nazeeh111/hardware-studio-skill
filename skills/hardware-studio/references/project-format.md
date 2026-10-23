@@ -15,6 +15,7 @@ For a selected part, optional `pins` is an array of unique pin or terminal names
   "cadUrl": "",
   "wiringUrl": "",
   "traySpec": null,
+  "solidSpec": null,
   "referenceImage": null,
   "tools": ["Multimeter", "Wire stripper"],
   "assumptions": ["Exact controller and display modules still need selection."],
@@ -79,3 +80,10 @@ The app accepts additional fields but does not use them. Keep full calculations,
 
 The browser tray workbench stores its valid draft with the local project as optional `traySpec`, and the project ZIP includes the same geometry as `tray-spec.json`. The spec may include `lid: {"thickness": 2.5, "skirtDepth": 3, "skirtWall": 2, "clearance": 0.5, "window": {"x": 6, "y": 27, "length": 54, "width": 14}}` for a separate, unretained lift-off cover that wraps outside the tray with a through-plate rectangular opening. Omit `window` or set it to `null` for a solid plate. The opening must leave at least 1 mm of plate inside each tray wall. Project JSON imports retain this field while resetting mechanical review. Download the spec directly from the workbench or use the repository's tray generator to make tray and optional lid STEP/STL; check component fit against both and record the resulting evidence URL in `cadUrl` when published.
 The skill checker validates `traySpec` against the same input rules as the browser editor. This only checks that the requested geometry is internally well formed; it does not compare it to manufacturer models or a physical assembly.
+
+
+### Editable feature part
+
+Optional `solidSpec` stores one connected feature part, validated by the browser and skill checker with the same rules. Schema is `hardware-studio-solid-v1`, units `mm`, with a short `title`, 1–32 ordered `features` and up to 16 `probes`. Features have unique `id`, `operation` (`add` or `cut`) and `shape`. A box uses `origin: [x,y,z]` at the minimum corner and `size: [x,y,z]`; a cylinder uses a base-center `origin`, positive `axis` (`x`, `y` or `z`), `radius` and `height`. Probes use the same primitive fields with `expect: "material"` or `"void"` instead of operation. Coordinates are bounded to ±500 mm and positive lengths to 0.01–500 mm. The first feature must add material. See the repository’s `tools/solid-generator/README.md` for generation constraints and the worked `examples/feature-bracket/` for source/readback.
+
+The project modeler saves applied source in a project-specific cache; the main app merges the latest valid source into project data and resets mechanical review after changes. Project ZIP contains matching `solid-spec.json`; generated STEP/STL is a separate checked download and is not silently attached to a source-only project export. Imports allocate independent IDs. History restores project and cache source together using captured-byte checks; an unreadable or intervening newer cache cancels replacement. Deleted recovery retains valid newer workbench source. The direct `solid.html` URL is a separate standalone workspace. Merely viewing the default bracket does not attach it to a project. These fields do not map one feature part to an entire physical assembly and do not prove strength, tolerance or fit.

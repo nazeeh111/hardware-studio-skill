@@ -1,7 +1,10 @@
 import {validateSolidSpec,solidProposal} from './solid-spec.js?v=1';
-import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=1';
+import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=2';
 import {writeWorkspace,WorkspaceConflictError} from './workspace-store.js?v=1';
-const $=s=>document.querySelector(s),KEY='hardware-studio-solid-model-v1',DRAFT='hardware-studio-solid-editor-v1',OLLAMA='http://127.0.0.1:11434';
+import {solidContext} from './project-geometry.js?v=1';
+import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=34';
+const context=solidContext(location.search);
+const $=s=>document.querySelector(s),KEY=context.key,DRAFT=context.draftKey,OLLAMA='http://127.0.0.1:11434';
 let spec=null,expectedRaw=null,preservedRaw=null,blocked=false,states=[],cursor=0,ready=false,busy=false,pending=null,controller=null;
 const note=text=>{$('#solid-status').textContent=text;};
 const source=()=>JSON.stringify(spec,null,2);
@@ -20,7 +23,7 @@ function save(){
 }
 function commit(next,history=true){
  next=validateSolidSpec(next);if(history&&JSON.stringify(next)!==JSON.stringify(spec)){states=states.slice(0,cursor+1);states.push(next);if(states.length>20)states.shift();cursor=states.length-1;}
- spec=next;render();const saved=save();note(`${spec.features.length} applied features; ${spec.probes.length} selected region checks. ${saved?'Source saved in this browser.':'Working copy is not saved over the stored source. Export it before closing.'} Generate CAD to check the solid.`);
+ spec=next;render();const saved=save();note(`${spec.features.length} applied features; ${spec.probes.length} selected region checks. ${saved?context.id?'Source saved for this project in this browser.':'Source saved in this browser.':'Working copy is not saved over the stored source. Export it before closing.'} Generate CAD to check the solid.`);
 }
 function download(name,data,type='application/json'){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 async function example(){const response=await fetch('./tools/solid-generator/examples/mounting-bracket.json');if(!response.ok)throw new Error('Bracket example unavailable. Import a feature JSON file.');return validateSolidSpec(await response.json());}
@@ -52,14 +55,23 @@ $('#solid-import').addEventListener('change',async event=>{const file=event.targ
 $('#solid-export').addEventListener('click',()=>download('hardware-studio-feature-source.json',$('#solid-source').value));
 $('#solid-backup').addEventListener('click',()=>{download('hardware-studio-original-feature-source.json',preservedRaw??'');$('#solid-replace').disabled=false;});
 $('#solid-replace').addEventListener('click',()=>{if($('#solid-replace').disabled||dirty())return note('Apply edited source before replacing saved bytes.');try{expectedRaw=writeWorkspace(localStorage,KEY,preservedRaw,JSON.stringify(spec));blocked=false;preservedRaw=null;$('#solid-recovery').hidden=true;try{sessionStorage.removeItem(DRAFT);}catch{}note('Working source saved after original-byte backup.');}catch{try{preservedRaw=localStorage.getItem(KEY);}catch{}$('#solid-replace').disabled=true;note('Saved bytes changed again or could not be written. Download the current original bytes before replacing.');}});
-$('#solid-preview').addEventListener('click',()=>{if(dirty()||!ready||busy)return;try{sessionStorage.setItem(SOLID_PREVIEW_KEY,JSON.stringify(solidSnapshot(spec)));location.href='./cad-viewer.html?generated=solid';}catch(error){note(error.message||'Preview snapshot could not be retained. Export source first.');}});
+$('#solid-preview').addEventListener('click',()=>{if(dirty()||!ready||busy)return;try{sessionStorage.setItem(SOLID_PREVIEW_KEY,JSON.stringify(solidSnapshot(spec,Date.now(),location.search)));location.href='./cad-viewer.html?generated=solid';}catch(error){note(error.message||'Preview snapshot could not be retained. Export source first.');}});
 $('#solid-package').addEventListener('click',async()=>{if(dirty()||!ready||busy)return;const frozen=structuredClone(spec);busy=true;buttons();note('Building the frozen feature record and checking exported geometry…');try{const response=await fetch('./api/solid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(frozen),signal:AbortSignal.timeout(130000)});if(!response.ok){let message='Solid build failed.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('No CAD ZIP returned.');download('hardware-studio-feature-cad.zip',await response.blob(),'application/zip');note(`CAD ZIP downloaded for “${frozen.title}”. Inspect its source and verification report; the editor may now contain later changes.`);}catch(error){note(error.name==='TimeoutError'?'Build timed out. Source retained.':error.message);}finally{busy=false;buttons();}});
 $('#solid-model').addEventListener('change',()=>{try{sessionStorage.setItem('hardware-studio-solid-model-choice-v1',$('#solid-model').value);}catch{}});
 $('#solid-propose').addEventListener('click',propose);$('#solid-cancel').addEventListener('click',()=>controller?.abort());$('#solid-discard').addEventListener('click',()=>{pending=null;$('#solid-proposal').hidden=true;$('#solid-ai-status').textContent='Proposal discarded. Current source retained.';});
 $('#solid-accept').addEventListener('click',()=>{if(!pending)return;try{if(dirty()||JSON.stringify(spec)!==pending.base)throw new Error('Source changed. Request a new proposal from the current source.');commit(pending.spec);pending=null;$('#solid-proposal').hidden=true;$('#solid-ai-status').textContent='Proposed source applied. Check save status, then generate to test geometry.';}catch(error){$('#solid-ai-status').textContent=error.message;}});
 async function initialize(){
+ $('#solid-project').textContent=context.id ? `PROJECT / ${context.title || context.id}` : 'STANDALONE / SOURCE';
+ document.querySelectorAll('header a').forEach(link=>link.href=context.studioTo);
  let initial;try{expectedRaw=localStorage.getItem(KEY);if(expectedRaw!==null){try{initial=validateSolidSpec(JSON.parse(expectedRaw));}catch{blocked=true;preservedRaw=expectedRaw;$('#solid-recovery').hidden=false;}}}catch{}
- try{spec=initial||await example();states=[spec];render();note(initial?'Saved feature source restored. Generate to check geometry.':blocked?'Saved bytes preserved. The example is a separate working copy.':'Bracket example loaded as an unverified working source.');try{const draft=sessionStorage.getItem(DRAFT);if(draft&&draft.length<=65536&&draft!==source()){$('#solid-source').value=draft;note('Unapplied source restored from this tab. Apply or export it before closing.');$('#solid-chip').textContent='UNAPPLIED';buttons();}}catch{}void runtime();void models();}
+ try{
+ if(context.id&&!initial&&!blocked){
+   const workspace=parseSavedWorkspace(localStorage.getItem(STORAGE_KEY));
+   const project=workspace.projects.find(p=>p.id===context.id);
+   if(!project)throw new Error('Project unavailable. Return to the studio and open the modeler from an existing project.');
+   if(project.solidSpec)initial=validateSolidSpec(project.solidSpec);
+ }
+ spec=initial||await example();states=[spec];render();note(initial?'Saved feature source restored. Generate to check geometry.':blocked?'Saved bytes preserved. The example is a separate working copy.':'Bracket example loaded as an unverified working source.');try{const draft=sessionStorage.getItem(DRAFT);if(draft&&draft.length<=65536&&draft!==source()){$('#solid-source').value=draft;note('Unapplied source restored from this tab. Apply or export it before closing.');$('#solid-chip').textContent='UNAPPLIED';buttons();}}catch{}void runtime();void models();}
  catch(error){note(error.message);}
 }
 void initialize();

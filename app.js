@@ -1,5 +1,7 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=33';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision } from './core.js?v=34';
 import { validateTraySpec } from './tray-spec.js?v=4';
+import { validateSolidSpec } from './solid-spec.js?v=1';
+import {trayKey,solidKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=1';
 import { createZip } from './zip.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=2';
 import { createSketchPad } from './sketch-pad.js?v=1';
@@ -255,45 +257,35 @@ function download(name, contents, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
-const trayKey = id => `hardware-studio-tray-${id}`;
-function traySpecForProject(p) {
-  let raw;
-  try { raw = localStorage.getItem(trayKey(p.id)); }
-  catch { return p.traySpec || null; }
-  return raw ? validateTraySpec(JSON.parse(raw)) : p.traySpec || null;
-}
-function projectWithTraySpec(p) {
-  const spec = traySpecForProject(p);
-  if (JSON.stringify(spec) === JSON.stringify(p.traySpec ?? null)) return p;
-  return { ...p, traySpec: spec, review: { ...p.review, mechanical: false } };
-}
-function syncCurrentTrayDraft(p) {
-  let spec;
-  try { spec = traySpecForProject(p); }
-  catch { showToast('The saved tray draft is unreadable. Export the project before changing it.'); return false; }
-  if (!spec) return true;
+function projectWithCurrentGeometry(p) { return projectWithGeometry(p, localStorage); }
+function syncCurrentGeometry(p, state = null) {
+  let next;
+  try { next = state ? state.project : projectWithCurrentGeometry(p); }
+  catch { showToast('Saved geometry could not be read. Original bytes remain in its workbench; download them before replacing.'); return false; }
+  if (next === p) return true;
   const before = structuredClone(p);
-  if (!setProjectTraySpec(p, spec)) return true;
-  return saveWithRollback(p, before, 'Before updating tray geometry');
+  Object.assign(p, next);
+  return saveWithRollback(p, before, 'Before updating CAD source');
 }
-function writeTraySidecar(p) {
-  try {
-    if (p.traySpec) localStorage.setItem(trayKey(p.id), JSON.stringify(p.traySpec));
-    else localStorage.removeItem(trayKey(p.id));
-    return true;
-  } catch { return false; }
+function geometryFailure(error) {
+  if (error.recovery) download('hardware-studio-geometry-recovery.json', JSON.stringify(error.recovery,null,2), 'application/json');
+  showToast(error.recovery ? error.message : 'Geometry cache could not be updated. The project and original bytes remain available.');
+}
+function rollbackGeometry(transaction) {
+  try { transaction.rollback(); } catch (error) { geometryFailure(error); }
 }
 function exportPackage(p) {
-  p = projectWithTraySpec(p);
+  p = projectWithCurrentGeometry(p);
   const generatedAt = new Date().toISOString();
   const issues = validate(p);
   const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
   const title = String(p.title).replace(/[\r\n]+/g, ' ');
   const reference = safeReferenceImage(p.referenceImage);
   const traySpec = p.traySpec;
+  const solidSpec = p.solidSpec;
   const partNames = new Map(p.parts.map(part => [part.id, part.name]));
   const buildPlan = `${title}\nBuild plan exported ${generatedAt}\n\nTOOLS AND CONSUMABLES\n${(p.tools || []).length ? p.tools.map(tool => `- ${tool}`).join('\n') : '(not recorded)'}\n\nASSUMPTIONS AND PREREQUISITES\n${(p.assumptions || []).length ? p.assumptions.map(item => `- ${item}`).join('\n') : '(not recorded)'}\n\nSTEPS\n${p.steps.map((step, index) => `${index + 1}. [${step.phase}] ${step.title}${step.done ? ' (checked in this browser)' : ''}\n   ${step.detail}\n   Parts: ${(step.partIds || []).map(id => partNames.get(id) || `Missing: ${id}`).join(', ') || '(not linked)'}`).join('\n\n')}\n\nThis is a planning record, not a verified build procedure.\n`;
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Connection register](connections.csv): each recorded relationship and its pin-name review state; rows may still combine conductors.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}${reference?.sketch ? '\n- [Editable sketch](reference-sketch.json): original bounded strokes and labels, also retained in project.json; annotations are not measured specifications.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Connection register](connections.csv): each recorded relationship and its pin-name review state; rows may still combine conductors.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${solidSpec ? '\n- [Feature CAD input](solid-spec.json): ordered editable part source; generate checked STEP/STL separately in the solid modeler.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}${reference?.sketch ? '\n- [Editable sketch](reference-sketch.json): original bounded strokes and labels, also retained in project.json; annotations are not measured specifications.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
@@ -306,6 +298,7 @@ function exportPackage(p) {
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
     { name: 'review.txt', data: report },
     ...(traySpec ? [{ name: 'tray-spec.json', data: JSON.stringify(traySpec, null, 2) + '\n' }] : []),
+    ...(solidSpec ? [{ name: 'solid-spec.json', data: JSON.stringify(solidSpec, null, 2) + '\n' }] : []),
     ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : []),
     ...(reference?.sketch ? [{ name: 'reference-sketch.json', data: JSON.stringify(reference.sketch,null,2) }] : [])
   ]);
@@ -327,7 +320,9 @@ function openHistory() {
   $('#history-dialog').showModal();
 }
 function restoreRevision(id) {
-  const p = current(); let entry;
+  const p = current(); let geometryState;
+  try { geometryState = readGeometryState(p, localStorage); } catch (error) { geometryFailure(error); return; }
+  if (!syncCurrentGeometry(p, geometryState)) return; let entry;
   try { entry = readRevisions().find(item => item.id === id && item.projectId === p.id); }
   catch { return showToast('Revision history could not be read.'); }
   if (!entry) return showToast('That revision is no longer available.');
@@ -336,16 +331,14 @@ function restoreRevision(id) {
   catch { return showToast('This revision is invalid and was not restored.'); }
   try { recordRevision(p, 'Before restoring an older revision'); }
   catch { return showToast('Current state could not be preserved in history. Export JSON before restoring.'); }
-  let priorSidecar;
-  try {
-    priorSidecar = localStorage.getItem(trayKey(p.id));
-    if (!writeTraySidecar(restored)) throw new Error('Tray draft could not be updated');
-  } catch { return showToast('Tray draft could not be restored. Current project remains unchanged.'); }
+  let transaction;
+  try { transaction = replaceGeometryCache(restored, localStorage, geometryState.raw); }
+  catch (error) { geometryFailure(error); return; }
   const index = projects.findIndex(item => item.id === p.id);
   projects[index] = restored;
   if (!save('Restored revision', { skipRevision: true })) {
     projects[index] = p;
-    try { if (priorSidecar == null) localStorage.removeItem(trayKey(p.id)); else localStorage.setItem(trayKey(p.id), priorSidecar); } catch { showToast('Tray draft recovery failed. Export the current project JSON.'); }
+    rollbackGeometry(transaction);
     return;
   }
   $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Older state restored. Verification marks were reset.');
@@ -355,19 +348,17 @@ function recoverDeletedProject(id) {
   try { entry = readRevisions().find(item => item.id === id && item.reason === 'Deleted project' && !projects.some(project => project.id === item.projectId)); }
   catch { return showToast('Deleted-project history could not be read.'); }
   if (!entry) return showToast('That deleted project is no longer available.');
-  let recovered;
-  try { recovered = restoreProjectFromRevision(entry.snapshot, entry.snapshot); }
+  let recovered, geometryState;
+  try { geometryState = readGeometryState(restoreProjectFromRevision(entry.snapshot, entry.snapshot), localStorage); recovered = geometryState.project; }
   catch { return showToast('This saved project is invalid and was not recovered.'); }
-  let priorSidecar;
-  try {
-    priorSidecar = localStorage.getItem(trayKey(recovered.id));
-    if (!writeTraySidecar(recovered)) throw new Error('Tray draft could not be updated');
-  } catch { return showToast('Tray draft could not be recovered. Saved history remains available.'); }
+  let transaction;
+  try { transaction = replaceGeometryCache(recovered, localStorage, geometryState.raw); }
+  catch (error) { geometryFailure(error); return; }
   const priorProjects = projects, priorId = currentId;
   projects = [recovered, ...projects]; currentId = recovered.id;
   if (!save('Recover deleted project', { skipRevision: true })) {
     projects = priorProjects; currentId = priorId;
-    try { if (priorSidecar == null) localStorage.removeItem(trayKey(recovered.id)); else localStorage.setItem(trayKey(recovered.id), priorSidecar); } catch { showToast('Tray draft recovery failed. Export the current project JSON.'); }
+    rollbackGeometry(transaction);
     return;
   }
   $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Project recovered. Verification and step marks were reset.');
@@ -376,13 +367,13 @@ function addProject(p) {
   const priorProjects = projects, priorId = currentId;
   projects = [p, ...projects]; currentId = p.id; activeTab = 'overview';
   if (!save('Before creating project')) { projects = priorProjects; currentId = priorId; render(); return false; }
-  const trayCached = !p.traySpec || writeTraySidecar(p);
-  render(); showToast(trayCached ? 'Project created. Review the design before building.' : 'Project saved, but the tray workbench could not cache its draft. Export JSON to keep the geometry.'); return true;
+  try { replaceGeometryCache(p, localStorage); } catch (error) { geometryFailure(error); }
+  render(); showToast('Project created. Review the design before building.'); return true;
 }
 
 function render() {
   const p = current(); if (!p) return;
-  syncCurrentTrayDraft(p);
+  syncCurrentGeometry(p);
   $('#project-count').textContent = String(projects.length).padStart(2, '0');
   $('#project-list').innerHTML = projects.map(item => `<button class="project-item ${item.id === p.id ? 'active' : ''}" data-project="${html(item.id)}" type="button"><span class="item-icon">${html(STARTERS.find(s => s.id === item.starterId)?.icon || '◇')}</span><span><strong>${html(item.title)}</strong><small>${html(item.starterId === 'ai' ? 'LOCAL AI DRAFT' : item.starterId === 'blank' ? 'CUSTOM CONCEPT' : item.starterId === 'imported' ? 'IMPORTED CONCEPT' : 'DESIGN PROJECT')}</small></span></button>`).join('');
   $('#starter-buttons').innerHTML = STARTERS.map(s => `<button class="starter-pill" data-starter="${html(s.id)}" type="button">${html(s.icon)} &nbsp; ${html(s.name)} ↗</button>`).join('');
@@ -472,10 +463,12 @@ function renderAssembly(p) {
   const evidence = safeUrl(p.cadUrl) ? `<div class="notice">Attached dimensioned work: <a href="${html(safeUrl(p.cadUrl))}" target="_blank" rel="noopener noreferrer">Open CAD source and checks ↗</a>. Review its stated scope before relying on it.</div>` : '';
   const next = evidence ? 'Next check: compare the linked CAD with physical parts, then test mounting, access, cable fit, thermal clearance and wire routing. Revise the model when hardware changes.' : 'Next check: measure the actual components, create a dimensioned model, then test mounting, access, motion, thermal clearance and wire routing. Revise the model when hardware changes.';
   const tray = p.traySpec ? `<div class="notice">Editable tray study: ${html(p.traySpec.outer.length)} × ${html(p.traySpec.outer.width)} × ${html(p.traySpec.outer.height)} mm, ${html(p.traySpec.mounts.length)} boss${p.traySpec.mounts.length === 1 ? '' : 'es'}, ${html(p.traySpec.cutouts.length)} opening${p.traySpec.cutouts.length === 1 ? '' : 's'}. Saved with project JSON; physical fit remains unverified.</div>` : '';
+  const solid = p.solidSpec ? `<div class="notice">Editable part: <strong>${html(p.solidSpec.title)}</strong>, ${p.solidSpec.features.length} features and ${p.solidSpec.probes.length} selected region checks. Source is saved with project JSON and ZIP. Generate CAD to check the geometry; fit and strength remain unverified.</div>` : '';
+  const solidWorkbench = `./solid.html?project=${encodeURIComponent(p.id)}&title=${encodeURIComponent(p.title)}`;
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const mounts = (p.mechanicalConnections || []).map((link, index) => `<div class="mount-row"><div><strong>${html(labels[link.from] || 'Missing part')} → ${html(labels[link.to] || 'Missing part')}</strong><span>${html(link.label)}</span>${link.note ? `<small>${html(link.note)}</small>` : ''}</div><button class="text-link" data-edit-mount="${index}" type="button">Edit</button></div>`).join('');
   const trayWorkbench = `./tray.html?project=${encodeURIComponent(p.id)}&title=${encodeURIComponent(p.title)}`;
-  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + tray + '<div class="notice">Create brackets, spacers and other supported connected parts in the <a href="./solid.html" target="_blank" rel="noopener noreferrer">feature solid modeler ↗</a>. Its editable source and checked CAD ZIP are separate from this project package. Inspect actual mesh geometry in the <a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">3D STL viewer ↗</a>. Open the worked tray and cover, or choose your own STL files; export the visible assembly as GLB.</div>' + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + (p.parts.length > 30 ? `<p class="assembly-legend">Preview shows the first 30 of ${p.parts.length} parts. Use the Parts tab for the complete list.</p>` : '') + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
+  return panelHead('MECHANICAL / LAYOUT', 'Assembly concept', 'This view inventories physical parts and mounting intent. It is not dimensioned CAD and does not prove that parts fit.', '<div><button id="add-mount" class="small-button" type="button">＋ Add mounting</button> <button id="export-diagram" class="small-button" type="button">Export SVG ↗</button></div>') + evidence + tray + solid + `<div class="notice">Create brackets, spacers and other supported connected parts in the <a href="${solidWorkbench}" target="_blank" rel="noopener noreferrer">feature solid modeler ↗</a>. Applied source stays with this project; download checked STEP/STL separately in the modeler. Inspect actual mesh geometry in the <a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">3D STL viewer ↗</a>. Open the worked tray and cover, or choose your own STL files; export the visible assembly as GLB.</div>` + (p.parts.length ? assemblySvg(p) : `<div class="empty"><strong>No assembly yet</strong>Add parts to view a conceptual layout.</div>`) + (p.parts.length > 30 ? `<p class="assembly-legend">Preview shows the first 30 of ${p.parts.length} parts. Use the Parts tab for the complete list.</p>` : '') + `<div class="mount-list"><div class="power-list-head">MOUNTING / FIT RELATIONSHIPS <span>Intent only; test against exact dimensions and hardware.</span></div>${mounts || '<div class="power-empty">Add a relationship between two parts to record how they should attach or fit.</div>'}</div><p class="assembly-legend">${next} <a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">Open the tray workbench to create a measured CAD spec ↗</a>.</p>`;
 }
 function renderBuild(p) {
   const names = new Map(p.parts.map(part => [part.id, part.name]));
@@ -617,9 +610,9 @@ function handleClick(event) {
   else if (button.id === 'remove-reference' && !draftController) { updatePendingReference(null); }
   else if (button.id === 'remove-project-reference') { if (editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
   else if (button.id === 'rename-project') openEditor('title', 0);
-  else if (button.id === 'history-project') { if (syncCurrentTrayDraft(p)) openHistory(); }
+  else if (button.id === 'history-project') { if (syncCurrentGeometry(p)) openHistory(); }
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
-  else if (button.id === 'history-export') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithTraySpec(p), null, 2), 'application/json'); showToast('Current project JSON downloaded.'); } catch { showToast('Tray draft could not be read. Export the tray spec separately from its workbench.'); } }
+  else if (button.id === 'history-export') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p), null, 2), 'application/json'); showToast('Current project JSON downloaded.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
   else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
   else if (button.dataset.recoverProject) recoverDeletedProject(button.dataset.recoverProject);
   else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = false; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
@@ -635,7 +628,7 @@ function handleClick(event) {
   }
   else if (button.id === 'import-project') $('#import-file').click();
   else if (button.id === 'delete-project') {
-    if (!syncCurrentTrayDraft(p)) return;
+    if (!syncCurrentGeometry(p)) return;
     if (!window.confirm(`Move “${p.title}” to Recently deleted? It can be recovered while this browser keeps its bounded history.`)) return;
     try { recordRevision(p, 'Deleted project'); }
     catch { return showToast('Project was not deleted because its recovery snapshot could not be saved. Export JSON first.'); }
@@ -646,7 +639,7 @@ function handleClick(event) {
     if (!save('Deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; render(); return; }
     render(); showToast('Project moved to Recently deleted. Open History to recover it.');
   }
-  else if (button.id === 'export-project') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithTraySpec(p), null, 2), 'application/json'); showToast('Project JSON downloaded, including any saved tray geometry.'); } catch { showToast('Tray draft could not be read. Export the tray spec separately from its workbench.'); } }
+  else if (button.id === 'export-project') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p), null, 2), 'application/json'); showToast('Project JSON downloaded, including saved tray and feature CAD source.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
   else if (button.id === 'export-package') { try { exportPackage(p); } catch { showToast('Package export failed. Export JSON to preserve the project.'); } }
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-connections') { download(`${filename(p)}-connections.csv`, wiringCsv(p), 'text/csv'); showToast('Connection register downloaded. Pin names still need independent review.'); }
@@ -713,6 +706,8 @@ function initialize() {
     }
   } catch { unreadableSavedData = rawSavedData; showToast('Saved data could not be read. The original bytes are preserved.'); }
   if (!projects.length) { projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; if (unreadableSavedData === null && !storageUnavailable) save('Initial workspace'); }
+  const requestedProject = new URLSearchParams(location.search).get('project');
+  if (projects.some(p => p.id === requestedProject)) currentId = requestedProject;
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
@@ -725,7 +720,7 @@ function initialize() {
     $('#brief-progress').textContent = `${questions.filter(item => String(briefAnswers[item.id] || '').trim()).length} / ${questions.length} ANSWERED`;
   });
   window.addEventListener('storage', event => {
-    if (event.key === trayKey(current()?.id)) {
+    if (event.key === trayKey(current()?.id) || event.key === solidKey(current()?.id)) {
       clearTimeout(traySyncTimer);
       traySyncTimer = setTimeout(() => render(), 800);
     }
@@ -746,6 +741,6 @@ function initialize() {
 }
 function safeProjectForStorage(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('Invalid stored project');
-  return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], mechanicalConnections: Array.isArray(input.mechanicalConnections) ? input.mechanicalConnections : [], traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec), review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
+  return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], mechanicalConnections: Array.isArray(input.mechanicalConnections) ? input.mechanicalConnections : [], traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec), solidSpec: input.solidSpec == null ? null : validateSolidSpec(input.solidSpec), review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
 }
 initialize();

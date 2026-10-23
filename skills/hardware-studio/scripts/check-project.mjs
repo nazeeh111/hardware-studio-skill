@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { validateTraySpec } from './tray-spec.mjs';
+import { validateSolidSpec } from './solid-spec.mjs';
 
 const path = process.argv[2];
 if (!path) { console.error('Usage: node check-project.mjs /absolute/path/to/project.json'); process.exit(2); }
@@ -17,6 +18,10 @@ try {
   if (project?.traySpec != null) {
     try { validateTraySpec(project.traySpec); }
     catch (error) { issues.push(`traySpec: ${error.message}`); }
+  }
+  if (project?.solidSpec != null) {
+    try { validateSolidSpec(project.solidSpec); }
+    catch (error) { issues.push(`solidSpec: ${error.message}`); }
   }
   const ids = new Set();
   const pinLists = new Map();

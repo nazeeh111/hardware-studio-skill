@@ -28,7 +28,7 @@ The [tray workbench](tray.html) provides a scaled browser plan and controls for 
 
 The [solid modeler](solid.html) builds connected parts from ordered box/cylinder additions and cuts, with editable source and optional local text proposals. It supports selected material/void checks, checked STEP/STL packages and the existing 3D viewer/GLB export. A [three-hole bracket example](examples/feature-bracket/README.md) matches an independently calculated volume and catches missing hole cuts. See the [format and CLI guide](tools/solid-generator/README.md).
 
-The feature model is standalone in this version; its source and CAD package are exported separately from the main project's JSON/ZIP. Axis-aligned primitives do not cover fillets, threads, lofts, arbitrary sketch extrusion or assemblies. A valid source becomes geometry only after generation and readback. Physical engineering checks remain open.
+Open the modeler from a project’s Assembly tab to keep its applied source as `solidSpec` in that project. Project JSON and ZIP exports retain it, with `solid-spec.json` in the ZIP; checked STEP/STL is downloaded separately from the modeler. History restoration updates both project and workbench source, and imported projects get an independent model identity. Opening the example does not attach it until you apply or import source. The direct modeler link keeps a separate standalone draft. Axis-aligned primitives do not cover fillets, threads, lofts, arbitrary sketch extrusion or assemblies. A valid source becomes geometry only after generation and readback. Physical engineering checks remain open.
 
 ## Run
 
