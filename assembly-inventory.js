@@ -28,11 +28,11 @@ export function partSymbol(part) {
     if (/\b(screw|bolt|fastener)s?\b/.test(name) || /fastener/.test(category)) return 'fastener';
     return 'part';
   }
-  if (/wire|interconnect|assembly/.test(category)) return 'wire';
+  if (/wire|interconnect/.test(category) || (/assembly/.test(category) && /\b(wire|wires|wiring|cable|cables|lead|leads)\b/.test(name))) return 'wire';
   if (/display/.test(category)) return 'display';
   if (/sensor/.test(category)) return 'sensor';
   if (/power/.test(category)) return 'power';
-  if (/controller|compute|logic/.test(category)) return 'controller';
+  if (/control|compute|logic/.test(category)) return 'controller';
   return 'part';
 }
 const symbolSvg = part => `<svg viewBox="0 0 150 120" aria-hidden="true" focusable="false">${symbols[partSymbol(part)]}</svg>`;

@@ -5,6 +5,9 @@ test('mechanical symbols distinguish families while unknown components stay neut
   const part=name=>({name,category:'Mechanical'});
   assert.deepEqual(['Custom concave mounting plate','Adhesive rubber feet','M3 spacer','L bracket','Unknown gizmo'].map(name=>partSymbol(part(name))),['plate','feet','spacer','bracket','part']);
   assert.equal(partSymbol({name:'sensor plate',category:'Sensor'}),'sensor');
+  assert.equal(partSymbol({name:'ESP32 DevKit board',category:'Control'}),'controller');
+  assert.equal(partSymbol({name:'Unknown assembly',category:'Assembly'}),'part');
+  assert.equal(partSymbol({name:'Insulated hookup wire',category:'Assembly'}),'wire');
 });
 test('inventory and standalone diagram escape names and preserve long names without viewport access',()=>{
   const name='A <script> & unusually long descriptive custom part with many additional words so the full description extends across several lines';

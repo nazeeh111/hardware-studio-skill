@@ -1,4 +1,4 @@
-import { assemblyInventory, assemblySvg } from './assembly-inventory.js?v=1';
+import { assemblyInventory, assemblySvg } from './assembly-inventory.js?v=2';
 import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=40';
 import { MODEL_PLAN_SCHEMA, coordinatedAiDraft } from './draft-plan.js?v=3';
 import { REQUEST_KEY, requestRecord, parseRequest, requestSignature, boundedModelJson } from './draft-intake.js?v=1';
