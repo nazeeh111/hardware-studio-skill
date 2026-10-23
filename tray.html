@@ -52,6 +52,7 @@
         <p id="status" class="status" role="status">Checking geometry…</p>
         <div class="drawing-key"><span><i class="swatch shell-color"></i> Shell</span><span><i class="swatch boss-color"></i> Boss / locator</span><span><i class="swatch opening-color"></i> Opening</span></div>
         <div class="actions"><button id="generate-cad" class="primary" type="button" disabled>Generate STEP/STL package ↗</button><button id="download" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
+        <p class="cad-status"><a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">Inspect exported STL surfaces in 3D and download GLB ↗</a>. Extract the STL files from your CAD ZIP, then choose them in the viewer.</p>
         <p id="cad-status" class="cad-status" role="status">Checking for the local CAD runtime…</p>
         <section class="fit-workbench" aria-labelledby="fit-title">
           <div class="section-head sub"><span>05</span><div><h2 id="fit-title">Check exact parts</h2><p>Choose maker STEP files, then place each model in tray millimeters. Compare with the tray and optional seated cover. Files stay on this local server only during the check.</p></div></div>

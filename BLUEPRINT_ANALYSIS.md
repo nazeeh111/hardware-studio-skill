@@ -55,6 +55,8 @@ Hardware Studio is intentionally original. It uses two editable, hand-authored s
 
 ## Evidence and next checks
 
+Hardware Studio's mechanical surface now also includes an original WebGL STL viewer with orbit, zoom, mesh visibility and GLB export. It displays actual supplied mesh surfaces and the worked tray/cover, with explicit millimeter interpretation and original assembly positions. This closes a browser inspection gap; it does not establish Blueprint's private CAD generation method or infer an assembly from an idea.
+
 - Direct site observations: [home](https://www.blueprint.io/), [FAQ](https://www.blueprint.io/faq), [pricing](https://www.blueprint.io/pricing), [public project](https://www.blueprint.io/s/4HKdHznzhy-I8Gfv61LL0FATpp_CxnKSKkiFw8hQCFw).
 - Unresolved: authenticated generation quality and failure cases, downloads, true CAD dimensional validity, supplier-link accuracy, privacy behavior, mobile editing, accessibility details beyond the sampled pages, and private backend behavior. The REA capture and partial static graph do not resolve these.
 - For a future authorized hands-on evaluation, create a disposable project in a free account, retain its input and output, check one part against a manufacturer datasheet, inspect each generated wire, and compare a CAD export's dimensions against actual component measurements. Do not treat a polished render as manufacturing proof.

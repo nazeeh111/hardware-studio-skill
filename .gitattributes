@@ -3,3 +3,4 @@
 *.stl binary
 *.blend binary
 *.jpg binary
+*.glb binary

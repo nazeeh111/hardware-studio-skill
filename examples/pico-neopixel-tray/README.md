@@ -1,5 +1,7 @@
 # Pico + NeoPixel prototype tray
 
+Inspect the tray and open-window cover in the [interactive 3D viewer](../../cad-viewer.html), or download the [assembly GLB](generated/window-cover-v1/assembly.glb). The browser export was imported into Blender with two meshes and checked world-space dimensions; [readback](generated/window-cover-v1/glb-readback.json). STL coordinates are interpreted as millimeters; the GLB uses meters. The viewer's cover lift is excluded from the exported assembly.
+
 ![Isometric render of the original tray](preview/tray-isometric.jpg)
 
 This example closes one mechanical gap in Hardware Studio: it supplies an editable, dimensioned **66 × 45 × 14 mm** open tray for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426. The [top layout](preview/layout.svg) marks both board envelopes and six locator pins. A separate [provisional electrical plan](electrical-plan.md) maps the power and data path with its open checks. The [app project](project.json) can be imported to inspect the combined parts, connections and incomplete power worksheet. The [original STEP](generated/v1/tray.step), [STL](generated/v1/tray.stl), [OpenCascade source](model.py), and [Blender scene](preview/tray-scene.blend) are included.

@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { parseStl, meshesToGlb } from '../stl.js';
+const root = new URL('../examples/pico-neopixel-tray/generated/window-cover-v1/', import.meta.url);
+const read = name => { const bytes=readFileSync(new URL(name,root));return bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength); };
+test('actual tray and lid STL spans survive GLB meter conversion and scene orientation',()=>{
+  const tray={...parseStl(read('tray.stl')),name:'Tray',color:[.5,.7,.3]},lid={...parseStl(read('lid.stl')),name:'Cover',color:[.8,.8,.6]};
+  assert.deepEqual(tray.max.map((n,k)=>Math.round((n-tray.min[k])*100)/100),[66,45,14]);
+  assert.deepEqual(lid.max.map((n,k)=>Math.round((n-lid.min[k])*100)/100),[71,50,5.5]);
+  const glb=meshesToGlb([tray,lid]),view=new DataView(glb);
+  assert.equal(view.getUint32(0,true),0x46546c67);assert.equal(view.getUint32(8,true),glb.byteLength);
+  const jsonLength=view.getUint32(12,true),doc=JSON.parse(new TextDecoder().decode(new Uint8Array(glb,20,jsonLength)));
+  assert.equal(doc.nodes.length,2);assert.equal(doc.accessors[0].count,tray.triangles*3);
+  assert.ok(Math.abs(doc.accessors[0].max[0]-doc.accessors[0].min[0]-.066)<1e-6);
+  assert.deepEqual(doc.nodes[0].rotation,[-Math.SQRT1_2,0,0,Math.SQRT1_2]);
+  assert.equal(view.getUint32(24+jsonLength,true),0x004e4942);
+  const bin=28+jsonLength;
+  assert.ok(Math.abs(view.getFloat32(bin,true)-tray.data[0]/1000)<1e-7);
+  assert.equal(view.getFloat32(bin+12,true),tray.data[3]);
+});
+test('ASCII STL normals are recomputed; invalid and nonfinite meshes are rejected',()=>{
+  const encode=text=>new TextEncoder().encode(text).buffer;
+  const ascii='solid triangle\n facet normal 0 0 0\n outer loop\n vertex 0 0 0\n vertex 10 0 0\n vertex 0 5 0\n endloop\n endfacet\nendsolid triangle\n';
+  const mesh=parseStl(encode(ascii));assert.equal(mesh.triangles,1);assert.deepEqual(mesh.max,[10,5,0]);assert.equal(mesh.data[5],1);
+  assert.throws(()=>parseStl(encode('not an STL file')),/supported/);
+  assert.throws(()=>parseStl(encode(ascii.replace('vertex 0 5 0','vertex 0 5e999 0'))),/finite/);
+  const malformed=ascii.replace('endsolid triangle','facet normal 0 0 1\nouter loop\nvertex NaN 0 0\nvertex NaN 1 0\nvertex NaN 0 1\nendloop\nendfacet\nendsolid triangle');
+  assert.throws(()=>parseStl(encode(malformed)),/finite/);
+  assert.throws(()=>parseStl(encode(ascii.replace('endloop','vertex 2 2 2\nendloop'))),/malformed/);
+  const bad=read('tray.stl');new DataView(bad).setFloat32(96,NaN,true);assert.throws(()=>parseStl(bad),/finite/);
+});

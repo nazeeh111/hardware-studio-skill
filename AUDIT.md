@@ -31,9 +31,13 @@ The scan did not find a source-backed XSS, CSV formula injection, ZIP traversal,
 
 ## Verification after fixes
 
-- Node app tests: **32 passed**.
+- Node app tests: **34 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
 - OpenCascade generator, fit and loopback-server tests: **11 passed**, including the new GET/HEAD Host and directory checks.
 - The app's source syntax, example structural checks, Markdown links, live Pages bytes and installed skill copy should be rechecked at each new publication; a successful local test is not a deployed revision.
+
+The 3D viewer was checked in a local browser with the 4,148-triangle tray/cover example, cover lift, local STL file selection and browser GLB download. A 390-pixel viewport had no horizontal overflow. Blender 5.1.2 imported the downloaded GLB with two separate meshes and the correct world-space spans of 66 × 45 × 14 mm and 71 × 50 × 5.5 mm. The GLB excludes the display-only lift. These later viewer files were not part of the earlier sealed security scan.
+
+An independent source reviewer caught silent partial ASCII-STL parsing and an inaccessible file chooser. The parser now validates complete facet records and rejects malformed vertices instead of dropping them; the chooser is a native button. Regression tests passed and the reviewer confirmed both source fixes.
 
 ## Open engineering work
 

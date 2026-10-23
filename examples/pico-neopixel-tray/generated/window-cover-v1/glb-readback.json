@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "objects": [
+    {
+      "name": "Pico prototype tray",
+      "dimensions_m": [
+        0.066,
+        0.045,
+        0.014
+      ],
+      "vertices": 12228,
+      "faces": 4076
+    },
+    {
+      "name": "Window cover",
+      "dimensions_m": [
+        0.071,
+        0.05,
+        0.0055
+      ],
+      "vertices": 216,
+      "faces": 72
+    }
+  ],
+  "tool": "Blender 5.1.2 glTF importer",
+  "method": "Browser-downloaded GLB imported into an isolated factory-startup scene; evaluated world-space bounding boxes and face counts checked.",
+  "sha256": "2f3be8ac439d2efb55faee31aa7ee95976cbead3eed28c5b065ae843582a4268",
+  "units": "meters",
+  "limitations": "Nominal mesh integrity only; no physical or electrical validation."
+}
