@@ -14,7 +14,8 @@ const conditions = [
 export function briefQuestions(idea) {
   const input = String(idea || '').trim();
   if (input.length < 5) return [];
-  const matched = conditions.filter(item => typeof item.when === 'function' ? item.when(input) : item.when.test(input));
+  const mechanicalScope = /\b(?:mechanical[- ]only|(?:enclosure|case|bracket|mount|holder|shell)\s+only)\b/i.test(input);
+  const matched = conditions.filter(item => !(mechanicalScope && ['sensing', 'visual', 'runtime', 'power'].includes(item.id)) && (typeof item.when === 'function' ? item.when(input) : item.when.test(input)));
   const selected = [...matched.filter(item => item.id !== 'success').slice(0, 3), matched.find(item => item.id === 'success')];
   return selected
     .map(({ id, title, question }) => ({ id, title, question: typeof question === 'function' ? question(input) : question }));

@@ -1,9 +1,11 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=37';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=40';
+import { MODEL_PLAN_SCHEMA, coordinatedAiDraft } from './draft-plan.js?v=3';
+import { REQUEST_KEY, requestRecord, parseRequest, requestSignature, boundedModelJson } from './draft-intake.js?v=1';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { validateSolidSpec } from './solid-spec.js?v=2';
 import {trayKey,solidKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=2';
 import { createZip } from './zip.js?v=1';
-import { briefQuestions, composeBrief } from './brief.js?v=2';
+import { briefQuestions, composeBrief } from './brief.js?v=3';
 import { createSketchPad } from './sketch-pad.js?v=1';
 import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
 
@@ -19,6 +21,8 @@ let toastTimer;
 let traySyncTimer;
 let draftController = null;
 let pendingDraft = null;
+let pendingDraftContext = null;
+let expectedRequestRaw = null, requestRecovery = null, requestBackedUp = false;
 let pendingReference = null;
 const PENDING_REFERENCE_KEY='hardware-studio-pending-reference-v1';
 let sketchPad, sketchProjectId=null;
@@ -28,25 +32,24 @@ let unreadableSavedData = null;
 let storageUnavailable = false;
 let expectedWorkspaceRaw = null, conflictingWorkspace = null;
 const OLLAMA_URL = 'http://127.0.0.1:11434';
-const LOCAL_AI_SCHEMA = {
-  type: 'object',
-  properties: {
-    title: { type: 'string' }, brief: { type: 'string' }, summary: { type: 'string' }, notes: { type: 'string' },
-    parts: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, name: { type: 'string' }, category: { type: 'string' }, qty: { type: 'integer' }, unitCost: { type: 'number' }, detail: { type: 'string' }, voltage: { type: 'string' }, sourceUrl: { type: 'string' }, verified: { type: 'boolean' } }, required: ['id', 'name', 'category', 'qty', 'unitCost', 'detail', 'voltage', 'sourceUrl', 'verified'] } },
-    wires: { type: 'array', items: { type: 'object', properties: { from: { type: 'string' }, fromPin: { type: 'string' }, to: { type: 'string' }, toPin: { type: 'string' }, signal: { type: 'string' }, voltage: { type: 'string' }, note: { type: 'string' } }, required: ['from', 'to', 'signal', 'voltage', 'note'] } },
-    steps: { type: 'array', items: { type: 'object', properties: { phase: { type: 'string' }, title: { type: 'string' }, detail: { type: 'string' } }, required: ['phase', 'title', 'detail'] } }
-  },
-  required: ['title', 'brief', 'summary', 'notes', 'parts', 'wires', 'steps']
-};
+// Request links even for preparation. The local validator also permits global
+// Prepare steps, but an unconditional minimum guides small model grammars.
+const GENERATION_SCHEMA = structuredClone(MODEL_PLAN_SCHEMA);
+GENERATION_SCHEMA.properties.steps.items.properties.partIds.minItems = 1;
+
 
 async function detectLocalModels() {
+  if (!['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname)) {
+    $('#local-ai-status').textContent = 'Local AI is available in the local version. Public drafts stay manual.';
+    return;
+  }
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   try {
     const response = await fetch(`${OLLAMA_URL}/api/tags`, { signal: controller.signal });
     if (!response.ok) throw new Error('Local model list unavailable');
     const data = await response.json();
-    const names = (data.models || []).map(model => model.name).filter(name => typeof name === 'string');
+    const names = (data.models || []).map(model => model.name).filter(name => typeof name === 'string' && !/cloud/i.test(name));
     // /api/tags lists models but does not consistently include capabilities.
     // /api/show is the authoritative local source for the vision badge.
     const capabilities = await Promise.all(names.map(async name => {
@@ -64,7 +67,8 @@ async function detectLocalModels() {
     if (!names.length) throw new Error('No local models installed');
     const select = $('#local-model');
     select.innerHTML = names.map(name => `<option value="${html(name)}">${html(name)}${modelCapabilities.get(name)?.has('vision') ? ' · vision' : ''}</option>`).join('');
-    select.value = names.includes('local-fast:latest') ? 'local-fast:latest' : names.includes('qwen3:4b') ? 'qwen3:4b' : names[0];
+    let preferred = ''; try { preferred = sessionStorage.getItem('hardware-studio-local-model') || ''; } catch {}
+    select.value = names.includes(preferred) ? preferred : names.includes('local-fast:latest') ? 'local-fast:latest' : names.includes('qwen3:4b') ? 'qwen3:4b' : names[0];
     select.hidden = false;
     $('#draft-local').hidden = false;
     $('#local-ai-status').textContent = 'Optional local model draft. No paid API.';
@@ -105,7 +109,39 @@ function updatePendingReference(reference){
   pendingReference=reference;let retained=true;
   try{if(reference)sessionStorage.setItem(PENDING_REFERENCE_KEY,JSON.stringify(reference));else sessionStorage.removeItem(PENDING_REFERENCE_KEY);}
   catch{retained=false;showToast('Tab storage is unavailable. Create a project to keep this reference before reloading.');}
-  renderReferenceInput();return retained;
+  renderReferenceInput(); refreshDraftGate(); return retained;
+}
+
+function currentRequestSignature() {
+  return requestSignature($('#brief-input').value, briefAnswers, pendingReference);
+}
+function refreshDraftGate() {
+  const stale = pendingDraftContext !== null && currentRequestSignature() !== pendingDraftContext.signature;
+  $('#accept-draft').disabled = !pendingDraft || stale;
+  $('#draft-error').hidden = !stale;
+  $('#draft-error').textContent = stale ? 'Your request changed during generation. Download this draft if useful, then discard it and generate from the current request. Your newer text and reference are preserved.' : '';
+  return !stale;
+}
+function requestStorageStatus(message) {
+  $('#request-status').textContent = message;
+  $('#request-backup').hidden = requestRecovery === null;
+  $('#request-replace').hidden = requestRecovery === null;
+  $('#request-replace').disabled = !requestBackedUp;
+}
+function savePendingRequest() {
+  refreshDraftGate();
+  if (requestRecovery !== null) return requestStorageStatus('The saved request could not be read or changed elsewhere. Your working text is here; download the saved bytes before replacing them.');
+  try {
+    expectedRequestRaw = writeWorkspace(sessionStorage, REQUEST_KEY, expectedRequestRaw, JSON.stringify(requestRecord($('#brief-input').value, briefAnswers)));
+    requestStorageStatus('Request retained in this tab through reload.');
+  } catch (error) {
+    try { requestRecovery = sessionStorage.getItem(REQUEST_KEY); } catch {}
+    requestStorageStatus(requestRecovery !== null ? 'The saved request changed. Download its bytes before replacing it with this form.' : 'Tab storage is unavailable. Create a project or download the AI draft before reloading.');
+  }
+}
+function clearPendingRequest() {
+  $('#brief-input').value = ''; briefAnswers = {};
+  updatePendingReference(null); renderBriefGuidance(); savePendingRequest();
 }
 
 function renderBriefGuidance() {
@@ -126,7 +162,8 @@ async function draftWithLocalAi() {
   const model = $('#local-model').value;
   if (!model) return showToast('Choose a local model.');
   if (pendingReference && !modelCapabilities.get(model)?.has('vision')) return showToast('Choose a model marked vision to interpret this image.');
-  const reference = pendingReference;
+  const reference = pendingReference ? structuredClone(pendingReference) : null;
+  const context = { signature: currentRequestSignature(), brief };
   const button = $('#draft-local');
   let failure = '';
   draftController = new AbortController();
@@ -144,22 +181,23 @@ async function draftWithLocalAi() {
     const response = await fetch(`${OLLAMA_URL}/api/generate`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
       body: JSON.stringify({
-        model, stream: false, format: LOCAL_AI_SCHEMA, think: false, keep_alive: '1m',
+        model, stream: false, format: GENERATION_SCHEMA, think: false, keep_alive: '1m',
         ...(reference ? { images: [reference.dataUrl.split(',')[1]] } : {}),
-        options: { temperature: 0.1, num_predict: 2400 },
+        options: { temperature: 0.1, num_predict: 5000, num_ctx: 16384 },
         system: 'You draft conceptual low-voltage hobby hardware plans. Treat unanswered design questions as unknown; do not invent exact specifications. Every requested sensing, display, input, or actuation function needs a dedicated physical part; a controller alone does not measure temperature or humidity. Include power conversion, cables and enclosure parts where needed. Do not claim that parts, pinouts, prices, sourcing, dimensions, wiring, or safety are verified. Use unique short part IDs and ensure each wire refers to existing part IDs. Use fromPin and toPin only when exact terminals are known; otherwise leave them empty for review. For hazardous or regulated projects, return no actionable wiring or build instructions.',
-        prompt: `Create a concise editable concept record for: ${brief}${reference ? '\nUse the attached image as a visual reference. Distinguish visible features from uncertain or hidden details. Do not infer exact dimensions, part numbers, pins, ratings or materials from appearance alone.' : ''}\nBefore writing JSON, mentally check each requested function against the physical parts list. Use 3–10 parts, 1–15 connections, and 3–10 preparation/build/test steps. Only include connections you can explain; put uncertainty in notes. Use zero for unknown cost, empty strings for unknown supplier URLs, and false for verified. Return only the JSON object matching this schema: ${JSON.stringify(LOCAL_AI_SCHEMA)}`
+        prompt: `Create a concise editable concept record for: ${brief}${reference ? '\nUse the attached image as a visual reference. Distinguish visible features from uncertain or hidden details. Do not infer exact dimensions, part numbers, pins, ratings or materials from appearance alone.' : ''}\nBefore writing JSON, mentally check each requested function against the physical parts list. Use 1–12 parts and 3–12 preparation/build/test steps. Mechanical-only builds may have one part and empty wires and powerRails. Electrical builds need wires and proposed power rail bindings to the source part and loads. Rail voltages are design proposals; do not provide current ratings. Include tools, explicit assumptions, mounting relationships where needed, and partIds linking EVERY step, including Prepare, to one or more affected parts. For example, a step involving parts with id board and sensor must use partIds:["board","sensor"], never empty. Include a linked Test step. Only include connections you can explain; put uncertainty in notes. Do not invent prices, supplier URLs, pin inventories, completed work or CAD. Return only the JSON object matching this schema: ${JSON.stringify(GENERATION_SCHEMA)}`
       })
     });
     if (!response.ok) {
       let detail = '';
-      try { detail = String((await response.json()).error || '').slice(0, 220); } catch { /* Ollama did not return a JSON error. */ }
+      try { detail = String((await boundedModelJson(response)).error || '').slice(0, 220); } catch { /* Ollama did not return a JSON error. */ }
       throw new Error(`Local model request failed (${response.status})${detail ? `: ${detail}` : '.'}`);
     }
-    const result = await response.json();
-    const draft = localAiDraft(JSON.parse(result.response), brief, model);
+    const result = await boundedModelJson(response);
+    if (typeof result.response !== 'string' || result.response.length > 100000) throw new Error('Local model returned an invalid plan response.');
+    const draft = coordinatedAiDraft(JSON.parse(result.response), brief, model);
     draft.referenceImage = reference;
-    showDraftPreview(draft);
+    showDraftPreview(draft, context);
   } catch (error) {
     failure = controller.signal.aborted ? 'Local draft cancelled or timed out.' : /llama-server binary not found/i.test(error.message || '') ? 'Ollama cannot start this model: llama-server is missing. Repair the local Ollama installation.' : error.message || 'Local model could not produce a usable draft.';
     showToast(failure);
@@ -177,14 +215,24 @@ async function draftWithLocalAi() {
   }
 }
 
-function showDraftPreview(draft) {
-  pendingDraft = draft;
+function showDraftPreview(draft, context) {
+  pendingDraft = draft; pendingDraftContext = context;
   $('#draft-title').textContent = draft.title;
   $('#draft-summary').textContent = draft.summary;
   const names = new Map(draft.parts.map(part => [part.id, part.name]));
+  const name = id => names.get(id) || id;
   const issues = validate(draft).filter(issue => issue.kind !== 'error');
-  const list = (items, limit) => `${items.slice(0, limit).map(item => `<li>${html(item)}</li>`).join('')}${items.length > limit ? `<li>${items.length - limit} more in the saved project</li>` : ''}`;
-  $('#draft-preview-grid').innerHTML = `<div><h3>PROPOSED PARTS / ${draft.parts.length}</h3><ul>${list(draft.parts.map(part => `${part.name} · ${part.category}`), 20)}</ul></div><div><h3>CONNECTION INTENT / ${draft.wires.length}</h3><ul>${list(draft.wires.map(wire => `${names.get(wire.from) || wire.from} → ${names.get(wire.to) || wire.to} · ${wire.signal}${wire.voltage ? ` · ${wire.voltage}` : ''}`), 16)}</ul></div><div><h3>BUILD SEQUENCE / ${draft.steps.length}</h3><ul>${list(draft.steps.map(step => `${step.phase}: ${step.title}`), 12)}</ul></div><div><h3>OPEN CHECKS / ${issues.length}</h3><ul>${list(issues.map(issue => issue.text), 5)}</ul><p>Prices, supplier links and verification marks were cleared. Exact pins and physical fit need independent checks.</p></div>`;
+  const list = items => items.map(item => `<li>${html(item)}</li>`).join('');
+  const section = (title, items) => `<section><h3>${html(title)} / ${items.length}</h3>${items.length ? `<ul>${list(items)}</ul>` : '<p>None proposed.</p>'}</section>`;
+  $('#draft-preview-grid').innerHTML = `<details class="draft-request"><summary>Captured request</summary><p>${html(context.brief)}</p>${draft.referenceImage ? `<img src="${html(draft.referenceImage.dataUrl)}" alt="Captured reference">` : ''}</details>` +
+    section('PROPOSED PARTS', draft.parts.map(part => `${part.qty} × ${part.name} · ${part.category} · ${part.detail}`)) +
+    section('CONNECTION INTENT', draft.wires.map(wire => `${name(wire.from)}${wire.fromPin ? ` (${wire.fromPin})` : ''} → ${name(wire.to)}${wire.toPin ? ` (${wire.toPin})` : ''} · ${wire.signal}${wire.voltage ? ` · ${wire.voltage}` : ''} · ${wire.note}`)) +
+    section('MOUNTING INTENT', draft.mechanicalConnections.map(link => `${name(link.from)} → ${name(link.to)} · ${link.label} · ${link.note}`)) +
+    section('PROPOSED POWER', draft.powerRails.map(rail => `${rail.name} · ${rail.voltageV} V proposed · ${name(rail.sourcePartId)} → ${rail.loads.map(load => name(load.partId)).join(', ')}. Supply and load currents unknown; budget incomplete.`)) +
+    section('TOOLS', draft.tools) + section('ASSUMPTIONS', draft.assumptions) +
+    section('BUILD SEQUENCE', draft.steps.map(step => `${step.phase}: ${step.title} · ${step.detail}${step.partIds.length ? ` [${step.partIds.map(name).join(', ')}]` : ''}`)) +
+    section('OPEN CHECKS', issues.map(issue => issue.text));
+  refreshDraftGate();
   $('#draft-dialog').showModal();
 }
 
@@ -478,7 +526,7 @@ function renderBuild(p) {
 }
 function renderReview(p) {
   const issues = validate(p); const errors = issues.filter(i => i.kind === 'error').length;
-  $('#review-rail').innerHTML = `<div class="rail-heading">DESIGN REVIEW</div><h3>${errors ? `${errors} data issue${errors === 1 ? '' : 's'}` : issues.length ? 'Review needed' : 'Review recorded'}</h3><p class="rail-summary">${issues.length} open ${issues.length === 1 ? 'item' : 'items'}. Review marks are local notes, not certification.</p>${issues.slice(0, 6).map(i => `<div class="rail-issue ${i.kind}"><i>${i.kind === 'error' ? '!' : i.kind === 'todo' ? '+' : '·'}</i><span>${html(i.text)}</span></div>`).join('')}${issues.length > 6 ? `<div class="rail-issue"><i>…</i><span>${issues.length - 6} more items. Inspect the project data and exact components.</span></div>` : ''}<div class="rail-note"><strong>REVIEW RECORD</strong><br>Mark a check only after reviewing independent evidence.</div>${[['electrical', 'Ratings, pinouts and current'], ['mechanical', 'Dimensions, fit and materials'], ['sourcing', 'Listings, stock and prices']].map(([key, label]) => key === 'electrical' && mechanicalOnly(p) ? '<p class="rail-summary">No electrical work recorded for these mechanical parts.</p>' : `<label class="review-check"><input data-review="${key}" type="checkbox" ${p.review[key] ? 'checked' : ''}><span>${label}</span></label>`).join('')}`;
+  $('#review-rail').innerHTML = `<div class="rail-heading">DESIGN REVIEW</div><h3>${errors ? `${errors} data issue${errors === 1 ? '' : 's'}` : issues.length ? 'Review needed' : 'Review recorded'}</h3><p class="rail-summary">${issues.length} open ${issues.length === 1 ? 'item' : 'items'}. Review marks are local notes, not certification.</p>${issues.slice(0, 6).map(i => `<div class="rail-issue ${i.kind}"><i>${i.kind === 'error' ? '!' : i.kind === 'todo' ? '+' : '·'}</i><span>${html(i.text)}</span></div>`).join('')}${issues.length > 6 ? `<details class="review-more"><summary>Show ${issues.length - 6} remaining review items</summary>${issues.slice(6).map(i => `<div class="rail-issue ${i.kind}"><i>${i.kind === 'error' ? '!' : i.kind === 'todo' ? '+' : '·'}</i><span>${html(i.text)}</span></div>`).join('')}</details>` : ''}<div class="rail-note"><strong>REVIEW RECORD</strong><br>Mark a check only after reviewing independent evidence.</div>${[['electrical', 'Ratings, pinouts and current'], ['mechanical', 'Dimensions, fit and materials'], ['sourcing', 'Listings, stock and prices']].map(([key, label]) => key === 'electrical' && mechanicalOnly(p) ? '<p class="rail-summary">No electrical work recorded for these mechanical parts.</p>' : `<label class="review-check"><input data-review="${key}" type="checkbox" ${p.review[key] ? 'checked' : ''}><span>${label}</span></label>`).join('')}`;
 }
 
 const field = (name, label, value = '', options = {}) => `<div class="field ${options.wide ? 'wide' : ''}"><label for="f-${name}">${label}</label>${options.type === 'textarea' ? `<textarea id="f-${name}" name="${name}" ${options.required ? 'required' : ''}>${html(value)}</textarea>` : options.type === 'select' ? `<select id="f-${name}" name="${name}" ${options.required ? 'required' : ''}>${options.choices.map(([id, text]) => `<option value="${html(id)}" ${String(id) === String(value) ? 'selected' : ''}>${html(text)}</option>`).join('')}</select>` : `<input id="f-${name}" name="${name}" type="${options.type || 'text'}" value="${html(value)}" ${options.required ? 'required' : ''} ${options.min != null ? `min="${options.min}"` : ''} ${options.step ? `step="${options.step}"` : ''}>`}</div>`;
@@ -598,14 +646,17 @@ function handleClick(event) {
     const next = blankProject(title); next.brief = composed.text; next.referenceImage = pendingReference;
     const openSummary = composed.openQuestions.length ? `${composed.openQuestions.length} design question${composed.openQuestions.length === 1 ? '' : 's'} ${composed.openQuestions.length === 1 ? 'remains' : 'remain'} open.` : 'Intake questions answered.';
     next.summary = `Custom concept. Add parts, connections and build steps. ${openSummary} No automatic design was generated.`;
-    if (addProject(next)) { $('#brief-input').value = ''; briefAnswers = {}; updatePendingReference(null); renderBriefGuidance(); }
+    if (addProject(next)) clearPendingRequest();
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
   else if (button.id === 'choose-reference') $('#reference-file').click();
   else if (button.id === 'draw-sketch' && !draftController) { sketchProjectId=null;sketchPad.open(pendingReference?.sketch); }
   else if (button.id === 'edit-project-sketch' && !draftController) { sketchProjectId=p.id;sketchPad.open(p.referenceImage?.sketch,p.id); }
-  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; briefAnswers = {}; updatePendingReference(null); renderBriefGuidance(); } }
-  else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); }
+  else if (button.id === 'accept-draft' && pendingDraft) { if (!refreshDraftGate()) return; if (addProject(pendingDraft)) { $('#draft-dialog').close(); clearPendingRequest(); } }
+  else if (button.id === 'download-draft' && pendingDraft) download(`${filename(pendingDraft)}-draft.json`, JSON.stringify(pendingDraft, null, 2), 'application/json');
+  else if (button.id === 'request-backup' && requestRecovery !== null) { download('hardware-studio-saved-request.json', requestRecovery, 'application/json'); requestBackedUp = true; requestStorageStatus('Saved bytes downloaded. You can now replace them with the current form.'); }
+  else if (button.id === 'request-replace' && requestBackedUp) { try { expectedRequestRaw = writeWorkspace(sessionStorage, REQUEST_KEY, requestRecovery, JSON.stringify(requestRecord($('#brief-input').value, briefAnswers))); requestRecovery = null; requestBackedUp = false; requestStorageStatus('Current request retained in this tab.'); } catch { requestBackedUp = false; try { requestRecovery = sessionStorage.getItem(REQUEST_KEY); } catch {} requestStorageStatus('Saved request changed again. Download its current bytes first.'); } }
+  else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); savePendingRequest(); }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
   else if (button.id === 'remove-reference' && !draftController) { updatePendingReference(null); }
   else if (button.id === 'remove-project-reference') { if (editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
@@ -696,6 +747,7 @@ function initialize() {
   }});
   let rawSavedData = null;
   try{const pending=sessionStorage.getItem(PENDING_REFERENCE_KEY);if(pending&&pending.length<=500000)pendingReference=safeReferenceImage(JSON.parse(pending));}catch{ /* Keep unreadable bytes intact; choosing another reference replaces them. */ }
+  try { expectedRequestRaw = sessionStorage.getItem(REQUEST_KEY); if (expectedRequestRaw !== null) { const request = parseRequest(expectedRequestRaw); $('#brief-input').value = request.idea; briefAnswers = request.answers; } requestStorageStatus('Request retained in this tab through reload.'); } catch { requestRecovery = expectedRequestRaw; requestStorageStatus(requestRecovery !== null ? 'Saved request is unreadable. Download its original bytes before replacing it.' : 'Tab storage is unavailable. Create a project before reloading.'); }
   renderReferenceInput();
   try { rawSavedData = localStorage.getItem(STORAGE_KEY); expectedWorkspaceRaw = rawSavedData; }
   catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep projects.'); }
@@ -711,11 +763,12 @@ function initialize() {
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
-  $('#brief-input').addEventListener('input', renderBriefGuidance);
+  $('#brief-input').addEventListener('input', () => { renderBriefGuidance(); savePendingRequest(); });
+  $('#local-model').addEventListener('change', () => { try { sessionStorage.setItem('hardware-studio-local-model', $('#local-model').value); } catch {} });
   $('#brief-question-list').addEventListener('input', event => {
     const key = event.target.dataset.briefAnswer;
     if (!key) return;
-    briefAnswers[key] = event.target.value;
+    briefAnswers[key] = event.target.value; savePendingRequest();
     const questions = briefQuestions($('#brief-input').value);
     $('#brief-progress').textContent = `${questions.filter(item => String(briefAnswers[item.id] || '').trim()).length} / ${questions.length} ANSWERED`;
   });
@@ -732,7 +785,7 @@ function initialize() {
   });
   $('#editor-form').addEventListener('submit', saveEditor);
   $('#editor-form').addEventListener('change', event => { if (event.target.name === 'from' || event.target.name === 'to') updatePinHints(); });
-  $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; });
+  $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; pendingDraftContext = null; });
   $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { const p = current(), before = structuredClone(p); p.notes = event.target.value; if (saveWithRollback(p, before, 'Before editing notes')) showToast('Notes saved locally.'); } });
   render();
   renderBriefGuidance();

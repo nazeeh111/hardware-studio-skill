@@ -234,6 +234,10 @@ export function validate(project) {
     if (part && String(pin || '').trim() && !(part.pins || []).length) uncheckedPinParts.add(part.name);
   }
   if (uncheckedPinParts.size) issues.push({ kind: 'todo', text: `${uncheckedPinParts.size} part${uncheckedPinParts.size === 1 ? '' : 's'} have named wire pins but no pin inventory for cross-checking.` });
+  for (const part of project.parts.filter(p => /sensor|sensing/i.test(p.category))) {
+    const signal = project.wires.some(w => (w.from === part.id || w.to === part.id) && /\b(?:data|signal|i[²2]c|spi|analog|digital|sda|scl|miso|mosi|clock|uart|serial|pulse|output|reading|tx|rx)\b/i.test(`${w.signal || ''} ${w.fromPin || ''} ${w.toPin || ''}`));
+    if (!signal) issues.push({ kind: 'todo', text: `${part.name} has no clearly recorded signal/data path. Record its actual interface; power connections alone do not carry measurements.` });
+  }
   for (const link of project.mechanicalConnections || []) {
     if (!ids.has(link.from) || !ids.has(link.to)) issues.push({ kind: 'error', text: `A ${link.label || 'mechanical'} relationship refers to a missing part.` });
     if (link.from === link.to && Number(project.parts.find(part => part.id === link.from)?.qty || 0) < 2) issues.push({ kind: 'error', text: 'A mechanical relationship uses one part at both ends without multiple units.' });
@@ -260,11 +264,16 @@ export function validate(project) {
     if (rail.supplyCurrentMa != null && (!Number.isFinite(Number(rail.supplyCurrentMa)) || Number(rail.supplyCurrentMa) <= 0)) issues.push({ kind: 'error', text: `${name} has an invalid supply rating.` });
     if (!Number.isFinite(Number(rail.marginPercent)) || Number(rail.marginPercent) < 0 || Number(rail.marginPercent) >= 100) issues.push({ kind: 'error', text: `${name} needs a margin target from 0 to 99%.` });
     if (rail.sourcePartId && !ids.has(rail.sourcePartId)) issues.push({ kind: 'error', text: `${name} refers to a missing supply part.` });
+    const source = partsById.get(rail.sourcePartId);
+    if (source && /\b(?:cable|wire|connector|splice)\b/i.test(source.name)) issues.push({ kind: 'todo', text: `${name} names ${source.name} as its source. Identify the upstream supply and rating; an interconnect does not establish either.` });
     const used = new Set();
     for (const load of rail.loads || []) {
       if (!ids.has(load.partId)) issues.push({ kind: 'error', text: `${name} has a load linked to a missing part.` });
       if (used.has(load.partId)) issues.push({ kind: 'error', text: `${name} counts a part twice.` });
       used.add(load.partId);
+      const part = partsById.get(load.partId);
+      const statedVoltage = /^\s*(\d+(?:\.\d+)?)\s*v\s*$/i.exec(String(part?.voltage || ''));
+      if (statedVoltage && Number.isFinite(Number(rail.voltageV)) && Math.abs(Number(statedVoltage[1]) - Number(rail.voltageV)) > .01) issues.push({ kind: 'todo', text: `${name} is ${rail.voltageV} V but ${part.name} records ${part.voltage}. Identify the actual supply input and any regulator; the part note may describe logic voltage instead.` });
       if (load.currentMaEach != null && (!Number.isFinite(Number(load.currentMaEach)) || Number(load.currentMaEach) < 0)) issues.push({ kind: 'error', text: `${name} has an invalid load current.` });
     }
     const budget = powerBudget(project, rail);
@@ -380,7 +389,7 @@ export function localAiDraft(input, brief, model) {
   project.steps = project.steps.map(step => ({ ...step, done: false }));
   project.powerRails = [];
   project.review = { electrical: false, mechanical: false, sourcing: false };
-  if (project.parts.length < 2 || project.wires.length < 1 || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');
+  if (project.parts.length < 1 || (!mechanicalOnly(project) && project.wires.length < 1) || project.steps.length < 3) throw new Error('The local model returned an incomplete design record. Try a more specific brief or another model.');
   const terms = project.parts.map(part => `${part.name} ${part.category}`).join(' ').toLowerCase();
   const expected = [
     { requested: /\btemp(?:erature)?\b|thermo/i, present: /therm|temp|bme\s?280|sht\d|dht\d|ds18|tmp\d|mcp9808/i, name: 'temperature sensor' },
@@ -391,11 +400,15 @@ export function localAiDraft(input, brief, model) {
     { requested: /\bmotor\b|\bservo\b/i, present: /motor|servo/i, name: 'motor' },
     { requested: /\bled\b|\blight\b|\blamp\b/i, present: /led|light|lamp/i, name: 'light source' }
   ];
-  const missing = expected.filter(check => check.requested.test(brief) && !check.present.test(terms)).map(check => check.name);
+  // A mechanical-only request can mention an existing device it must fit.
+  // Require explicit user scope as well as mechanical-only output before
+  // bypassing component checks; model category labels alone are insufficient.
+  const mechanicalScope = mechanicalOnly(project) && /\b(?:mechanical[- ]only|(?:enclosure|case|bracket|mount|holder|shell)\s+only)\b/i.test(brief);
+  const missing = mechanicalScope ? [] : expected.filter(check => check.requested.test(brief) && !check.present.test(terms)).map(check => check.name);
   if (missing.length) throw new Error(`The local model omitted a requested ${missing.join(' and ')}. Try another model or use a manual project.`);
   // A common model failure is a Pico-to-NeoPixel drawing with no LED supply.
   // A named 5 V design also needs a deliberate signal interface.
-  if (/\b(?:pico|rp2040)\b/i.test(brief) && /\b(?:neopixel|ws2812)\b/i.test(brief)) {
+  if (!mechanicalScope && /\b(?:pico|rp2040)\b/i.test(brief) && /\b(?:neopixel|ws2812)\b/i.test(brief)) {
     const missingHardware = [];
     const fiveVolt = /\b5\s?v\b/i.test(`${brief} ${terms}`);
     if (!/\b(?:power\s*(?:supply|source|adapter)|5\s?v\s*(?:supply|adapter)|battery|regulated\s*5\s?v)\b/i.test(terms)) missingHardware.push('rated LED power source');

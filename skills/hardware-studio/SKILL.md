@@ -44,3 +44,6 @@ When the user wants an interactive project, produce a Hardware Studio JSON file 
 If the JSON includes a tray spec, the checker also applies the app's tray input rules. Passing those rules means the requested shape can be submitted to the generator, not that any real component fits.
 
 For the public product pattern that inspired this workflow, read [Blueprint observations](references/blueprint-observations.md) only when comparing features or interpreting that website. It is not an API or an engineering standard.
+
+
+When using the browser's local AI concept draft, inspect its captured request and all proposed relationships before acceptance. New drafts include tools, assumptions, mounting intent, part-linked build/test steps and proposed rail bindings. All supply/load currents remain unknown, prices and evidence links are cleared, and review/completion marks stay false. This is an editable concept, not checked engineering. Use **Download draft JSON** to retain a proposal independently. If the intake changes during generation, acceptance is blocked; generate again from the newer request or reconcile the downloaded proposal manually. Brief text and answers persist in tab storage; unreadable saved request bytes require a backup before explicit replacement. AI discovery and generation are limited to the local app; public Pages does not probe Ollama.

@@ -1,0 +1,305 @@
+{
+  "id": "73821b31-9844-48bc-80b3-90f3a405acf7",
+  "title": "USB-Powered Indoor Desk Temperature Display",
+  "brief": "A USB-powered indoor desk temperature display. Use an ESP32 DevKit board, BME280 breakout and 3.3 V compatible OLED, plus USB supply/cable and enclosure. Exact module variants, pinouts, current ratings, material and fit are unknown. Proposed outer enclosure 100 × 60 × 30 mm. Show changing temperature readings; compare to an independent reference. Include mounting intent and proposed source-to-load power rail bindings.\n\nOpen design questions; do not invent exact specifications:\n- What range, accuracy, and update rate matter?\n- What display size and readability are needed?\n- What observable result would show that it works?",
+  "summary": "Local AI concept draft. Proposed parts, connections, dimensions, sources and safety claims are unverified. Review the project record before use.",
+  "starterId": "ai",
+  "createdAt": "2026-10-23T21:17:44.655Z",
+  "updatedAt": "2026-10-23T21:17:44.655Z",
+  "notes": "Generated locally with qwen3-vl:4b-instruct. The model text below is unverified, including any measurements, source claims or assertions of testing. Check each claim against independent evidence before buying or building.\n\nMODEL NOTES / UNVERIFIED\nNo exact part variants, pinouts, or current ratings provided. Enclosure size is 100×60×30mm. Power rails are design proposals only. No CAD or supplier info. All wires and connections are conceptual. Mounting intent is described. Test step references functional behavior without verification.",
+  "tools": [
+    "Soldering iron",
+    "Wire strippers",
+    "Multimeter",
+    "Hot glue gun",
+    "Phillips screwdriver",
+    "Cutting tool for enclosure"
+  ],
+  "assumptions": [
+    "All parts are 3.3V compatible and USB-powered.",
+    "Enclosure can accommodate all components with clearance.",
+    "Sensor and display are wired correctly to ESP32.",
+    "USB cable provides sufficient current for all loads.",
+    "Mounting holes or slots exist for secure attachment."
+  ],
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": null,
+  "cadUrl": "",
+  "wiringUrl": "",
+  "parts": [
+    {
+      "id": "board",
+      "name": "ESP32 DevKit",
+      "category": "Controller",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "USB-powered microcontroller with GPIO pins for sensor and display.",
+      "voltage": "3.3V",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "sensor",
+      "name": "BME280 Breakout",
+      "category": "Sensor",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Environmental sensor for temperature, pressure, humidity.",
+      "voltage": "3.3V",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "display",
+      "name": "OLED Display",
+      "category": "Display",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "3.3V compatible OLED with I2C interface.",
+      "voltage": "3.3V",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "enclosure",
+      "name": "Plastic Enclosure",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "100×60×30mm, open-top or side-mountable for components.",
+      "voltage": "N/A",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "cable",
+      "name": "USB Cable",
+      "category": "Power",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "USB-A to USB-B or micro-USB for power input.",
+      "voltage": "5V",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [
+    {
+      "from": "board",
+      "fromPin": "VCC",
+      "to": "sensor",
+      "toPin": "VCC",
+      "signal": "Power supply to sensor",
+      "voltage": "3.3V",
+      "note": "Sensor requires 3.3V; board provides via voltage regulator."
+    },
+    {
+      "from": "board",
+      "fromPin": "GND",
+      "to": "sensor",
+      "toPin": "GND",
+      "signal": "Ground connection",
+      "voltage": "0V",
+      "note": "Shared ground between board and sensor."
+    },
+    {
+      "from": "board",
+      "fromPin": "SDA",
+      "to": "display",
+      "toPin": "SDA",
+      "signal": "I2C data line",
+      "voltage": "3.3V",
+      "note": "I2C communication with OLED."
+    },
+    {
+      "from": "board",
+      "fromPin": "SCL",
+      "to": "display",
+      "toPin": "SCL",
+      "signal": "I2C clock line",
+      "voltage": "3.3V",
+      "note": "I2C communication with OLED."
+    },
+    {
+      "from": "board",
+      "fromPin": "VCC",
+      "to": "display",
+      "toPin": "VCC",
+      "signal": "Power to display",
+      "voltage": "3.3V",
+      "note": "Display powered via board’s 3.3V rail."
+    },
+    {
+      "from": "board",
+      "fromPin": "GND",
+      "to": "display",
+      "toPin": "GND",
+      "signal": "Ground to display",
+      "voltage": "0V",
+      "note": "Shared ground with board."
+    }
+  ],
+  "mechanicalConnections": [
+    {
+      "from": "board",
+      "to": "enclosure",
+      "label": "Board Mounting",
+      "note": "Mount board inside enclosure with screws or adhesive. Ensure clearance for wires."
+    },
+    {
+      "from": "sensor",
+      "to": "enclosure",
+      "label": "Sensor Mounting",
+      "note": "Mount sensor near desk surface; avoid direct heat sources."
+    },
+    {
+      "from": "display",
+      "to": "enclosure",
+      "label": "Display Mounting",
+      "note": "Mount display vertically or horizontally; ensure screen is readable from desk."
+    },
+    {
+      "from": "cable",
+      "to": "enclosure",
+      "label": "USB Cable Entry",
+      "note": "Insert USB cable into enclosure port or use external USB hub."
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "Prepare",
+      "title": "Prepare Components",
+      "detail": "Gather all parts: ESP32 DevKit, BME280 breakout, OLED, enclosure, USB cable. Verify compatibility with 3.3V logic.",
+      "partIds": [
+        "board",
+        "sensor",
+        "display",
+        "enclosure",
+        "cable"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-2",
+      "phase": "Fabricate",
+      "title": "Fabricate Enclosure Mounting",
+      "detail": "Drill or cut mounting holes for board, sensor, and display. Ensure internal space allows for wiring and heat dissipation.",
+      "partIds": [
+        "enclosure"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-3",
+      "phase": "Wire",
+      "title": "Wire Sensor and Display to Board",
+      "detail": "Connect sensor and display to ESP32 using defined I2C and power lines. Use soldering for secure connections.",
+      "partIds": [
+        "board",
+        "sensor",
+        "display"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-4",
+      "phase": "Bring up",
+      "title": "Upload Firmware",
+      "detail": "Program ESP32 to read sensor data and update OLED display. Use Arduino IDE or similar. Test via serial monitor.",
+      "partIds": [
+        "board"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-5",
+      "phase": "Assemble",
+      "title": "Assemble Enclosure",
+      "detail": "Insert all components into enclosure. Secure with screws or glue. Ensure USB cable entry point is accessible.",
+      "partIds": [
+        "enclosure",
+        "board",
+        "sensor",
+        "display",
+        "cable"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-6",
+      "phase": "Test",
+      "title": "Test Temperature Display",
+      "detail": "Power on device and verify that temperature readings update and display correctly. Compare to known reference (e.g., thermometer).",
+      "partIds": [
+        "board",
+        "sensor",
+        "display"
+      ],
+      "done": false
+    }
+  ],
+  "powerRails": [
+    {
+      "id": "mainRail",
+      "name": "USB Power Rail",
+      "voltageV": 5,
+      "supplyCurrentMa": null,
+      "marginPercent": 20,
+      "sourcePartId": "cable",
+      "loads": [
+        {
+          "partId": "board",
+          "currentMaEach": null
+        },
+        {
+          "partId": "sensor",
+          "currentMaEach": null
+        },
+        {
+          "partId": "display",
+          "currentMaEach": null
+        }
+      ]
+    },
+    {
+      "id": "33VRail",
+      "name": "3.3V Internal Rail",
+      "voltageV": 3.3,
+      "supplyCurrentMa": null,
+      "marginPercent": 20,
+      "sourcePartId": "board",
+      "loads": [
+        {
+          "partId": "sensor",
+          "currentMaEach": null
+        },
+        {
+          "partId": "display",
+          "currentMaEach": null
+        }
+      ]
+    }
+  ],
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

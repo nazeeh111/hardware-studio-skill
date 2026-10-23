@@ -1,0 +1,86 @@
+{
+  "id": "64db0ab4-af9a-45e8-a075-8ebdc2ddbc18",
+  "title": "Mechanical Bookend - Bent Plate",
+  "brief": "Mechanical-only: a single bent plate bookend for a desk. Use one Mechanical part, no electronics, no wires and no power rails. Footprint, load, thickness and material require measurement. Include preparation, fabrication and a stability Test linked to the plate.\n\nOpen design questions; do not invent exact specifications:\n- What will power it, and what supply limits are known?\n- What size, weight, or mounting constraint must it meet?\n- What observable result would show that it works?",
+  "summary": "Local AI concept draft. Proposed parts, connections, dimensions, sources and safety claims are unverified. Review the project record before use.",
+  "starterId": "ai",
+  "createdAt": "2026-10-23T21:14:52.015Z",
+  "updatedAt": "2026-10-23T21:14:52.015Z",
+  "notes": "Generated locally with qwen3-vl:4b-instruct. The model text below is unverified, including any measurements, source claims or assertions of testing. Check each claim against independent evidence before buying or building.\n\nMODEL NOTES / UNVERIFIED\nNo power source required. No wires or power rails. Stability test relies on observable deflection or load retention. All measurements and constraints are open design questions. No electronics or tools beyond mechanical fabrication.",
+  "tools": [
+    "Handheld file or metal file",
+    "Measuring tape or caliper",
+    "Angle grinder or bench grinder (optional)",
+    "Clamps or vise",
+    "Drill or rotary tool (if hole drilling needed)",
+    "Ruler or straight edge"
+  ],
+  "assumptions": [
+    "Material is rigid and can be bent without cracking or warping.",
+    "Plate thickness and footprint are within desk surface constraints.",
+    "Load capacity is sufficient for typical book weight (e.g., 1–5 kg).",
+    "Mounting surface is flat and stable (e.g., desk top).",
+    "No external forces (e.g., vibration, wind) are present during test."
+  ],
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": null,
+  "cadUrl": "",
+  "wiringUrl": "",
+  "parts": [
+    {
+      "id": "plate",
+      "name": "Bent Plate Bookend",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Single plate, bent at a single angle to form a bookend shape. Dimensions and material to be measured.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [],
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "Prepare",
+      "title": "Measure and Mark Plate Dimensions",
+      "detail": "Measure desired footprint, thickness, and bend angle. Mark bend line with pencil or scribe. Ensure material can be bent without cracking or warping.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-2",
+      "phase": "Fabricate",
+      "title": "Bend Plate to Desired Angle",
+      "detail": "Use file or grinder to create bend. Apply force to form angle. Ensure bend is consistent and not too sharp or too shallow. No electronics or power involved.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    },
+    {
+      "id": "step-3",
+      "phase": "Test",
+      "title": "Stability Test with Known Load",
+      "detail": "Place plate on flat surface. Apply known load (e.g., 1 kg book or weight). Observe if plate remains upright. Record deflection or collapse. No power or wires involved.",
+      "partIds": [
+        "plate"
+      ],
+      "done": false
+    }
+  ],
+  "powerRails": [],
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}
