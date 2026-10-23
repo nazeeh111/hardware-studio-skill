@@ -1,7 +1,7 @@
 {
   "title": "Pico + NeoPixel prototype tray",
   "brief": "An open, dimensioned tray and a provisional 5 V electrical prototype for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426.",
-  "summary": "Two-board tray checked against manufacturer STEP models. Proposed 5 V data and power path is source-backed but unbuilt; supply, harness, auxiliary-part fit and measurements remain open.",
+  "summary": "Two-board tray checked against maker STEP models. A listed 5 V / 2 A source and two connector candidates narrow the power architecture, but junction, branch ratings, remaining loads, auxiliary fit and measurements remain open.",
   "cadUrl": "https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray",
   "wiringUrl": "https://github.com/nazeeh111/hardware-studio-skill/blob/main/examples/pico-neopixel-tray/electrical-plan.md",
   "starterId": "imported",
@@ -118,40 +118,112 @@
     },
     {
       "id": "supply",
-      "name": "Regulated 5 V source and distribution harness, exact parts TBD",
+      "name": "Adafruit #276 regulated 5 V / 2 A wall supply (proposed)",
       "category": "Power",
       "qty": 1,
       "unitCost": 0,
-      "detail": "Provide separate 5 V branches to Pico micro-USB, Stick +5V/GND and level shifter VCC/GND, with common ground. Do not assume the Pico VBUS header or an arbitrary USB host can carry the LED load. Select a source, cable, connector and branching method only after rating checks.",
+      "detail": "UL-listed 5 V, up to 2 A positive-tip 5.5/2.1 mm barrel output per maker listing. This is a proposed exact source, not an assembled/bench-verified supply. Connector, branch and load checks remain open.",
       "voltage": "5 V nominal",
+      "sourceUrl": "https://www.adafruit.com/product/276",
+      "specUrl": "https://www.adafruit.com/product/276",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "BARREL CENTER +5V",
+        "BARREL SLEEVE GND"
+      ]
+    },
+    {
+      "id": "barrel-368",
+      "name": "Adafruit #368 2.1 mm female barrel to screw terminal (proposed)",
+      "category": "Power interface",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Accepts positive-tip 5.5/2.1 mm plug and exposes marked +/− terminals. Vendor support cites nominal 2 A, but verify actual unit, wire retention and heating. The two screws do not establish a safe three-way branch; distribution hardware is separate and unresolved. Off-tray.",
+      "voltage": "5 V",
+      "sourceUrl": "https://www.adafruit.com/product/368",
+      "specUrl": "https://forums.adafruit.com/viewtopic.php?t=141620",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "+",
+        "-"
+      ]
+    },
+    {
+      "id": "branch-junction",
+      "name": "Insulated 5 V / GND distribution junction, exact hardware TBD",
+      "category": "Power interface",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Connect one input pair from #368 to three protected and retained branch pairs: Pico USB, NeoPixel input, and AHCT supply. Choose an exact connector or fabricated board with documented contact, wire and insulation ratings before wiring. Not in tray CAD.",
+      "voltage": "5 V",
       "sourceUrl": "",
       "specUrl": "",
       "checkedAt": "",
       "verified": false,
       "pins": []
+    },
+    {
+      "id": "usb-plug-3972",
+      "name": "Adafruit #3972 Micro-B male terminal adapter (proposed)",
+      "category": "Power interface",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Terminal A is USB pin 1 V+; E is pin 5 GND. B/C/D are left disconnected in this power-only proposal. Listed adapter size 32.5 × 28.0 × 10.4 mm and 26–16 AWG terminal wire range; no assembly current rating was established. Must remain off-tray until plug/cable fit and strain relief are checked.",
+      "voltage": "5 V",
+      "sourceUrl": "https://www.adafruit.com/product/3972",
+      "specUrl": "https://www.adafruit.com/product/3972",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "A V+",
+        "E GND"
+      ]
     }
   ],
   "wires": [
     {
       "from": "supply",
+      "to": "barrel-368",
+      "signal": "positive-tip 5 V barrel pair",
+      "voltage": "5 V",
+      "note": "Verify center-positive polarity and barrel fit before connecting any electronics."
+    },
+    {
+      "from": "barrel-368",
+      "to": "branch-junction",
+      "signal": "marked +5 V / GND pair",
+      "voltage": "5 V",
+      "note": "Exact junction and wire retention/rating are open. Do not clamp three branch conductors under an unspecified adapter terminal."
+    },
+    {
+      "from": "branch-junction",
+      "to": "usb-plug-3972",
+      "signal": "Pico branch to A V+ and E GND",
+      "voltage": "5 V",
+      "note": "B/C/D stay open; exact branch wire/contact rating and plug access are unverified."
+    },
+    {
+      "from": "usb-plug-3972",
       "to": "pico-r3",
-      "signal": "5 V branch → micro-USB",
+      "signal": "Micro-B power plug into Pico USB socket",
       "voltage": "5 V",
-      "note": "Exact supply, cable and branch hardware TBD; no LED power routed through Pico VBUS header."
+      "note": "Power-only connection; do not simultaneously connect another USB power source."
     },
     {
-      "from": "supply",
+      "from": "branch-junction",
       "to": "neopixel-1426",
-      "signal": "5 V + common GND → 5VDC/GND input pads",
+      "signal": "separate +5 V / GND pair to input pads",
       "voltage": "5 V",
-      "note": "Use input end. Select a distribution harness rated for worst-case load."
+      "note": "Use the DIN end; confirm conductor and junction ratings and polarity."
     },
     {
-      "from": "supply",
+      "from": "branch-junction",
       "to": "ahct",
-      "signal": "5 V + common GND → VCC 14/GND 7",
+      "signal": "separate +5 V / GND pair to VCC 14 / GND 7",
       "voltage": "5 V",
-      "note": "Gate 1OE pin 1 held low. Other OE and A inputs require defined levels; see TI datasheet."
+      "note": "1OE pin 1 held low; define unused input levels per TI."
     },
     {
       "from": "pico-r3",
@@ -198,9 +270,9 @@
   "powerRails": [
     {
       "id": "rail-5v",
-      "name": "Proposed shared 5 V rail; source and auxiliary currents open",
+      "name": "Proposed Adafruit #276 shared 5 V rail; load/branches open",
       "voltageV": 5,
-      "supplyCurrentMa": null,
+      "supplyCurrentMa": 2000,
       "marginPercent": 20,
       "sourcePartId": "supply",
       "loads": [
@@ -243,11 +315,14 @@
     },
     {
       "phase": "Prepare",
-      "title": "Select and rate the 5 V source",
-      "detail": "Choose an exact regulated source, dual-branch harness, cable and connectors. The LED upper-bound estimate is 8 × 60 = 480 mA; add measured or sourced Pico and shifter peak currents, then check all ratings with headroom.",
+      "title": "Verify the proposed source and rate every branch",
+      "detail": "Adafruit #276 lists 5 V / 2 A. Verify the purchased supply and center-positive output, then choose an exact rated insulated junction and branch wires. Check the #368 and #3972 contact limits. Add sourced/measured Pico and shifter peak currents to the 480 mA LED estimate before accepting a margin.",
       "done": false,
       "partIds": [
         "supply",
+        "barrel-368",
+        "branch-junction",
+        "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
         "ahct"
@@ -269,10 +344,13 @@
     {
       "phase": "Wire",
       "title": "Connect power and common ground",
-      "detail": "With power disconnected, branch the same verified 5 V source to Pico micro-USB, Stick +5V/GND and shifter VCC/GND; add 1000 µF capacitor across Stick input with correct polarity. Do not use Pico VBUS as the LED feed in this plan.",
+      "detail": "With power disconnected, connect the #276 barrel through #368 to a separately selected insulated junction. Route three +5 V/GND pairs: #3972 A/E into Pico micro-USB, Stick 5VDC/GND, and AHCT VCC/GND. Add the bulk and bypass capacitors with correct polarity. Verify continuity, no shorts and no second USB power source before energizing.",
       "done": false,
       "partIds": [
         "supply",
+        "barrel-368",
+        "branch-junction",
+        "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
         "ahct",
@@ -283,10 +361,13 @@
     {
       "phase": "Test",
       "title": "Bench test before tray assembly",
-      "detail": "Current-limit the source for initial bring-up, begin at low brightness, then measure worst-case current, rail sag and signal levels with the actual parts. Stop if the supply, cable or connector limits are exceeded.",
+      "detail": "After unpowered polarity/continuity checks, bring up with a current limit and low brightness. Measure worst-case total and branch currents, rail sag at the Stick and IC, and data levels. Stop if source, connector, cable or junction limits are exceeded.",
       "done": false,
       "partIds": [
         "supply",
+        "barrel-368",
+        "branch-junction",
+        "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
         "ahct",
@@ -320,11 +401,14 @@
     {
       "phase": "Prepare",
       "title": "Package the auxiliary electronics",
-      "detail": "Measure the level shifter, capacitors, resistor, harness and USB plug; locate them mechanically, add insulation and strain relief, then revise CAD. They are absent from the current two-board tray model.",
+      "detail": "Measure #368, #3972, the selected junction, IC, capacitors, resistor, harness and USB plug. Place or retain them externally, provide insulation/strain relief, then revise and recheck CAD. The current tray fits only Pico and Stick.",
       "done": false,
       "partIds": [
         "tray",
         "supply",
+        "barrel-368",
+        "branch-junction",
+        "usb-plug-3972",
         "ahct",
         "res470",
         "bulkcap",
@@ -332,7 +416,7 @@
       ]
     }
   ],
-  "notes": "Mechanical STEP fit is only for Pico and Stick, with 1.5 mm minimum Pico wall clearance and 3.78 mm published Stick wall clearance. Auxiliary electronics, distribution harness and mating USB plug are not modeled. The 480 mA LED figure is Adafruit’s maximum-white estimate for eight pixels, not a measured assembly draw. Supply rating, Pico peak draw and level-shifter dynamic draw remain unknown, so the power worksheet must stay incomplete. All prices are unknown; no bench wiring or physical fit was performed.",
+  "notes": "Mechanical STEP fit covers only Pico and Stick, not the 5 V supply, #368, #3972, distribution junction, shifter or passives. Adafruit #276 lists 5 V / 2 A; the LED full-white estimate is 480 mA, so the worksheet remains incomplete until Pico and shifter current are established. #368 has a vendor-support nominal 2 A statement; #3972 and the junction/branch assembly lack an established current rating. No wiring or physical fit was performed. Prices remain unknown.",
   "review": {
     "electrical": false,
     "mechanical": false,
@@ -345,8 +429,9 @@
     "Soldering and insulated wire preparation tools"
   ],
   "assumptions": [
-    "The downloaded maker STEP revisions match the exact boards purchased; verify this before fabrication.",
-    "The 5 V supply and distribution harness are not selected or rated yet.",
+    "The downloaded maker STEP revisions match the exact boards purchased; verify before fabrication.",
+    "Adafruit #276, #368 and #3972 are proposed specific components; purchase, electrical ratings and fit must be confirmed on actual units.",
+    "An exact insulated distribution junction and branch wires remain unselected.",
     "All fit and electrical work remains a prototype plan until physical and bench checks are recorded."
   ]
 }

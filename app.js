@@ -1,4 +1,4 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=26';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=27';
 import { validateTraySpec } from './tray-spec.js?v=2';
 import { createZip } from './zip.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=2';

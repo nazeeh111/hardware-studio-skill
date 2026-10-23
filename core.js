@@ -240,7 +240,13 @@ export function validate(project) {
       if (load.currentMaEach != null && (!Number.isFinite(Number(load.currentMaEach)) || Number(load.currentMaEach) < 0)) issues.push({ kind: 'error', text: `${name} has an invalid load current.` });
     }
     const budget = powerBudget(project, rail);
-    if (budget.status === 'incomplete') issues.push({ kind: 'todo', text: `${name} needs a supply rating and current for every assigned load.` });
+    if (budget.status === 'incomplete') {
+      const missing = [];
+      if (!Number.isFinite(budget.supplyMa) || budget.supplyMa <= 0) missing.push('a supply rating');
+      if (!budget.loads.length) missing.push('assigned loads');
+      else if (budget.loads.some(load => load.totalMa == null)) missing.push('current for every assigned load');
+      issues.push({ kind: 'todo', text: `${name} needs ${missing.join(' and ')}.` });
+    }
     if (budget.status === 'overload') issues.push({ kind: 'error', text: `${name} exceeds its recorded supply rating by ${Math.abs(budget.headroomMa).toFixed(0)} mA.` });
     if (budget.status === 'below-margin') issues.push({ kind: 'review', text: `${name} is below its chosen ${Number(rail.marginPercent)}% headroom target.` });
   }
