@@ -30,6 +30,8 @@ Open `http://localhost:4173` in a browser. No account, paid API or server databa
 
 Optional local AI drafting uses an already installed [Ollama](https://docs.ollama.com/api/generate) model at `127.0.0.1:11434`. Start Ollama before opening the app, select a local model, enter a brief, and choose **Draft with local AI**. Add a sketch or photo if useful; image drafting requires a model marked **vision** in the selector. If Ollama is unavailable, the editor and starter designs still work. The brief and optional resized image go only to the local Ollama service; no cloud model is called by this feature. Generation uses local compute and can take a few minutes.
 
+The model picker checks each installed model with Ollama's `/api/show` endpoint. `/api/tags` alone does not consistently report vision capability. In a local image test, `qwen3-vl:4b-instruct` recognized the prototype render but returned an incomplete concept that the app rejected; `local-fast:latest` produced a five-part concept, two proposed connections and eight steps that passed the structural gate. The [local test screenshot](vision-draft-local.png) shows the saved draft with its image and unresolved review items. This confirms the image flow and review gate on that machine, not part selection or electrical correctness.
+
 For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Ollama's default local-origin access. The public GitHub Pages version works without Ollama; its AI control stays hidden unless your Ollama installation explicitly allows that site's origin.
 
 ## What works

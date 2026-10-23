@@ -34,13 +34,26 @@ const LOCAL_AI_SCHEMA = {
 
 async function detectLocalModels() {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
+  const timer = setTimeout(() => controller.abort(), 8000);
   try {
     const response = await fetch(`${OLLAMA_URL}/api/tags`, { signal: controller.signal });
     if (!response.ok) throw new Error('Local model list unavailable');
     const data = await response.json();
     const names = (data.models || []).map(model => model.name).filter(name => typeof name === 'string');
-    modelCapabilities = new Map((data.models || []).filter(model => typeof model.name === 'string').map(model => [model.name, new Set(model.capabilities || [])]));
+    // /api/tags lists models but does not consistently include capabilities.
+    // /api/show is the authoritative local source for the vision badge.
+    const capabilities = await Promise.all(names.map(async name => {
+      try {
+        const detail = await fetch(`${OLLAMA_URL}/api/show`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: name }), signal: controller.signal
+        });
+        if (!detail.ok) return [];
+        const info = await detail.json();
+        return Array.isArray(info.capabilities) ? info.capabilities : [];
+      } catch { return []; }
+    }));
+    modelCapabilities = new Map(names.map((name, index) => [name, new Set(capabilities[index])]));
     if (!names.length) throw new Error('No local models installed');
     const select = $('#local-model');
     select.innerHTML = names.map(name => `<option value="${html(name)}">${html(name)}${modelCapabilities.get(name)?.has('vision') ? ' · vision' : ''}</option>`).join('');
