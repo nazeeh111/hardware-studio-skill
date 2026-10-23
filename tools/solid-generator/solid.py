@@ -93,7 +93,7 @@ def check_shape(shape):
         raise ValueError('Every feature must leave one connected valid solid.')
     v, span = volume(shape), bounds(shape)
     if not math.isfinite(v) or v <= .001 or any(not math.isfinite(n) or n <= 0 or n > 500.001 for n in span):
-        raise ValueError('Result needs positive volume and dimensions at most 500 mm.')
+        raise ValueError('Result volume must exceed 0.001 cubic mm, with positive dimensions at most 500 mm.')
     return v, span
 
 def check_probes(shape, spec):
@@ -115,7 +115,7 @@ def build(spec):
         v, span = check_shape(shape)
         delta = v - prior
         if (feature['operation'] == 'add' and delta <= .001) or (feature['operation'] == 'cut' and delta >= -.001):
-            raise ValueError(f'Feature {feature["id"]} has no material effect.')
+            raise ValueError(f'Feature {feature["id"]} must change volume by more than 0.001 cubic mm.')
         history.append({'id': feature['id'], 'operation': feature['operation'], 'volume_mm3': v, 'volume_delta_mm3': delta, 'span_mm': span})
         prior = v
     return shape, history, check_probes(shape, spec)

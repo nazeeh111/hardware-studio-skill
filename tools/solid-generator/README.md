@@ -34,7 +34,7 @@ The output directory must be absent and its parent must exist. The [bracket sour
 - A `cylinder` has `radius`, `height` and `axis` (`x`, `y` or `z`); its origin is the base center and its axis points in the positive direction.
 - `probes`: up to 16 records with unique IDs, `expect` (`material` or `void`), and the same primitive fields. A material probe requires at least 99.9% overlap; a void probe permits at most 0.1%. These are selected-region checks, not full wall-thickness or strength tests.
 
-Numbers must be finite. Coordinates are bounded to ±500 mm; positive lengths range from 0.01 to 500 mm. Each result span must be at most 500 mm. Unsupported fields, disconnected solids, no-effect operations, invalid shapes, non-positive volumes and failing probes are rejected. The generator does not silently repair them.
+Numbers must be finite. Coordinates are bounded to ±500 mm; positive lengths range from 0.01 to 500 mm. Each result span must be at most 500 mm. The result volume and each operation’s absolute volume change must exceed 0.001 cubic millimeters. Unsupported fields, disconnected solids, changes below that threshold, invalid shapes and failing probes are rejected. The generator does not silently repair them.
 
 ## Export and evidence
 
