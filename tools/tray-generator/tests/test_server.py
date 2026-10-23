@@ -21,6 +21,7 @@ from OCP.STEPControl import STEPControl_AsIs, STEPControl_Writer
 from generate import box
 
 EXAMPLE = Path(__file__).resolve().parents[1] / 'examples' / 'pico-neopixel-tray.json'
+COVER_EXAMPLE = EXAMPLE.with_name('pico-neopixel-cover-study.json')
 
 
 class LocalServerTests(unittest.TestCase):
@@ -56,6 +57,14 @@ class LocalServerTests(unittest.TestCase):
                     collision = json.load(response)
                 self.assertEqual(collision['status'], 'modeled interference detected')
                 self.assertGreater(collision['components'][0]['tray_overlap_mm3'], 20)
+                request['traySpec'] = json.loads(COVER_EXAMPLE.read_text())
+                request['components'][0]['translationMm'] = [20, 12, 13]
+                with post(base) as response:
+                    cover_collision = json.load(response)
+                self.assertEqual(cover_collision['status'], 'modeled interference detected')
+                self.assertLessEqual(cover_collision['components'][0]['tray_overlap_mm3'], .01)
+                self.assertGreater(cover_collision['components'][0]['lid_overlap_mm3'], 20)
+                self.assertTrue(cover_collision['components'][0]['lid_interference_above_threshold'])
             finally:
                 server.shutdown()
                 server.server_close()
@@ -83,6 +92,15 @@ class LocalServerTests(unittest.TestCase):
                 report = json.loads(package.read('verification.json'))
                 self.assertEqual(report['outer_span_mm'], [66.0, 45.0, 14.0])
                 self.assertEqual(report['stl_outer_span_mm'], [66.0, 45.0, 14.0])
+            covered = urllib.request.Request(f'{base}/api/tray', COVER_EXAMPLE.read_bytes(), {'Content-Type': 'application/json', 'Origin': base}, method='POST')
+            with urllib.request.urlopen(covered, timeout=150) as response:
+                with zipfile.ZipFile(io.BytesIO(response.read())) as package:
+                    self.assertIsNone(package.testzip())
+                    self.assertIn('lid.step', package.namelist())
+                    self.assertIn('lid.stl', package.namelist())
+                    lid_report = json.loads(package.read('verification.json'))['lid']
+                    self.assertEqual(lid_report['outer_span_mm'], [71.0, 50.0, 5.5])
+                    self.assertGreater(lid_report['shifted_overlap_mm3'], 1)
         finally:
             server.shutdown()
             server.server_close()

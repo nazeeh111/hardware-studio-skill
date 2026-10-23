@@ -28,6 +28,18 @@ The tray has 2.5 mm nominal walls and floor, an open USB-side notch, bosses at t
 
 These are same-kernel CAD checks, not independent CAD-system interoperability or physical validation. The USB connector and a mating cable plug were not modeled together. Nominal radial clearance is geometry, not a measured printer tolerance. Try a fit coupon in the intended material and process, then measure real parts and revise the design before fabrication or assembly.
 
+## Lift-off cover geometry study
+
+![Blender exploded preview of the separate cover and tray](preview/cover-v3/cover-exploded.jpg)
+
+The optional [cover spec](../../tools/tray-generator/examples/pico-neopixel-cover-study.json) uses the same 66 × 45 × 14 mm tray and left USB-side opening, plus a 2.5 mm plate, 3 mm outside skirt, 2 mm skirt wall and **0.5 mm nominal side gap**. The [generated package](generated/cover-study-v1/spec.json) includes separate [lid STEP](generated/cover-study-v1/lid.step), [lid STL](generated/cover-study-v1/lid.stl), a [top drawing](generated/cover-study-v1/layout.svg) and a [fresh-process report](generated/cover-study-v1/verification.json). The lid has a 71 × 50 × 5.5 mm bounding span in its seated pose. The reader found zero modeled tray/lid volume overlap; shifting it toward the tray by 1.5 mm produced **87 mm³** of modeled interference.
+
+The [editable Blender scene](preview/cover-v3/cover-scene.blend) raises the lid **23 mm above its seated STEP pose for illustration**; it is not the fit-check position.
+
+The [cover fit report](checks/cover-study-v1/fit-report.json) then compared both original maker STEP models at the earlier documented positions against **both** tray and seated lid. It found zero modeled intersections; closest lid separation was 2.27 mm for the Pico model and 3.40 mm for the Stick model. These are nominal model distances, not guaranteed vertical clearances on purchased boards. The source hashes in that report match the earlier tray fit references. The [manifest](fit-manifest-cover.json) can be rerun after downloading the two maker STEP files into a local `vendor/` folder.
+
+This flat cover is a geometry example only. It has **no retention or diffuser** and its opaque plate blocks the NeoPixels, so it is not a finished light. The side skirt inherits the tray notch, but a mating USB plug and its cable bend were not modeled. Printer tolerance, retention, ventilation, access to the Stick, wiring space, temperature and physical fit remain untested. Do not fabricate this as a final enclosure without redesigning those features.
+
 ## Reusable fit checker
 
 The [new generator package](generated/generator-v1/spec.json) keeps a re-runnable tray spec with its [STEP](generated/generator-v1/tray.step), [STL](generated/generator-v1/tray.stl) and [readback report](generated/generator-v1/verification.json). The generic `tools/tray-generator/fit.py` uses the [nominal manifest](fit-manifest.json) and [shifted-Pico manifest](fit-manifest-shifted.json). Its published [nominal report](checks/generic-fit-v1/nominal.json) found zero modeled tray/component and component/component intersection, with 3.5 mm closest distance between the two component models. The [negative report](checks/generic-fit-v1/shifted-pico.json) detected 69.30 mm³ of Pico/tray interference after moving the Pico 3 mm toward the front wall. These results match the earlier part-specific check's key collision finding without replacing its hole and connector checks.

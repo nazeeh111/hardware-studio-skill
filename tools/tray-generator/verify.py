@@ -11,6 +11,8 @@ from pathlib import Path
 sys.dont_write_bytecode = True
 
 from OCP.BRepBndLib import BRepBndLib
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Common
+from OCP.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepGProp import BRepGProp
 from OCP.Bnd import Bnd_Box
@@ -19,6 +21,7 @@ from OCP.IFSelect import IFSelect_RetDone
 from OCP.STEPControl import STEPControl_Reader
 from OCP.TopAbs import TopAbs_SOLID
 from OCP.TopExp import TopExp_Explorer
+from OCP.gp import gp_Trsf, gp_Vec
 
 
 def sha256(path):
@@ -51,6 +54,36 @@ def volume(shape):
     return properties.Mass()
 
 
+def solid_count(shape):
+    count = 0
+    explorer = TopExp_Explorer(shape, TopAbs_SOLID)
+    while explorer.More():
+        count += 1
+        explorer.Next()
+    return count
+
+
+def overlap_volume(first, second):
+    result = BRepAlgoAPI_Common(first, second)
+    result.Build()
+    if not result.IsDone():
+        raise RuntimeError('STEP overlap comparison failed')
+    return 0.0 if result.Shape().IsNull() else volume(result.Shape())
+
+
+def checked_stl_span(path, expected):
+    stl = path.read_bytes()
+    if len(stl) < 84:
+        raise RuntimeError(f'{path.name} is incomplete')
+    triangle_count = struct.unpack_from('<I', stl, 80)[0]
+    if triangle_count < 12 or len(stl) != 84 + triangle_count * 50:
+        raise RuntimeError(f'{path.name} triangle count or byte length is invalid')
+    span = stl_bounds(stl, triangle_count)
+    if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(span, expected)):
+        raise RuntimeError(f'{path.name} dimensions {span} differ from spec {expected}')
+    return span, triangle_count
+
+
 def stl_bounds(data, triangle_count):
     low = [math.inf] * 3
     high = [-math.inf] * 3
@@ -74,13 +107,9 @@ def main():
     spec = json.loads((root / 'spec.json').read_text())
     built = json.loads((root / 'build-report.json').read_text())
     shape = read_step(root / 'tray.step')
-    solid_count = 0
-    explorer = TopExp_Explorer(shape, TopAbs_SOLID)
-    while explorer.More():
-        solid_count += 1
-        explorer.Next()
-    if solid_count != 1:
-        raise RuntimeError(f'Expected one connected solid, got {solid_count}')
+    tray_solids = solid_count(shape)
+    if tray_solids != 1:
+        raise RuntimeError(f'Expected one connected tray solid, got {tray_solids}')
     span = bounds(shape)
     expected = [spec['outer'][key] for key in ('length', 'width', 'height')]
     if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(span, expected)):
@@ -88,24 +117,45 @@ def main():
     volume_mm3 = volume(shape)
     if not math.isclose(volume_mm3, built['volume_mm3'], rel_tol=1e-5, abs_tol=.01):
         raise RuntimeError('STEP volume differs from build report')
-    stl = (root / 'tray.stl').read_bytes()
-    if len(stl) < 84:
-        raise RuntimeError('STL is incomplete')
-    triangle_count = struct.unpack_from('<I', stl, 80)[0]
-    if triangle_count < 12 or len(stl) != 84 + triangle_count * 50:
-        raise RuntimeError('STL triangle count or byte length is invalid')
-    mesh_span = stl_bounds(stl, triangle_count)
-    if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(mesh_span, expected)):
-        raise RuntimeError(f'STL dimensions {mesh_span} differ from spec {expected}')
+    mesh_span, triangle_count = checked_stl_span(root / 'tray.stl', expected)
+    lid_result = None
+    names = ['spec.json', 'tray.step', 'tray.stl', 'layout.svg']
+    if spec.get('lid'):
+        lid = read_step(root / 'lid.step')
+        if solid_count(lid) != 1:
+            raise RuntimeError('Expected one connected lid solid')
+        margin = spec['lid']['clearance'] + spec['lid']['skirtWall']
+        lid_expected = [spec['outer']['length'] + 2 * margin, spec['outer']['width'] + 2 * margin, spec['lid']['thickness'] + spec['lid']['skirtDepth']]
+        lid_span = bounds(lid)
+        if any(not math.isclose(value, target, abs_tol=.03) for value, target in zip(lid_span, lid_expected)):
+            raise RuntimeError(f'Lid STEP dimensions {lid_span} differ from spec {lid_expected}')
+        lid_volume = volume(lid)
+        if not math.isclose(lid_volume, built['lid']['volume_mm3'], rel_tol=1e-5, abs_tol=.01):
+            raise RuntimeError('Lid STEP volume differs from build report')
+        lid_mesh_span, lid_triangles = checked_stl_span(root / 'lid.stl', lid_expected)
+        seated_overlap = overlap_volume(shape, lid)
+        if seated_overlap > .01:
+            raise RuntimeError(f'Seated lid overlaps tray by {seated_overlap:.3f} mm³')
+        transform = gp_Trsf()
+        transform.SetTranslation(gp_Vec(spec['lid']['clearance'] + spec['lid']['skirtWall'] / 2, 0, 0))
+        shifted = BRepBuilderAPI_Transform(lid, transform, True).Shape()
+        shifted_overlap = overlap_volume(shape, shifted)
+        if shifted_overlap <= .01:
+            raise RuntimeError('Shifted lid did not detect the expected tray interference')
+        lid_result = {'solid_count': 1, 'outer_span_mm': lid_span, 'volume_mm3': lid_volume, 'stl_triangles': lid_triangles,
+                      'stl_outer_span_mm': lid_mesh_span, 'seated_overlap_mm3': seated_overlap, 'shifted_overlap_mm3': shifted_overlap,
+                      'nominal_side_clearance_mm': spec['lid']['clearance']}
+        names.extend(['lid.step', 'lid.stl'])
     result = {
         'status': 'fresh-process same-kernel readback passed; physical fit untested',
-        'solid_count': solid_count,
+        'solid_count': tray_solids,
         'outer_span_mm': span,
         'volume_mm3': volume_mm3,
         'stl_triangles': triangle_count,
         'stl_outer_span_mm': mesh_span,
-        'sha256': {name: sha256(root / name) for name in ('spec.json', 'tray.step', 'tray.stl', 'layout.svg')},
-        'limits': ['Same OpenCascade kernel wrote and read STEP.', 'No manufacturer models, printed sample, connector access or physical tolerances were checked.'],
+        'sha256': {name: sha256(root / name) for name in names},
+        'lid': lid_result,
+        'limits': ['Same OpenCascade kernel wrote and read STEP.', 'No manufacturer models, printed sample, connector access or physical tolerances were checked.', 'The optional lift-off cover has no retention, seal, or proven cable access.'],
     }
     (root / 'verification.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps(result, indent=2))

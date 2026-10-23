@@ -17,7 +17,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 
-from OCP.BRepAlgoAPI import BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
+from OCP.BRepAlgoAPI import BRepAlgoAPI_Common, BRepAlgoAPI_Cut, BRepAlgoAPI_Fuse
 from OCP.BRepBndLib import BRepBndLib
 from OCP.BRepCheck import BRepCheck_Analyzer
 from OCP.BRepGProp import BRepGProp
@@ -101,7 +101,19 @@ def validate(spec):
         if start < wall or end > edge_span - wall or start >= end or bottom < floor or bottom >= top:
             raise ValueError(f'cutouts[{index}] must stay between corners and above the floor')
         normalized_cutouts.append(dict(edge=edge, start=start, end=end, bottom=bottom, top=top))
-    return dict(title=str(spec.get('title') or 'Tray study')[:100], outer=dict(length=length, width=width, height=height), wall=wall, floor=floor, mounts=normalized_mounts, cutouts=normalized_cutouts)
+    raw_lid = spec.get('lid')
+    lid = None
+    if raw_lid is not None:
+        if not isinstance(raw_lid, dict):
+            raise ValueError('lid must contain millimeter dimensions')
+        thickness = number(raw_lid.get('thickness'), 'lid.thickness', lower=.5, upper=20)
+        skirt_depth = number(raw_lid.get('skirtDepth'), 'lid.skirtDepth', lower=.5, upper=20)
+        skirt_wall = number(raw_lid.get('skirtWall'), 'lid.skirtWall', lower=.5, upper=10)
+        clearance = number(raw_lid.get('clearance'), 'lid.clearance', upper=5)
+        if skirt_depth >= height - floor or length + 2 * (clearance + skirt_wall) > 500 or width + 2 * (clearance + skirt_wall) > 500:
+            raise ValueError('lid skirt reaches the floor or its outside envelope exceeds 500 mm')
+        lid = dict(thickness=thickness, skirtDepth=skirt_depth, skirtWall=skirt_wall, clearance=clearance)
+    return dict(title=str(spec.get('title') or 'Tray study')[:100], outer=dict(length=length, width=width, height=height), wall=wall, floor=floor, mounts=normalized_mounts, cutouts=normalized_cutouts, lid=lid)
 
 
 def box(x, y, z, dx, dy, dz):
@@ -145,6 +157,44 @@ def make_tray(spec):
     return tray
 
 
+def make_lid(spec):
+    """A separate lift-off cover positioned at its nominal seated height.
+
+    Its skirt wraps outside the tray. It has no snap fit, gasket or fastener.
+    """
+    if spec['lid'] is None:
+        return None
+    length, width, height = (spec['outer'][key] for key in ('length', 'width', 'height'))
+    thickness, depth, skirt_wall, clearance = (spec['lid'][key] for key in ('thickness', 'skirtDepth', 'skirtWall', 'clearance'))
+    margin = clearance + skirt_wall
+    outer_length, outer_width = length + 2 * margin, width + 2 * margin
+    bottom = height - depth
+    lid = box(-margin, -margin, height, outer_length, outer_width, thickness)
+    skirt = box(-margin, -margin, bottom, outer_length, outer_width, depth)
+    skirt = boolean(BRepAlgoAPI_Cut, skirt, box(-clearance, -clearance, bottom - 1, length + 2 * clearance, width + 2 * clearance, depth + 2))
+    for opening in spec['cutouts']:
+        low = max(bottom, opening['bottom'])
+        high = min(height, opening['top'])
+        if high <= low:
+            continue
+        start, end = opening['start'] - clearance, opening['end'] + clearance
+        if opening['edge'] == 'left': cutter = box(-margin - 1, start, low - .01, skirt_wall + 2, end - start, high - low + .02)
+        elif opening['edge'] == 'right': cutter = box(length + clearance - 1, start, low - .01, skirt_wall + 2, end - start, high - low + .02)
+        elif opening['edge'] == 'front': cutter = box(start, -margin - 1, low - .01, end - start, skirt_wall + 2, high - low + .02)
+        else: cutter = box(start, width + clearance - 1, low - .01, end - start, skirt_wall + 2, high - low + .02)
+        skirt = boolean(BRepAlgoAPI_Cut, skirt, cutter)
+    lid = boolean(BRepAlgoAPI_Fuse, lid, skirt)
+    return lid
+
+
+def modeled_overlap(first, second):
+    operation = BRepAlgoAPI_Common(first, second)
+    operation.Build()
+    if not operation.IsDone():
+        raise RuntimeError('OpenCascade common failed')
+    return 0.0 if operation.Shape().IsNull() else volume(operation.Shape())
+
+
 def bounds(shape):
     boundary = Bnd_Box()
     BRepBndLib.AddOptimal_s(shape, boundary, False, False)
@@ -164,6 +214,12 @@ def layout_svg(spec):
     x0 = y0 = 72
     w, h = length * scale, width * scale
     wall = spec['wall'] * scale
+    cover = ''
+    cover_note = ''
+    if spec['lid']:
+        margin = (spec['lid']['clearance'] + spec['lid']['skirtWall']) * scale
+        cover = f'<rect x="{x0 - margin:.2f}" y="{y0 - margin:.2f}" width="{w + 2 * margin:.2f}" height="{h + 2 * margin:.2f}" fill="none" stroke="#bd9d3a" stroke-width="2" stroke-dasharray="6 4"/>'
+        cover_note = f' · LIFT-OFF COVER {spec["lid"]["thickness"]:g} THICK / {spec["lid"]["clearance"]:g} SIDE CLEARANCE'
     mounts = ''.join(f'<g><circle cx="{x0 + m["x"] * scale:.2f}" cy="{y0 + m["y"] * scale:.2f}" r="{m["bossRadius"] * scale:.2f}" fill="none" stroke="#728d69" stroke-width="2"/><circle cx="{x0 + m["x"] * scale:.2f}" cy="{y0 + m["y"] * scale:.2f}" r="3" fill="#728d69"/><text x="{x0 + (m["x"] + m["bossRadius"]) * scale + 6:.2f}" y="{y0 + m["y"] * scale - 5:.2f}" font-size="10" fill="#233d31">{html.escape(m["id"])}</text></g>' for m in spec['mounts'])
     cutouts = ''
     for cut in spec['cutouts']:
@@ -177,27 +233,27 @@ def layout_svg(spec):
     return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w + 144:.2f} {h + 150:.2f}" role="img" aria-label="Dimensioned tray top view">
 <rect width="100%" height="100%" fill="#f4f5ef"/><text x="72" y="30" font-family="sans-serif" font-size="15" font-weight="bold" fill="#183026">{title}</text>
 <text x="72" y="47" font-family="monospace" font-size="9" fill="#6c806f">TOP VIEW / MILLIMETERS / PROTOTYPE GEOMETRY</text>
-<rect x="{x0}" y="{y0}" width="{w:.2f}" height="{h:.2f}" fill="#dbe6d1" stroke="#183026" stroke-width="2"/>
+{cover}<rect x="{x0}" y="{y0}" width="{w:.2f}" height="{h:.2f}" fill="#dbe6d1" stroke="#183026" stroke-width="2"/>
 <rect x="{x0 + wall:.2f}" y="{y0 + wall:.2f}" width="{w - 2 * wall:.2f}" height="{h - 2 * wall:.2f}" fill="#f4f5ef" stroke="#819781" stroke-width="1"/>
 {cutouts}{mounts}
 <path d="M{x0} {y0 + h + 20}H{x0 + w}M{x0} {y0 + h + 15}v10M{x0 + w} {y0 + h + 15}v10" stroke="#233d31"/>
 <text x="{x0 + w / 2:.2f}" y="{y0 + h + 37:.2f}" font-family="monospace" font-size="11" text-anchor="middle" fill="#233d31">{length:g} mm</text>
 <path d="M{x0 - 20} {y0}V{y0 + h}M{x0 - 25} {y0}h10M{x0 - 25} {y0 + h}h10" stroke="#233d31"/>
 <text x="{x0 - 29}" y="{y0 + h / 2:.2f}" transform="rotate(-90 {x0 - 29} {y0 + h / 2:.2f})" font-family="monospace" font-size="11" text-anchor="middle" fill="#233d31">{width:g} mm</text>
-<text x="72" y="{h + 135:.2f}" font-family="monospace" font-size="9" fill="#6c806f">OUTER HEIGHT {spec['outer']['height']:g} · WALL {spec['wall']:g} · FLOOR {spec['floor']:g} · PHYSICAL FIT UNTESTED</text>
+<text x="72" y="{h + 135:.2f}" font-family="monospace" font-size="9" fill="#6c806f">OUTER HEIGHT {spec['outer']['height']:g} · WALL {spec['wall']:g} · FLOOR {spec['floor']:g}{cover_note} · PHYSICAL FIT UNTESTED</text>
 </svg>'''
 
 
-def export(shape, output):
+def export(shape, output, stem='tray'):
     writer = STEPControl_Writer()
     Interface_Static.SetCVal_s('write.step.unit', 'MM')
-    if writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone or writer.Write(str(output / 'tray.step')) != IFSelect_RetDone:
+    if writer.Transfer(shape, STEPControl_AsIs) != IFSelect_RetDone or writer.Write(str(output / f'{stem}.step')) != IFSelect_RetDone:
         raise RuntimeError('STEP export failed')
     mesher = BRepMesh_IncrementalMesh(shape, .04, False, .15, False)
     mesher.Perform()
     stl = StlAPI_Writer()
     stl.ASCIIMode = False
-    if not stl.Write(shape, str(output / 'tray.stl')):
+    if not stl.Write(shape, str(output / f'{stem}.stl')):
         raise RuntimeError('STL export failed')
 
 
@@ -212,12 +268,19 @@ def main():
     raw = args.spec.expanduser().resolve().read_bytes()
     spec = validate(json.loads(raw))
     shape = make_tray(spec)
+    lid = make_lid(spec)
+    lid_overlap = modeled_overlap(shape, lid) if lid is not None else None
+    if lid_overlap is not None and lid_overlap > .01:
+        raise RuntimeError(f'Nominal lid overlaps tray by {lid_overlap:.3f} mm³')
     staging = Path(tempfile.mkdtemp(prefix='.tray-staging-', dir=destination.parent))
     try:
         (staging / 'spec.json').write_text(json.dumps({'schema': 'hardware-studio-tray-v1', 'units': 'mm', **spec}, indent=2) + '\n')
         (staging / 'layout.svg').write_text(layout_svg(spec))
         export(shape, staging)
-        report = {'status': 'kernel-valid; physical fit untested', 'units': 'mm', 'source_spec_sha256': hashlib.sha256(raw).hexdigest(), 'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'mount_count': len(spec['mounts']), 'cutout_count': len(spec['cutouts']), 'solid_valid': BRepCheck_Analyzer(shape).IsValid(), 'vendor_models_included': False}
+        if lid is not None:
+            export(lid, staging, 'lid')
+        report = {'status': 'kernel-valid; physical fit untested', 'units': 'mm', 'source_spec_sha256': hashlib.sha256(raw).hexdigest(), 'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'mount_count': len(spec['mounts']), 'cutout_count': len(spec['cutouts']), 'solid_valid': BRepCheck_Analyzer(shape).IsValid(), 'vendor_models_included': False,
+                  'lid': None if lid is None else {'outer_span_mm': bounds(lid), 'volume_mm3': volume(lid), 'seated_overlap_mm3': lid_overlap, 'nominal_side_clearance_mm': spec['lid']['clearance'], 'retention': 'none; lift-off cover'}}
         (staging / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
         subprocess.run([sys.executable, str(Path(__file__).with_name('verify.py')), '--package', str(staging)], check=True, capture_output=True, text=True)
         staging.rename(destination)

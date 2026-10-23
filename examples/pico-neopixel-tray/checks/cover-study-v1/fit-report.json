@@ -1,0 +1,183 @@
+{
+  "schema": "hardware-studio-fit-report-v1",
+  "status": "no modeled intersection above threshold",
+  "scope": "same-kernel nominal STEP geometry; physical fit untested",
+  "units": "mm",
+  "manifest_sha256": "2a532ee46e06fc9c3ad7e779509a73cea876e7ae9dba7c478200def9598de496",
+  "tray_step_sha256": "33d49f6cc575ac6fcfae6d729b297fe2b8df2289c8b69112c29ab3dfe7816e74",
+  "lid_step_sha256": "9a07c5cde70bc048adf786efc6d1463c14efaf349b843984d93a007012369a31",
+  "legacy_spec_rehydrated": false,
+  "tray_bounds": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      66.0,
+      45.0,
+      14.0
+    ],
+    "span_mm": [
+      66.0,
+      45.0,
+      14.0
+    ]
+  },
+  "lid_bounds": {
+    "min_mm": [
+      -2.5,
+      -2.5,
+      11.0
+    ],
+    "max_mm": [
+      68.5,
+      47.5,
+      16.5
+    ],
+    "span_mm": [
+      71.0,
+      50.0,
+      5.5
+    ]
+  },
+  "overlap_limit_mm3": 0.01,
+  "components": [
+    {
+      "id": "pico-r3",
+      "source_sha256": "ea5c693afee3de73e9fcaab1892a5ed44bf789438b9b1e5906e9c4f9859cab8b",
+      "source_solids": 17,
+      "rotation": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "translation_mm": [
+        60.0,
+        4.0,
+        8.5
+      ],
+      "placed_envelope": {
+        "min_mm": [
+          7.6999999999999975,
+          3.999999999999996,
+          8.0
+        ],
+        "max_mm": [
+          60.0,
+          25.0,
+          11.730000000000002
+        ],
+        "span_mm": [
+          52.300000000000004,
+          21.000000000000004,
+          3.730000000000002
+        ]
+      },
+      "cavity_envelope_margins_mm": {
+        "left": 5.1999999999999975,
+        "right": 3.5,
+        "front": 1.499999999999996,
+        "back": 17.5,
+        "floor": 5.5,
+        "rim": 2.269999999999998
+      },
+      "tray_overlap_mm3": 0,
+      "tray_separation_mm": 0.0,
+      "lid_overlap_mm3": 0,
+      "lid_separation_mm": 2.2699999999999996,
+      "tray_interference_above_threshold": false,
+      "lid_interference_above_threshold": false,
+      "interference_above_threshold": false
+    },
+    {
+      "id": "adafruit-1426",
+      "source_sha256": "d3066e01e96644b0990469cf4450ab909ef0c8b034a12bd8151320fa33f98522",
+      "source_solids": 1,
+      "rotation": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "translation_mm": [
+        7.6,
+        28.5,
+        8.0
+      ],
+      "placed_envelope": {
+        "min_mm": [
+          7.6,
+          28.499999999999996,
+          8.0
+        ],
+        "max_mm": [
+          58.4,
+          38.66,
+          10.6
+        ],
+        "span_mm": [
+          50.8,
+          10.16,
+          2.5999999999999996
+        ]
+      },
+      "cavity_envelope_margins_mm": {
+        "left": 5.1,
+        "right": 5.100000000000001,
+        "front": 25.999999999999996,
+        "back": 3.8400000000000034,
+        "floor": 5.5,
+        "rim": 3.4000000000000004
+      },
+      "tray_overlap_mm3": 0,
+      "tray_separation_mm": 0.0,
+      "lid_overlap_mm3": 0,
+      "lid_separation_mm": 3.4000000000000004,
+      "tray_interference_above_threshold": false,
+      "lid_interference_above_threshold": false,
+      "interference_above_threshold": false
+    }
+  ],
+  "component_pairs": [
+    {
+      "parts": [
+        "pico-r3",
+        "adafruit-1426"
+      ],
+      "overlap_mm3": 0,
+      "separation_mm": 3.5,
+      "interference_above_threshold": false
+    }
+  ],
+  "limits": [
+    "Source STEP files may omit connectors, tolerances or other physical features.",
+    "Axis-aligned cavity margins are descriptive; openings may intentionally cross a wall.",
+    "Mounting-hole alignment and fastener engagement were not checked.",
+    "The optional cover has no retention, seal or verified access for plugs and cables.",
+    "No print process, material shrinkage, cable routing, thermal behavior or physical assembly was tested."
+  ]
+}

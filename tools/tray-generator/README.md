@@ -1,6 +1,6 @@
 # Parametric tray generator
 
-Generate an original open tray from an explicit millimeter JSON specification. The command writes editable input, STEP, STL, a dimensioned top-view SVG, and two machine-readable reports. A separate process reopens the STEP and STL before the output directory is published. This verifies file integrity and modeled dimensions; it does not prove component fit or printability.
+Generate an original open tray and optional separate lift-off cover from an explicit millimeter JSON specification. The command writes editable input, STEP, STL, a dimensioned top-view SVG, and two machine-readable reports. A separate process reopens each STEP and STL before the output directory is published. This verifies file integrity and modeled dimensions; it does not prove component fit or printability.
 
 ## Run
 
@@ -12,9 +12,9 @@ For the browser workbench and one-click CAD download, start the local server:
 sh tools/tray-generator/run-local.sh --port 4174
 ```
 
-Open `http://127.0.0.1:4174/tray.html`. The server binds only to `127.0.0.1`, accepts JSON only from its own browser origin, processes one CAD build at a time, and returns a ZIP containing the spec, STEP, STL, SVG, build report and fresh-process verification. Stop it with Ctrl-C. The public GitHub Pages site can prepare and export a spec, but cannot run this local Python service.
+Open `http://127.0.0.1:4174/tray.html`. The server binds only to `127.0.0.1`, accepts JSON only from its own browser origin, processes one CAD build at a time, and returns a ZIP containing the spec, tray STEP/STL, optional cover STEP/STL, SVG, build report and fresh-process verification. Stop it with Ctrl-C. The public GitHub Pages site can prepare and export a spec, but cannot run this local Python service.
 
-The same local workbench can check one to four maker STEP files against its current tray. Supply each file, a unique part ID, an axis orientation and X/Y/Z translation in millimeters. The browser limits each file to 8 MB and all files to 17 MB; the local server applies its own byte limits, generates the current tray, runs `fit.py`, and returns a downloadable JSON report. Selected files are stored in a temporary local directory only during the check. The browser offers common quarter-turns and the worked Pico axis mapping; use the CLI manifest below for an arbitrary proper 3D rotation. The browser does not infer placement, mounting-hole alignment or real-world fit.
+The same local workbench can check one to four maker STEP files against its current tray and optional seated cover. Supply each file, a unique part ID, an axis orientation and X/Y/Z translation in millimeters. The browser limits each file to 8 MB and all files to 17 MB; the local server applies its own byte limits, generates the current geometry, runs `fit.py`, and returns a downloadable JSON report. Selected files are stored in a temporary local directory only during the check. The browser offers common quarter-turns and the worked Pico axis mapping; use the CLI manifest below for an arbitrary proper 3D rotation. The browser does not infer placement, mounting-hole alignment or real-world fit.
 
 The launcher selects this Mac's installed OCP environment when present, then checks `python3`. On another machine, set `HARDWARE_STUDIO_PYTHON` to a Python interpreter with the free `cadquery-ocp-novtk` package installed. It exits with a clear error if no usable interpreter is available.
 
@@ -32,9 +32,11 @@ python tools/tray-generator/generate.py \
 
 The [Pico + NeoPixel example](examples/pico-neopixel-tray.json) is a complete input. Required fields are `schema: "hardware-studio-tray-v1"`, `units: "mm"`, `outer.length`, `outer.width`, `outer.height`, `wall`, and `floor`. Coordinates start at the outer front-left bottom corner: X runs along length, Y along width, Z upward. `mounts` and `cutouts` may be empty arrays.
 
+Optional `lid` adds a **separate lift-off cover**: `thickness` is its flat plate, `skirtDepth` is the outside vertical skirt, `skirtWall` is skirt thickness, and `clearance` is the nominal side gap to the tray. The cover plate sits at the tray rim; its skirt wraps outside and inherits openings where they overlap the skirt. The [cover study](examples/pico-neopixel-cover-study.json) uses 2.5 mm plate, 3 mm skirt depth, 2 mm skirt wall and 0.5 mm nominal gap. It has no snap, seal, fastener or verified cable access. A side gap in CAD is not a process tolerance. The opaque plate over this NeoPixel example blocks light and is **not** a functional lamp cover.
+
 Each mount has a unique `id`, center `x` and `y`, `bossRadius`, and `bossTopZ`. Add either `locatorRadius` with `locatorHeight` for a pin, or `holeRadius` for a vertical through-hole. A cutout names `left`, `right`, `front`, or `back`, plus a horizontal `start` and `end` and vertical `bottom` and `top`. The generator rejects bosses outside the cavity, overlapping bosses, and cutouts that cross a corner or the floor.
 
-The output includes `spec.json`, `tray.step`, `tray.stl`, `layout.svg`, `build-report.json`, and `verification.json`. The report records dimensions, modeled volume, source-spec hash, STEP readback, STL triangles, and output hashes. Re-run from the saved `spec.json` to revise geometry. Keep physical part models, clearance/tolerance analysis, connector access, assembly method, material/process constraints, and bench checks in a separate design review. The supplied example has that additional evidence in [`examples/pico-neopixel-tray`](../../examples/pico-neopixel-tray/README.md); the generator does not automatically repeat it for a new spec.
+The output includes `spec.json`, `tray.step`, `tray.stl`, `layout.svg`, `build-report.json`, and `verification.json`; with a cover it also includes `lid.step` and `lid.stl`. The report records dimensions, modeled volume, source-spec hash, STEP readback, STL triangles, output hashes and, when present, seated lid/tray overlap plus a deliberately shifted collision. Re-run from the saved `spec.json` to revise geometry. Keep physical part models, clearance/tolerance analysis, connector access, assembly method, material/process constraints, and bench checks in a separate design review. The supplied example has that additional evidence in [`examples/pico-neopixel-tray`](../../examples/pico-neopixel-tray/README.md); the generator does not automatically repeat it for a new spec.
 New packages preserve `schema` and `units` in `spec.json`. The generic fit checker can also read earlier packages that omitted those two fields, while clearly marking that legacy normalization in its report.
 
 ## Check supplied component STEP models
@@ -63,7 +65,7 @@ Use `fit.py` after obtaining exact STEP files from the component makers. Put a m
 python tools/tray-generator/fit.py --manifest /absolute/path/to/fit-manifest.json --out /absolute/path/to/new-fit-report
 ```
 
-The absent output directory receives `fit-report.json` with source hashes, transformed envelopes, cavity margins, tray/model and model/model intersection volumes, and closest distances. It rejects a tray STEP whose hash no longer matches its verification report. A result with no modeled intersection is **not** physical fit approval: maker CAD may omit connectors or tolerances, a board may be deliberately close to a support, and cable routing, thermal behavior, material shrinkage and assembly access are separate checks. The Pico + NeoPixel worked example adds part-specific checks beyond this generic report.
+The absent output directory receives `fit-report.json` with source hashes, transformed envelopes, cavity margins, tray/model, optional cover/model and model/model intersection volumes, and closest distances. It rejects a tray or cover STEP whose hash no longer matches its verification report. A result with no modeled intersection is **not** physical fit approval: maker CAD may omit connectors or tolerances, a board may be deliberately close to a support, and cable routing, thermal behavior, material shrinkage and assembly access are separate checks. The Pico + NeoPixel worked example adds part-specific checks beyond this generic report.
 
 ## Check
 

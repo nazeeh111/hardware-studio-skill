@@ -1,0 +1,89 @@
+{
+  "schema": "hardware-studio-tray-v1",
+  "units": "mm",
+  "title": "Pico + NeoPixel lift-off cover study",
+  "outer": {
+    "length": 66.0,
+    "width": 45.0,
+    "height": 14.0
+  },
+  "wall": 2.5,
+  "floor": 2.5,
+  "mounts": [
+    {
+      "id": "pico-a",
+      "x": 11.0,
+      "y": 8.8,
+      "bossRadius": 2.2,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    },
+    {
+      "id": "pico-b",
+      "x": 11.0,
+      "y": 20.2,
+      "bossRadius": 2.2,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    },
+    {
+      "id": "pico-c",
+      "x": 58.0,
+      "y": 8.8,
+      "bossRadius": 2.2,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    },
+    {
+      "id": "pico-d",
+      "x": 58.0,
+      "y": 20.2,
+      "bossRadius": 2.2,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    },
+    {
+      "id": "stick-a",
+      "x": 20.3,
+      "y": 36.628,
+      "bossRadius": 1.7,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    },
+    {
+      "id": "stick-b",
+      "x": 45.7,
+      "y": 36.628,
+      "bossRadius": 1.7,
+      "bossTopZ": 8.0,
+      "locatorRadius": 0.8,
+      "locatorHeight": 1.2,
+      "holeRadius": null
+    }
+  ],
+  "cutouts": [
+    {
+      "edge": "left",
+      "start": 7.0,
+      "end": 22.0,
+      "bottom": 3.0,
+      "top": 14.0
+    }
+  ],
+  "lid": {
+    "thickness": 2.5,
+    "skirtDepth": 3.0,
+    "skirtWall": 2.0,
+    "clearance": 0.5
+  }
+}

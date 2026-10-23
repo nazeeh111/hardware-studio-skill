@@ -1,6 +1,6 @@
 """Render the original tray STL in a separate Blender scene for visual QA.
 
-Usage: Blender --background --factory-startup --python render.py -- --stl PATH --out NEW_DIR
+Usage: Blender --background --factory-startup --python render.py -- --stl PATH [--lid-stl PATH] --out NEW_DIR
 The render is illustrative. The STEP and OpenCascade fit report are the geometry
 sources, and the manufacturer board models are not copied into this scene.
 """
@@ -16,9 +16,12 @@ from mathutils import Vector
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stl", required=True, type=Path)
+    parser.add_argument("--lid-stl", type=Path)
     parser.add_argument("--out", required=True, type=Path)
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else [])
     args.stl = args.stl.expanduser().resolve(strict=True)
+    if args.lid_stl:
+        args.lid_stl = args.lid_stl.expanduser().resolve(strict=True)
     args.out = args.out.expanduser().resolve()
     if args.out.exists() or not args.out.parent.is_dir():
         parser.error("--out must be absent and its parent must exist")
@@ -62,6 +65,16 @@ def main():
     tray.data.materials.append(material("Sage technical model", (0.30, 0.49, 0.37), .55, .0))
     for poly in tray.data.polygons:
         poly.use_smooth = False
+    cover = None
+    if args.lid_stl:
+        bpy.ops.wm.stl_import(filepath=str(args.lid_stl))
+        cover = bpy.context.selected_objects[0]
+        cover.name = "Separate lift-off cover | exploded +23 mm from seated STEP pose"
+        cover.location.z = 23
+        cover.data.materials.clear()
+        cover.data.materials.append(material("Signal yellow cover study", (0.96, 0.89, 0.44), .62))
+        for poly in cover.data.polygons:
+            poly.use_smooth = False
     bpy.ops.mesh.primitive_plane_add(size=2, location=(33, 22.5, -0.8))
     floor = bpy.context.object
     floor.name = "Warm neutral backdrop"
@@ -72,7 +85,7 @@ def main():
     bpy.context.collection.objects.link(camera)
     bpy.context.scene.camera = camera
     camera_data.type = "ORTHO"
-    camera_data.ortho_scale = 96
+    camera_data.ortho_scale = 136 if cover else 96
     area_light("Key softbox", (15, -15, 90), 1800, 85)
     area_light("Rim softbox", (80, 80, 70), 1350, 70)
     world = bpy.context.scene.world or bpy.data.worlds.new("Neutral studio")
@@ -94,11 +107,13 @@ def main():
     scene.render.image_settings.file_format = "JPEG"
     scene.render.image_settings.quality = 90
     scene.render.film_transparent = False
-    scene.render.filepath = str(args.out / "tray-isometric.jpg")
-    camera.location = (108, -96, 91)
-    aim(camera, (33, 22.5, 4))
-    bpy.ops.wm.save_as_mainfile(filepath=str(args.out / "tray-scene.blend"))
+    scene.render.filepath = str(args.out / ("cover-exploded.jpg" if cover else "tray-isometric.jpg"))
+    camera.location = (116, -110, 110 if cover else 91)
+    aim(camera, (33, 22.5, 20 if cover else 4))
+    bpy.ops.wm.save_as_mainfile(filepath=str(args.out / ("cover-scene.blend" if cover else "tray-scene.blend")))
     bpy.ops.render.render(write_still=True)
+    if cover:
+        return
     camera.location = (33, 22.5, 105)
     aim(camera, (33, 22.5, 4))
     camera_data.ortho_scale = 77

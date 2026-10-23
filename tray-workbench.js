@@ -1,5 +1,5 @@
-import { validateTraySpec } from './tray-spec.js?v=2';
-import { STORAGE_KEY } from './core.js?v=23';
+import { validateTraySpec } from './tray-spec.js?v=3';
+import { STORAGE_KEY } from './core.js?v=29';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const $ = selector => document.querySelector(selector);
@@ -63,19 +63,22 @@ function readRows(selector) {
 }
 function readForm() {
   const form = new FormData($('#tray-form'));
-  return { schema, title: form.get('title'), units: 'mm', outer: { length: form.get('length'), width: form.get('width'), height: form.get('height') }, wall: form.get('wall'), floor: form.get('floor'), mounts: readRows('[data-mount]'), cutouts: readRows('[data-cutout]') };
+  const lid = $('#lid-enabled').checked ? { thickness: form.get('lidThickness'), skirtDepth: form.get('lidSkirtDepth'), skirtWall: form.get('lidSkirtWall'), clearance: form.get('lidClearance') } : null;
+  return { schema, title: form.get('title'), units: 'mm', outer: { length: form.get('length'), width: form.get('width'), height: form.get('height') }, wall: form.get('wall'), floor: form.get('floor'), mounts: readRows('[data-mount]'), cutouts: readRows('[data-cutout]'), lid };
 }
 function svg(spec) {
   const { length, width, height } = spec.outer;
   const scale = Math.min(7, 520 / Math.max(length, width));
-  const x0 = 72, y0 = 66, w = length * scale, h = width * scale, border = spec.wall * scale;
+  const coverMargin = spec.lid ? (spec.lid.clearance + spec.lid.skirtWall) * scale : 0;
+  const x0 = 72 + coverMargin, y0 = 66 + coverMargin, w = length * scale, h = width * scale, border = spec.wall * scale;
+  const cover = spec.lid ? `<rect class="cover-outline" x="${x0 - coverMargin}" y="${y0 - coverMargin}" width="${w + 2 * coverMargin}" height="${h + 2 * coverMargin}"/>` : '';
   const openings = spec.cutouts.map(cut => {
     const a = cut.start * scale, b = cut.end * scale;
     const values = cut.edge === 'left' ? [x0 - 1, y0 + a, border + 2, b - a] : cut.edge === 'right' ? [x0 + w - border - 1, y0 + a, border + 2, b - a] : cut.edge === 'front' ? [x0 + a, y0 - 1, b - a, border + 2] : [x0 + a, y0 + h - border - 1, b - a, border + 2];
     return `<rect x="${values[0]}" y="${values[1]}" width="${values[2]}" height="${values[3]}" fill="#f0efe8" stroke="#a46748" stroke-width="1.5"/>`;
   }).join('');
   const mounts = spec.mounts.map(m => `<g><circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.bossRadius * scale}" fill="#b8ceb0" stroke="#496a4c" stroke-width="1.5"/>${m.holeRadius ? `<circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.holeRadius * scale}" fill="#f0efe8" stroke="#496a4c"/>` : m.locatorRadius ? `<circle cx="${x0 + m.x * scale}" cy="${y0 + m.y * scale}" r="${m.locatorRadius * scale}" fill="#496a4c"/>` : ''}<text x="${x0 + (m.x + m.bossRadius) * scale + 5}" y="${y0 + m.y * scale - 3}" fill="#335139" font-size="9" font-family="monospace">${escapeHtml(m.id)}</text></g>`).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145} ${h + 145}" role="img" aria-label="Scaled tray top view; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text><rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${h + 126}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS</text></svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145 + 2 * coverMargin} ${h + 145 + 2 * coverMargin}" role="img" aria-label="Scaled tray top view${spec.lid ? ' with lift-off cover outline' : ''}; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text>${cover}<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${y0 + h + 60}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS${spec.lid ? ` · COVER ${spec.lid.clearance} CLEARANCE` : ''}</text></svg>`;
 }
 function show() {
   fitRevision += 1;
@@ -86,7 +89,7 @@ function show() {
     $('#preview').innerHTML = svg(spec);
     let persisted = false;
     try { if (storageKey) { localStorage.setItem(storageKey, JSON.stringify(spec)); persisted = true; } } catch { /* The file download still works. */ }
-    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
+    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
     $('#status').classList.remove('error');
     $('#status-chip').textContent = 'SPEC READY'; $('#status-chip').classList.remove('invalid');
     updateCadButton();
@@ -145,7 +148,7 @@ async function runFit() {
     components.push({ id, translationMm, rotation: rotations[value('orientation')], dataBase64: await fileBase64(file) });
   }
   fitBusy = true; updateCadButton();
-  $('#fit-status').textContent = 'Generating the current tray and checking supplied STEP solids locally…';
+  $('#fit-status').textContent = `Generating the current tray${spec.lid ? ' and cover' : ''} and checking supplied STEP solids locally…`;
   $('#fit-status').classList.remove('error');
   try {
     const response = await fetch('./api/fit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schema: 'hardware-studio-browser-fit-v1', traySpec: spec, components }), signal: AbortSignal.timeout(250000) });
@@ -154,9 +157,13 @@ async function runFit() {
     if (report.schema !== 'hardware-studio-fit-report-v1') throw new Error('The local service returned an unfamiliar fit report.');
     if (fitRevision !== revision || draft !== spec) throw new Error('Geometry or placement changed while checking. Run the check again.');
     fitReport = report;
-    const collisions = [...report.components.filter(item => item.interference_above_threshold).map(item => `${item.id} intersects tray by ${item.tray_overlap_mm3.toFixed(2)} mm³`), ...report.component_pairs.filter(item => item.interference_above_threshold).map(item => `${item.parts.join(' ↔ ')} overlap by ${item.overlap_mm3.toFixed(2)} mm³`)];
+    const collisions = [
+      ...report.components.filter(item => item.tray_interference_above_threshold ?? item.tray_overlap_mm3 > report.overlap_limit_mm3).map(item => `${item.id} intersects tray by ${item.tray_overlap_mm3.toFixed(2)} mm³`),
+      ...report.components.filter(item => item.lid_interference_above_threshold ?? (item.lid_overlap_mm3 != null && item.lid_overlap_mm3 > report.overlap_limit_mm3)).map(item => `${item.id} intersects cover by ${item.lid_overlap_mm3.toFixed(2)} mm³`),
+      ...report.component_pairs.filter(item => item.interference_above_threshold).map(item => `${item.parts.join(' ↔ ')} overlap by ${item.overlap_mm3.toFixed(2)} mm³`)
+    ];
     const result = $('#fit-result');
-    result.innerHTML = `<strong class="${collisions.length ? 'fit-alert' : 'fit-clear'}">${collisions.length ? 'MODELED INTERFERENCE' : 'NO MODELED INTERSECTION'}</strong><p>${collisions.length ? collisions.map(escapeHtml).join('<br>') : `${report.components.length} supplied models checked at the entered coordinates. Inspect source hashes, distances and cavity margins in the report.`}</p><button id="download-fit-report" type="button">Download fit report ↓</button><small>This is nominal model geometry. Tolerances, connectors, cables and physical assembly remain untested.</small>`;
+    result.innerHTML = `<strong class="${collisions.length ? 'fit-alert' : 'fit-clear'}">${collisions.length ? 'MODELED INTERFERENCE' : 'NO MODELED INTERSECTION'}</strong><p>${collisions.length ? collisions.map(escapeHtml).join('<br>') : `${report.components.length} supplied models checked against the tray${report.lid_bounds ? ' and seated cover' : ''} at the entered coordinates. Inspect source hashes, distances and cavity margins in the report.`}</p><button id="download-fit-report" type="button">Download fit report ↓</button><small>This is nominal model geometry. Tolerances, connectors, cables and physical assembly remain untested.</small>`;
     result.querySelector('button').addEventListener('click', () => downloadJson('hardware-studio-fit-report.json', fitReport));
     $('#fit-status').textContent = `Fit check complete. ${collisions.length} modeled collisions above ${report.overlap_limit_mm3} mm³.`;
   } finally { fitBusy = false; updateCadButton(); }
@@ -165,9 +172,17 @@ function populate(spec) {
   $('#title').value = spec.title;
   for (const [key, value] of Object.entries(spec.outer)) $(`[name="${key}"]`).value = value;
   $('[name="wall"]').value = spec.wall; $('[name="floor"]').value = spec.floor;
+  $('#lid-enabled').checked = Boolean(spec.lid);
+  for (const [key, value] of Object.entries({ lidThickness: spec.lid?.thickness ?? 2.5, lidSkirtDepth: spec.lid?.skirtDepth ?? 3, lidSkirtWall: spec.lid?.skirtWall ?? 2, lidClearance: spec.lid?.clearance ?? .5 })) $(`[name="${key}"]`).value = value;
+  syncCoverInputs();
   $('#mounts').innerHTML = spec.mounts.map(mountRow).join('') || '<div class="empty">No bosses. Add measured mounting points if needed.</div>';
   $('#cutouts').innerHTML = spec.cutouts.map(cutoutRow).join('') || '<div class="empty">No openings. Add access for connectors, airflow or cables if needed.</div>';
   show();
+}
+function syncCoverInputs() {
+  const enabled = $('#lid-enabled').checked;
+  $('#lid-fields').classList.toggle('is-disabled', !enabled);
+  $('#lid-fields').querySelectorAll('input').forEach(input => { input.disabled = !enabled; });
 }
 function appendRow(kind) {
   const container = kind === 'mount' ? $('#mounts') : $('#cutouts');
@@ -196,7 +211,7 @@ function initialize() {
   populate(initial);
   void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());
-  $('#tray-form').addEventListener('input', show);
+  $('#tray-form').addEventListener('input', event => { if (event.target.id === 'lid-enabled') syncCoverInputs(); show(); });
   $('#fit-components').addEventListener('input', resetFitReport);
   $('#fit-components').addEventListener('change', resetFitReport);
   $('#add-fit-component').addEventListener('click', () => {
@@ -217,7 +232,7 @@ function initialize() {
     try { await runFit(); }
     catch (error) { $('#fit-status').textContent = error.name === 'TimeoutError' ? 'Fit check timed out. Inspect the local server terminal.' : error.message; $('#fit-status').classList.add('error'); }
   });
-  $('#tray-form').addEventListener('change', event => { if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
+  $('#tray-form').addEventListener('change', event => { if (event.target.id === 'lid-enabled') syncCoverInputs(); if (event.target.dataset.key === 'type') { const raw = readForm(); const index = Number(event.target.closest('[data-mount]').dataset.mount); const mount = raw.mounts[index]; mount.type = event.target.value; if (mount.type === 'locator') { mount.locatorRadius = .8; mount.locatorHeight = 1.2; } if (mount.type === 'through-hole') mount.holeRadius = 1; $('#mounts').querySelector(`[data-mount="${index}"]`).outerHTML = mountRow(mount, index); } show(); });
   $('#add-mount').addEventListener('click', () => appendRow('mount'));
   $('#add-cutout').addEventListener('click', () => appendRow('cutout'));
   document.addEventListener('click', event => {

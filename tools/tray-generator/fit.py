@@ -175,6 +175,14 @@ def fit_report(manifest_path):
     actual = bounds(tray)['span_mm']
     if any(abs(a - b) > .03 for a, b in zip(actual, expected)):
         raise ValueError('Tray STEP dimensions differ from its spec')
+    lid = None
+    if spec['lid']:
+        lid_path = package / 'lid.step'
+        if not lid_path.is_file() or verification.get('sha256', {}).get('lid.step') != sha256(lid_path):
+            raise ValueError('Lid STEP is missing or differs from its verification report')
+        lid = read_step(lid_path)
+        if solid_count(lid) != 1:
+            raise ValueError('Lid STEP must contain exactly one solid')
     placed = []
     reports = []
     any_interference = False
@@ -187,12 +195,18 @@ def fit_report(manifest_path):
         envelope = bounds(shape)
         overlap = overlap_mm3(tray, shape)
         distance = separation_mm(tray, shape)
-        any_interference |= overlap > limit
+        lid_overlap = overlap_mm3(lid, shape) if lid is not None else None
+        lid_distance = separation_mm(lid, shape) if lid is not None else None
+        tray_collision = overlap > limit
+        lid_collision = lid_overlap is not None and lid_overlap > limit
+        any_interference |= tray_collision or lid_collision
         reports.append({'id': item['id'], 'source_sha256': sha256(item['step']), 'source_solids': count,
                         'rotation': item['rotation'], 'translation_mm': item['translationMm'],
                         'placed_envelope': envelope, 'cavity_envelope_margins_mm': cavity_margins(envelope, spec),
                         'tray_overlap_mm3': overlap, 'tray_separation_mm': distance,
-                        'interference_above_threshold': overlap > limit})
+                        'lid_overlap_mm3': lid_overlap, 'lid_separation_mm': lid_distance,
+                        'tray_interference_above_threshold': tray_collision, 'lid_interference_above_threshold': lid_collision,
+                        'interference_above_threshold': tray_collision or lid_collision})
         placed.append((item['id'], shape))
     pairs = []
     for index, (name, shape) in enumerate(placed):
@@ -205,11 +219,13 @@ def fit_report(manifest_path):
     return {'schema': 'hardware-studio-fit-report-v1', 'status': 'modeled interference detected' if any_interference else 'no modeled intersection above threshold',
             'scope': 'same-kernel nominal STEP geometry; physical fit untested', 'units': 'mm',
             'manifest_sha256': sha256(manifest_path), 'tray_step_sha256': sha256(package / 'tray.step'),
+            'lid_step_sha256': sha256(package / 'lid.step') if lid is not None else None,
             'legacy_spec_rehydrated': legacy_spec,
-            'tray_bounds': bounds(tray), 'overlap_limit_mm3': limit, 'components': reports, 'component_pairs': pairs,
+            'tray_bounds': bounds(tray), 'lid_bounds': bounds(lid) if lid is not None else None, 'overlap_limit_mm3': limit, 'components': reports, 'component_pairs': pairs,
             'limits': ['Source STEP files may omit connectors, tolerances or other physical features.',
                        'Axis-aligned cavity margins are descriptive; openings may intentionally cross a wall.',
                        'Mounting-hole alignment and fastener engagement were not checked.',
+                       'The optional cover has no retention, seal or verified access for plugs and cables.',
                        'No print process, material shrinkage, cable routing, thermal behavior or physical assembly was tested.']}
 
 

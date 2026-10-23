@@ -47,7 +47,8 @@ def generate_package(raw):
             raise ValueError('The CAD generator rejected this geometry. Check dimensions, boss spacing and openings.')
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
-            for name in PACKAGE_FILES:
+            extras = ('lid.step', 'lid.stl') if (package / 'lid.step').is_file() and (package / 'lid.stl').is_file() else ()
+            for name in PACKAGE_FILES + extras:
                 zipped.write(package / name, arcname=name)
         return archive.getvalue()
 

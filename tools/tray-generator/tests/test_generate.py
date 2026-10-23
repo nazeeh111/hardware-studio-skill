@@ -14,6 +14,7 @@ from generate import bounds, make_tray, validate, volume
 
 
 EXAMPLE = Path(__file__).resolve().parents[1] / 'examples' / 'pico-neopixel-tray.json'
+COVER_EXAMPLE = EXAMPLE.with_name('pico-neopixel-cover-study.json')
 
 
 class TrayGeneratorTests(unittest.TestCase):
@@ -37,6 +38,24 @@ class TrayGeneratorTests(unittest.TestCase):
         self.assertEqual(bounds(shape), [66.0, 45.0, 14.0])
         self.assertAlmostEqual(volume(shape), 13556.364475159604, places=4)
 
+    def test_lift_off_cover_exports_separate_solid_and_detects_shifted_interference(self):
+        root = EXAMPLE.parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary) / 'tray-with-cover'
+            subprocess.run([sys.executable, str(root / 'generate.py'), '--spec', str(COVER_EXAMPLE), '--out', str(package)], check=True, capture_output=True, text=True)
+            report = json.loads((package / 'verification.json').read_text())
+            self.assertEqual(report['lid']['outer_span_mm'], [71.0, 50.0, 5.5])
+            self.assertLessEqual(report['lid']['seated_overlap_mm3'], .01)
+            self.assertGreater(report['lid']['shifted_overlap_mm3'], 1)
+            self.assertTrue((package / 'lid.step').is_file())
+            self.assertTrue((package / 'lid.stl').is_file())
+            lid_stl = bytearray((package / 'lid.stl').read_bytes())
+            struct.pack_into('<f', lid_stl, 84 + 12, float('nan'))
+            (package / 'lid.stl').write_bytes(lid_stl)
+            check = subprocess.run([sys.executable, str(root / 'verify.py'), '--package', str(package)], capture_output=True, text=True)
+            self.assertNotEqual(check.returncode, 0)
+            self.assertIn('non-finite coordinate', check.stderr)
+
     def test_through_hole_removes_material_without_changing_outer_size(self):
         raw = {'schema': 'hardware-studio-tray-v1', 'units': 'mm', 'outer': {'length': 40, 'width': 30, 'height': 10}, 'wall': 2, 'floor': 2,
                'mounts': [{'id': 'a', 'x': 20, 'y': 15, 'bossRadius': 3, 'bossTopZ': 6}], 'cutouts': []}
@@ -54,6 +73,7 @@ class TrayGeneratorTests(unittest.TestCase):
         case = copy.deepcopy(template); case['mounts'][1]['x'] = case['mounts'][0]['x']; case['mounts'][1]['y'] = case['mounts'][0]['y']; cases.append(case)
         case = copy.deepcopy(template); case['mounts'][0]['holeRadius'] = 1; cases.append(case)
         case = copy.deepcopy(template); case['cutouts'][0]['bottom'] = 1; cases.append(case)
+        case = json.loads(COVER_EXAMPLE.read_text()); case['lid']['skirtDepth'] = 12; cases.append(case)
         for candidate in cases:
             with self.subTest(candidate=candidate):
                 with self.assertRaises(ValueError):

@@ -1,7 +1,7 @@
 const schema = 'hardware-studio-tray-v1';
 const finite = (value, name, min = 0, max = 500) => {
   const number = Number(value);
-  if (value === '' || value == null || !Number.isFinite(number) || number <= min || number > max) throw new Error(`${name} must be above ${min} and at most ${max} mm.`);
+  if (value === '' || value == null || typeof value === 'boolean' || !Number.isFinite(number) || number <= min || number > max) throw new Error(`${name} must be above ${min} and at most ${max} mm.`);
   return number;
 };
 const optional = (value, name, max = 20) => value === '' || value == null ? null : finite(value, name, 0, max);
@@ -48,6 +48,16 @@ export function validateTraySpec(raw) {
     if (start < wall || end > span - wall || start >= end || bottom < floor || bottom >= top) throw new Error(`Opening ${i + 1} crosses a corner or floor.`);
     return { edge: item.edge, start, end, bottom, top };
   });
-  return { schema, title: String(raw.title || 'Tray study').trim().slice(0, 100), units: 'mm', outer: { length, width, height }, wall, floor, cutouts, mounts };
+  let lid = null;
+  if (raw.lid != null) {
+    if (typeof raw.lid !== 'object' || Array.isArray(raw.lid)) throw new Error('Cover must be an object of millimeter dimensions.');
+    const thickness = finite(raw.lid.thickness, 'Cover thickness', .5, 20);
+    const skirtDepth = finite(raw.lid.skirtDepth, 'Cover skirt depth', .5, 20);
+    const skirtWall = finite(raw.lid.skirtWall, 'Cover skirt wall', .5, 10);
+    const clearance = finite(raw.lid.clearance, 'Cover side clearance', 0, 5);
+    if (skirtDepth >= height - floor || length + 2 * (clearance + skirtWall) > 500 || width + 2 * (clearance + skirtWall) > 500) throw new Error('Cover skirt reaches the floor or its outside envelope exceeds 500 mm.');
+    lid = { thickness, skirtDepth, skirtWall, clearance };
+  }
+  return { schema, title: String(raw.title || 'Tray study').trim().slice(0, 100), units: 'mm', outer: { length, width, height }, wall, floor, cutouts, mounts, lid };
 }
 

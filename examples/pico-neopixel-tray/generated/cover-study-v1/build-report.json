@@ -1,0 +1,26 @@
+{
+  "status": "kernel-valid; physical fit untested",
+  "units": "mm",
+  "source_spec_sha256": "c1e0bdbac80c3440e15891768b4b88463a4ede23f82d15b16b395ce80cd9d979",
+  "outer_span_mm": [
+    66.0,
+    45.0,
+    14.0
+  ],
+  "volume_mm3": 13556.364475159604,
+  "mount_count": 6,
+  "cutout_count": 1,
+  "solid_valid": true,
+  "vendor_models_included": false,
+  "lid": {
+    "outer_span_mm": [
+      71.0,
+      50.0,
+      5.5
+    ],
+    "volume_mm3": 10183.000000000002,
+    "seated_overlap_mm3": 0.0,
+    "nominal_side_clearance_mm": 0.5,
+    "retention": "none; lift-off cover"
+  }
+}

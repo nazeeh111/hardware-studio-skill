@@ -1,0 +1,47 @@
+{
+  "status": "fresh-process same-kernel readback passed; physical fit untested",
+  "solid_count": 1,
+  "outer_span_mm": [
+    66.0,
+    45.0,
+    14.0
+  ],
+  "volume_mm3": 13556.36447515953,
+  "stl_triangles": 4076,
+  "stl_outer_span_mm": [
+    66.0,
+    45.0,
+    14.0
+  ],
+  "sha256": {
+    "spec.json": "5d067fdd2ef0899ea700800ae6832dcb3af4cd931782d3b4ac75328cd9d398bd",
+    "tray.step": "33d49f6cc575ac6fcfae6d729b297fe2b8df2289c8b69112c29ab3dfe7816e74",
+    "tray.stl": "438f5e1b468568306892d2ffd0b38cf5fb33fd2cb57ba1bd92fc801e78262118",
+    "layout.svg": "8fba06b6696bd0a6a4e3788939e524fd19b7aa36010b455169b0cf8cb6edd448",
+    "lid.step": "9a07c5cde70bc048adf786efc6d1463c14efaf349b843984d93a007012369a31",
+    "lid.stl": "d0bd9491f0288ff8d8639158368f04a3ac400b4fc909b2c0137a6e812c6b6d20"
+  },
+  "lid": {
+    "solid_count": 1,
+    "outer_span_mm": [
+      71.0,
+      50.0,
+      5.5
+    ],
+    "volume_mm3": 10183.000000000002,
+    "stl_triangles": 52,
+    "stl_outer_span_mm": [
+      71.0,
+      50.0,
+      5.5
+    ],
+    "seated_overlap_mm3": 0.0,
+    "shifted_overlap_mm3": 87.0,
+    "nominal_side_clearance_mm": 0.5
+  },
+  "limits": [
+    "Same OpenCascade kernel wrote and read STEP.",
+    "No manufacturer models, printed sample, connector access or physical tolerances were checked.",
+    "The optional lift-off cover has no retention, seal, or proven cable access."
+  ]
+}
