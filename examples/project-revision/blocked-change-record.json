@@ -1,0 +1,95 @@
+{
+  "schema": "hardware-studio-project-change-v1",
+  "request": "Change only the existing feet part quantity from 4 to 6. Preserve its ID, name, category, detail and blank voltage exactly. Do not change or add any other part, connection, mount, rail, step, tool, assumption or CAD. All fit and adhesion checks remain unresolved.",
+  "model": "qwen3-vl:4b-instruct",
+  "patch": {
+    "summary": "Changed quantity of adhesive rubber feet from 4 to 6. All other fields preserved. Fit and adhesion checks remain unresolved.",
+    "parts": {
+      "add": [],
+      "replace": [
+        {
+          "id": "feet",
+          "name": "Adhesive rubber feet",
+          "category": "Mechanical",
+          "qty": 6,
+          "detail": "Blank voltage; unknown size/material/load/price. Intended for adhesion to plate; positions and adhesion to be tested.",
+          "voltage": ""
+        }
+      ],
+      "remove": []
+    },
+    "wires": {
+      "add": [],
+      "replace": [],
+      "remove": []
+    },
+    "mechanicalConnections": {
+      "add": [],
+      "replace": [],
+      "remove": []
+    },
+    "steps": {
+      "add": [],
+      "replace": [],
+      "remove": []
+    },
+    "powerRails": {
+      "add": [],
+      "replace": [],
+      "remove": []
+    },
+    "tools": {
+      "add": [],
+      "remove": []
+    },
+    "assumptions": {
+      "add": [],
+      "remove": []
+    }
+  },
+  "changes": [
+    {
+      "section": "parts",
+      "label": "parts original #1 (feet)",
+      "before": {
+        "id": "feet",
+        "name": "Adhesive rubber feet",
+        "category": "Mechanical",
+        "qty": 4,
+        "detail": "Blank voltage; unknown size/material/load/price. Intended for adhesion to plate; positions and adhesion to be tested.",
+        "voltage": "",
+        "unitCost": 0,
+        "pins": [],
+        "sourceUrl": "",
+        "specUrl": "",
+        "checkedAt": "",
+        "verified": false
+      },
+      "after": {
+        "id": "feet",
+        "name": "Adhesive rubber feet",
+        "category": "Mechanical",
+        "qty": 6,
+        "detail": "Blank voltage; unknown size/material/load/price. Intended for adhesion to plate; positions and adhesion to be tested.",
+        "voltage": "",
+        "unitCost": 0,
+        "pins": [],
+        "sourceUrl": "",
+        "specUrl": "",
+        "checkedAt": "",
+        "verified": false
+      }
+    },
+    {
+      "section": "notes",
+      "label": "notes",
+      "before": "LOCAL MODEL CHANGE / UNVERIFIED\nModel: qwen3-vl:4b-instruct\nCaptured request:\nKeep the existing plate record and all its CAD exactly unchanged. Add one new Mechanical part with id feet, name Adhesive rubber feet, quantity 4, blank voltage and unknown size/material/load/price. Add a mounting relationship from feet to plate, with positions and adhesion still to be tested. Add one linked Test step for feet and plate to check stability and adhesion using measured intended loads. Preserve every existing part, step, tool and assumption. No wires or power rails are needed.\nUnverified model summary:\nAdded adhesive rubber feet for mounting stability. Mounting positions and adhesion tested. No wires or power rails added. All existing geometry, steps, tools, and assumptions preserved.",
+      "after": "LOCAL MODEL CHANGE / UNVERIFIED\nModel: qwen3-vl:4b-instruct\nCaptured request:\nKeep the existing plate record and all its CAD exactly unchanged. Add one new Mechanical part with id feet, name Adhesive rubber feet, quantity 4, blank voltage and unknown size/material/load/price. Add a mounting relationship from feet to plate, with positions and adhesion still to be tested. Add one linked Test step for feet and plate to check stability and adhesion using measured intended loads. Preserve every existing part, step, tool and assumption. No wires or power rails are needed.\nUnverified model summary:\nAdded adhesive rubber feet for mounting stability. Mounting positions and adhesion tested. No wires or power rails added. All existing geometry, steps, tools, and assumptions preserved.\n\nLOCAL MODEL CHANGE / UNVERIFIED\nModel: qwen3-vl:4b-instruct\nCaptured request:\nChange only the existing feet part quantity from 4 to 6. Preserve its ID, name, category, detail and blank voltage exactly. Do not change or add any other part, connection, mount, rail, step, tool, assumption or CAD. All fit and adhesion checks remain unresolved.\nUnverified model summary:\nChanged quantity of adhesive rubber feet from 4 to 6. All other fields preserved. Fit and adhesion checks remain unresolved."
+    }
+  ],
+  "warnings": [
+    "Local model changes and any proposed endpoint names are unverified. Review specifications, wiring, fit and power before building.",
+    "Affected completion, review and current evidence have been cleared; inspect every before/after record.",
+    "Conservative power policy: wire additions, replacements and removals clear per-unit current evidence for loads at both old and new endpoints because operating conditions may change. Unchanged supply hardware keeps its rating; unrelated load branches keep their current evidence."
+  ]
+}

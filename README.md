@@ -46,6 +46,16 @@ The model picker checks each installed model with Ollama's `/api/show` endpoint.
 
 For local AI, run the app at `http://127.0.0.1:4173` so the browser can use Ollama's default local-origin access. The public GitHub Pages version works without Ollama and does not probe the local model service. Local AI controls are available only on a loopback host; cloud-named model tags are excluded. The selected model is retained in the current tab.
 
+## Revise an existing project
+
+In the local app with Ollama ready, choose **Revise with local AI** beside the project title. Describe the requested change, select a model, and inspect the before/after records. Parts, connections, mounting, power-rail bindings, linked steps, tools and assumptions can change together. The model returns up to 32 explicit edits against the captured project. Unmentioned records, existing CAD, images and evidence links remain attached.
+
+Changing a part's identity clears its recorded price, pin inventory and specification checks; quantity-only changes retain the per-unit part evidence. Affected steps and all project review marks reset. Changed rails have unknown currents, and wire changes conservatively clear affected load-current evidence while preserving unchanged supply hardware ratings and unrelated branch currents. These rules prevent some stale records; they do not validate a design. Expand each changed record to inspect every automatic reset. Free-form model explanations remain in the raw downloaded patch; saved project provenance is derived from the recorded edit operations, so unsupported model claims of completed tests are not appended as project notes.
+
+**Download revision ZIP** retains the captured project, proposed project and exact model patch with its before/after record. Importing the proposed JSON creates a separate project with checks reset. **Apply reviewed revision** first saves a recovery snapshot in History, then saves the new state. A changed request, model, workspace or CAD sidecar blocks an older proposal. Close and reopen to capture the latest project. Requests survive close/reopen in memory and reload when tab storage works; saved text needing recovery is preserved until downloaded and explicitly replaced.
+
+The model receives design fields and original record indexes, without image pixels, CAD source or dedicated source/evidence fields. Geometry edits belong in the workbenches. Large projects exceeding the local context bound use the manual editor; appending a change is rejected if existing notes plus the request would exceed 10,000 characters. See the [actual revision trials](examples/project-revision/README.md) for retained model patches, source-preservation checks and a blocked concurrent CAD case.
+
 ## What works
 
 - Start from the filled plant monitor or ambient-light designs, or create a blank concept from any brief. The **Create concept** button records the brief and optional image without claiming automatic design; choose a starter explicitly to use its example parts and wiring.

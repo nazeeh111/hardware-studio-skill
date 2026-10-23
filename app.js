@@ -1,6 +1,7 @@
 import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=40';
 import { MODEL_PLAN_SCHEMA, coordinatedAiDraft } from './draft-plan.js?v=3';
 import { REQUEST_KEY, requestRecord, parseRequest, requestSignature, boundedModelJson } from './draft-intake.js?v=1';
+import { createProjectChangeController } from './project-change-ui.js?v=8';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { validateSolidSpec } from './solid-spec.js?v=2';
 import {trayKey,solidKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=2';
@@ -22,6 +23,7 @@ let traySyncTimer;
 let draftController = null;
 let pendingDraft = null;
 let pendingDraftContext = null;
+let projectChange;
 let expectedRequestRaw = null, requestRecovery = null, requestBackedUp = false;
 let pendingReference = null;
 const PENDING_REFERENCE_KEY='hardware-studio-pending-reference-v1';
@@ -71,6 +73,7 @@ async function detectLocalModels() {
     select.value = names.includes(preferred) ? preferred : names.includes('local-fast:latest') ? 'local-fast:latest' : names.includes('qwen3:4b') ? 'qwen3:4b' : names[0];
     select.hidden = false;
     $('#draft-local').hidden = false;
+    $('#revise-project').hidden = false;
     $('#local-ai-status').textContent = 'Optional local model draft. No paid API.';
   } catch {
     $('#local-ai-status').textContent = 'Create a blank concept or choose a filled starter below.';
@@ -242,6 +245,29 @@ function showToast(message) {
 }
 function editorError(message) { const el = $('#dialog-error'); el.textContent = message; el.hidden = false; }
 function current() { return projects.find(p => p.id === currentId) || projects[0]; }
+function captureProjectChange() {
+  if (storageUnavailable || unreadableSavedData !== null) throw new Error('Recover the saved workspace before proposing a revision.');
+  if (localStorage.getItem(STORAGE_KEY) !== expectedWorkspaceRaw) throw new Error('The saved workspace changed. Reload its latest state before proposing a revision.');
+  const p = current(), geometry = readGeometryState(p, localStorage);
+  if (!syncCurrentGeometry(p, geometry)) throw new Error('The latest CAD source could not be saved. Preserve it before revising the project.');
+  return {project:structuredClone(p), workspaceRaw:expectedWorkspaceRaw, geometryRaw:geometry.raw};
+}
+function assertProjectChangeCurrent(base) {
+  if (current()?.id !== base.project.id || localStorage.getItem(STORAGE_KEY) !== base.workspaceRaw || expectedWorkspaceRaw !== base.workspaceRaw) throw new Error('The project or saved workspace changed. Close and reopen this editor to propose changes from its latest state.');
+  const latest = readGeometryState(current(), localStorage);
+  if (projectContentChanged(base.project, latest.project) || Object.keys(base.geometryRaw).some(key => latest.raw[key] !== base.geometryRaw[key])) throw new Error('The project or CAD workbench changed. Close and reopen this editor from the latest state; this proposal remains available to download.');
+}
+function applyProjectChange(base, next) {
+  assertProjectChangeCurrent(base);
+  // Refuse the edit if its recovery snapshot cannot be saved. CAD sidecars are
+  // unchanged by this route, and their captured bytes were checked above.
+  try { recordRevision(base.project, 'Before local AI revision'); }
+  catch { throw new Error('The earlier project could not be saved in History. Export it and free browser storage before applying this revision.'); }
+  const p = current(), before = structuredClone(p);
+  Object.assign(p, next);
+  const saved = saveWithRollback(p, before, 'Local AI revision', {skipRevision:true});
+  render(); return saved;
+}
 function readRevisions() {
   const raw = localStorage.getItem(REVISIONS_KEY);
   if (!raw) return [];
@@ -286,8 +312,8 @@ function save(reason = 'edit', { skipRevision = false } = {}) {
   }
   return true;
 }
-function saveWithRollback(project, before, reason) {
-  if (save(reason)) return true;
+function saveWithRollback(project, before, reason, options) {
+  if (save(reason, options)) return true;
   for (const key of Object.keys(project)) delete project[key];
   Object.assign(project, before);
   return false;
@@ -434,6 +460,7 @@ function render() {
   const panels = { overview: renderOverview, parts: renderParts, wiring: renderWiring, power: renderPower, assembly: renderAssembly, build: renderBuild };
   $('#panel').innerHTML = panels[activeTab](p);
   renderReview(p);
+  projectChange?.refresh();
 }
 
 function panelHead(kicker, title, description, actions = '') { return `<div class="panel-head"><div><div class="eyebrow accent">${kicker}</div><h3>${title}</h3><p>${description}</p></div>${actions}</div>`; }
@@ -649,6 +676,7 @@ function handleClick(event) {
     if (addProject(next)) clearPendingRequest();
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
+  else if (button.id === 'revise-project') { if (draftController) return showToast('Finish or cancel the new-concept draft before revising this project.'); projectChange.open(); }
   else if (button.id === 'choose-reference') $('#reference-file').click();
   else if (button.id === 'draw-sketch' && !draftController) { sketchProjectId=null;sketchPad.open(pendingReference?.sketch); }
   else if (button.id === 'edit-project-sketch' && !draftController) { sketchProjectId=p.id;sketchPad.open(p.referenceImage?.sketch,p.id); }
@@ -739,6 +767,13 @@ function handleChange(event) {
   }
 }
 function initialize() {
+  projectChange = createProjectChangeController({
+    capture:captureProjectChange, assertCurrent:assertProjectChangeCurrent, apply:applyProjectChange,
+    getModels:() => [...$('#local-model').options].filter(option => option.value).map(option => ({value:option.value,label:option.textContent})),
+    getModel:() => $('#local-model').value,
+    setModel:value => { $('#local-model').value = value; try {sessionStorage.setItem('hardware-studio-local-model',value);} catch {} },
+    download, toast:showToast
+  });
   sketchPad=createSketchPad({onUse(reference){
     const safe=safeReferenceImage(reference);
     if(sketchProjectId){const p=projects.find(item=>item.id===sketchProjectId);if(!p)throw new Error('That project is no longer available. Close the sketch and choose a project.');if(!editProject(p,'Before editing sketch',()=>{p.referenceImage=safe;p.review={electrical:false,mechanical:false,sourcing:false};}))throw new Error('The sketch could not be saved. Export your project to free storage, then try again.');}
