@@ -1,5 +1,6 @@
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { STORAGE_KEY } from './core.js?v=29';
+import { PREVIEW_KEY, previewSnapshot } from './cad-preview.js?v=1';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const $ = selector => document.querySelector(selector);
@@ -10,6 +11,7 @@ const num = 'type="number" step="0.1"';
 let draft = null;
 let storageKey = '';
 let cadAvailable = false;
+let previewAvailable = false;
 let cadBusy = false;
 let fitBusy = false;
 let fitReport = null;
@@ -25,6 +27,7 @@ const rotations = {
 
 function updateCadButton() {
   $('#generate-cad').disabled = !draft || !cadAvailable || cadBusy;
+  $('#preview-cad').disabled = !draft || !previewAvailable || cadBusy || fitBusy;
   $('#download').disabled = !draft;
   $('#check-fit').disabled = !draft || !cadAvailable || fitBusy || cadBusy;
 }
@@ -34,8 +37,9 @@ async function detectCadService() {
     const response = await fetch('./api/health', { cache: 'no-store', signal: AbortSignal.timeout(3000) });
     const status = await response.json();
     cadAvailable = response.ok && status.ok === true && status.schema === schema;
-  } catch { cadAvailable = false; }
-  $('#cad-status').textContent = cadAvailable ? 'Local OpenCascade runtime ready. CAD builds stay on this computer.' : 'Local CAD runtime unavailable here. Download the spec, then start the free local server shown below.';
+    previewAvailable = cadAvailable && status.features?.includes('tray-preview-v1');
+  } catch { cadAvailable = false; previewAvailable = false; }
+  $('#cad-status').textContent = cadAvailable ? 'Local OpenCascade runtime ready. CAD builds stay on this computer.' + (previewAvailable ? '' : ' Restart the server from the current repository to enable direct 3D previews.') : 'Local CAD runtime unavailable here. Download the spec, then start the free local server shown below.';
   $('#fit-status').textContent = cadAvailable ? 'Choose maker STEP files and enter measured placements to compare their modeled solids.' : 'Start the local CAD runtime to check supplied models.';
   $('#cad-status').classList.toggle('error', !cadAvailable);
   updateCadButton();
@@ -258,6 +262,15 @@ function initialize() {
     const url = URL.createObjectURL(new Blob([JSON.stringify(draft, null, 2) + '\n'], { type: 'application/json' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = file; anchor.click();
     setTimeout(() => URL.revokeObjectURL(url), 30000);
+  });
+  $('#preview-cad').addEventListener('click', () => {
+    if(!draft||!cadAvailable||cadBusy||fitBusy)return;
+    try {
+      const frozen=previewSnapshot(draft,location.search),raw=JSON.stringify(frozen);
+      if(raw.length>65536)throw new Error('This tray snapshot is too large for preview. Download the CAD package instead.');
+      sessionStorage.setItem(PREVIEW_KEY,raw);
+      location.href='./cad-viewer.html?generated=1';
+    } catch(error) { $('#cad-status').textContent='Could not open 3D preview: '+error.message;$('#cad-status').classList.add('error'); }
   });
   $('#generate-cad').addEventListener('click', async () => {
     if (!draft || !cadAvailable || cadBusy) return;

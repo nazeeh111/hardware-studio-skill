@@ -51,7 +51,7 @@
         <div id="preview" class="preview" aria-live="polite"></div>
         <p id="status" class="status" role="status">Checking geometry…</p>
         <div class="drawing-key"><span><i class="swatch shell-color"></i> Shell</span><span><i class="swatch boss-color"></i> Boss / locator</span><span><i class="swatch opening-color"></i> Opening</span></div>
-        <div class="actions"><button id="generate-cad" class="primary" type="button" disabled>Generate STEP/STL package ↗</button><button id="download" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
+        <div class="actions"><button id="preview-cad" class="primary" type="button" disabled>Generate and inspect in 3D ↗</button><button id="generate-cad" class="primary" type="button" disabled>Generate STEP/STL package ↗</button><button id="download" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
         <p class="cad-status"><a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">Inspect exported STL surfaces in 3D and download GLB ↗</a>. Extract the STL files from your CAD ZIP, then choose them in the viewer.</p>
         <p id="cad-status" class="cad-status" role="status">Checking for the local CAD runtime…</p>
         <section class="fit-workbench" aria-labelledby="fit-title">
@@ -67,6 +67,6 @@
     </section>
     <footer>HARDWARE / STUDIO <span>Modeled geometry is not physical fit or fabrication approval.</span></footer>
   </main>
-  <script type="module" src="./tray-workbench.js?v=12"></script>
+  <script type="module" src="./tray-workbench.js?v=13"></script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
+import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
 let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, pointers=new Map();
+let previewRecord=null,generatedBusy=false;
 const palette=[[.53,.67,.35],[.87,.84,.64],[.65,.76,.75],[.77,.51,.34]];
 function status(text,error=false){$('#viewer-status').textContent=text;$('#viewer-status').classList.toggle('error',error);}
 function shader(type,source){const value=gl.createShader(type);gl.shaderSource(value,source);gl.compileShader(value);if(!gl.getShaderParameter(value,gl.COMPILE_STATUS))throw new Error('Your browser could not prepare the 3D renderer.');return value;}
@@ -37,6 +39,7 @@ function controls(){
 }
 function replaceMeshes(next){for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=next.map((mesh,i)=>{const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);return {...mesh,buffer,color:palette[i],visible:true};});controls();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);}
 async function loadExample(){
+  leaveGeneratedMode();
   const token=++sequence;if(!gl||!program)return;status('Loading the worked tray and cover…');
   try{const next=await Promise.all(['tray','lid'].map(async(name)=>{const response=await fetch(`./examples/pico-neopixel-tray/generated/window-cover-v1/${name}.stl`);if(!response.ok)throw new Error('The example could not be loaded. Try again or choose a local STL.');return {...parseStl(await response.arrayBuffer()),name:name==='lid'?'Window cover':'Pico prototype tray',cover:name==='lid'};}));if(token===sequence)replaceMeshes(next);}catch(error){if(token===sequence)status(error.message,true);}
 }
@@ -44,6 +47,7 @@ $('#load-example').addEventListener('click',loadExample);
 $('#choose-mesh').addEventListener('click',()=>$('#mesh-files').click());
 $('#mesh-files').addEventListener('change',async event=>{
   const files=[...event.target.files];event.target.value='';if(!files.length||!gl||!program)return;const token=++sequence;status('Reading selected STL geometry…');
+  leaveGeneratedMode();
   try{if(files.length>4)throw new Error('Choose at most four STL files.');if(files.some(f=>f.size>MAX_STL_BYTES||!f.name.toLowerCase().endsWith('.stl')))throw new Error('Choose STL files smaller than 32 MB each.');const next=[];let triangles=0;for(const file of files){const mesh=parseStl(await file.arrayBuffer());triangles+=mesh.triangles;if(triangles>400000)throw new Error('Use at most 400,000 triangles across all files.');next.push({...mesh,name:file.name.slice(0,120),cover:false});}if(token===sequence)replaceMeshes(next);}catch(error){if(token===sequence)status(error.message,true);}
 });
 $('#export-glb').addEventListener('click',()=>{try{const blob=new Blob([meshesToGlb(meshes.filter(m=>m.visible))],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='hardware-studio-assembly.glb';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('GLB downloaded in meters, at original positions. The display lift is excluded.');}catch(error){status(error.message,true);}});
@@ -56,3 +60,43 @@ for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addE
 canvas.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','+','=','-'].includes(event.key))return;event.preventDefault();if(event.key==='Home')return reset();if(['+','='].includes(event.key))return scale(1.2);if(event.key==='-')return scale(1/1.2);yaw+=event.key==='ArrowLeft'?-.15:event.key==='ArrowRight'?.15:0;pitch=Math.max(-1.5,Math.min(1.5,pitch+(event.key==='ArrowUp'?-.15:event.key==='ArrowDown'?.15:0)));draw();});
 canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();status('The graphics context was lost. Reload this page to restore the viewer; your files are unchanged.',true);$('#export-glb').disabled=true;});
 new ResizeObserver(draw).observe(canvas);draw();
+
+function leaveGeneratedMode(){
+  previewRecord=null;$('#generated-controls').hidden=true;
+  const url=new URL(location.href);if(url.searchParams.has('generated')){url.searchParams.delete('generated');history.replaceState(null,'',url);}
+}
+function generatedButtons(){ $('#retry-generated').disabled=generatedBusy;$('#download-generated').disabled=generatedBusy||!previewRecord||!meshes.length; }
+async function generatePreview(){
+  if(!previewRecord||generatedBusy||!gl||!program)return;
+  const record=previewRecord,token=++sequence;generatedBusy=true;generatedButtons();
+  status('Generating fresh STEP/STL and reopening the exports locally…');
+  $('#generated-status').textContent=`Frozen tray: ${record.spec.title}. This preview uses the workbench dimensions captured when you opened it.`;
+  try {
+    const response=await fetch('./api/tray-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    if(!response.ok){let message='The local CAD service could not generate the preview.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}
+    const next=await previewMeshes(await response.json(),record.spec);
+    if(token!==sequence||previewRecord!==record)return;
+    replaceMeshes(next);
+    $('#generated-status').textContent=`${record.spec.title} · STL hashes, triangle counts and dimensions match fresh-process readback. Physical fit remains untested.`;
+  }catch(error){if(token===sequence&&previewRecord===record){status(error.name==='TimeoutError'?'Preview timed out. Check the local server before retrying.':error.message,true);$('#generated-status').textContent='Preview unavailable. Return to the workbench or retry with the same frozen dimensions.';}}
+  finally{generatedBusy=false;generatedButtons();}
+}
+$('#retry-generated').addEventListener('click',generatePreview);
+$('#download-generated').addEventListener('click',async()=>{
+  if(!previewRecord||generatedBusy)return;
+  const record=previewRecord;generatedBusy=true;generatedButtons();
+  $('#generated-status').textContent='Regenerating a CAD ZIP from these frozen dimensions…';
+  try{
+    const response=await fetch('./api/tray',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    if(!response.ok){let detail='CAD ZIP generation failed.';try{detail=(await response.json()).error||detail;}catch{}throw new Error(detail);}
+    if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('The local service did not return a CAD ZIP.');
+    const blob=await response.blob();if(previewRecord!==record)return;
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='hardware-studio-generated-cad.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    $('#generated-status').textContent='CAD ZIP downloaded from the same frozen specification. Inspect its verification report before use.';
+  }catch(error){if(previewRecord===record)$('#generated-status').textContent=error.name==='TimeoutError'?'CAD ZIP timed out. Check the local server.':error.message;}
+  finally{generatedBusy=false;generatedButtons();}
+});
+if(new URL(location.href).searchParams.get('generated')==='1'){
+  try{previewRecord=readPreviewSnapshot(sessionStorage.getItem(PREVIEW_KEY));document.querySelector('.back').href=previewRecord.returnTo;$('#generated-controls').hidden=false;void generatePreview();}
+  catch(error){status(error.message,true);}
+}

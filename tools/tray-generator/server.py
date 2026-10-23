@@ -32,7 +32,7 @@ PACKAGE_FILES = ('spec.json', 'tray.step', 'tray.stl', 'layout.svg', 'build-repo
 build_lock = threading.Lock()
 
 
-def generate_package(raw):
+def generate_package(raw, preview=False):
     """Run the existing verifier-backed CLI in an isolated temporary directory."""
     with tempfile.TemporaryDirectory(prefix='hardware-studio-cad-') as temporary:
         temporary = Path(temporary)
@@ -45,9 +45,18 @@ def generate_package(raw):
         )
         if result.returncode:
             raise ValueError('The CAD generator rejected this geometry. Check dimensions, boss spacing and openings.')
+        extras = ('lid.step', 'lid.stl') if (package / 'lid.step').is_file() and (package / 'lid.stl').is_file() else ()
+        if preview:
+            verification = json.loads((package / 'verification.json').read_text())
+            names = ['tray.stl'] + (['lid.stl'] if extras else [])
+            if sum((package / name).stat().st_size for name in names) > 16_000_000 or verification['stl_triangles'] + (verification.get('lid') or {}).get('stl_triangles', 0) > 400_000:
+                raise ValueError('This preview exceeds the browser mesh limit. Download the CAD package instead.')
+            return {'schema': 'hardware-studio-cad-preview-v1',
+                    'spec': json.loads((package / 'spec.json').read_text()),
+                    'verification': verification,
+                    'meshes': [{'name': name, 'dataBase64': base64.b64encode((package / name).read_bytes()).decode('ascii')} for name in names]}
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
-            extras = ('lid.step', 'lid.stl') if (package / 'lid.step').is_file() and (package / 'lid.stl').is_file() else ()
             for name in PACKAGE_FILES + extras:
                 zipped.write(package / name, arcname=name)
         return archive.getvalue()
@@ -131,7 +140,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1'})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1']})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()
@@ -147,7 +156,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path not in ('/api/tray', '/api/fit'):
+        if path not in ('/api/tray', '/api/tray-preview', '/api/fit'):
             return self._json(404, {'error': 'Unknown API route.'})
         if not self._local_origin():
             return self._json(403, {'error': 'Local origin required.'})
@@ -174,7 +183,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(409, {'error': 'Another CAD build is running. Try again after it finishes.'})
         try:
             try:
-                output = check_fit_request(raw) if path == '/api/fit' else generate_package(raw)
+                output = check_fit_request(raw) if path == '/api/fit' else generate_package(raw, preview=path == '/api/tray-preview')
             except subprocess.TimeoutExpired:
                 return self._json(504, {'error': 'CAD generation exceeded two minutes.'})
             except ValueError as error:
@@ -184,9 +193,9 @@ class Handler(SimpleHTTPRequestHandler):
         finally:
             build_lock.release()
         try:
-            body = json.dumps(output).encode('utf-8') if path == '/api/fit' else output
+            body = output if path == '/api/tray' else json.dumps(output).encode('utf-8')
             self.send_response(200)
-            self.send_header('Content-Type', 'application/json; charset=utf-8' if path == '/api/fit' else 'application/zip')
+            self.send_header('Content-Type', 'application/zip' if path == '/api/tray' else 'application/json; charset=utf-8')
             if path == '/api/tray':
                 self.send_header('Content-Disposition', 'attachment; filename="hardware-studio-tray-cad.zip"')
             self.send_header('Content-Length', str(len(body)))

@@ -27,6 +27,36 @@ WINDOW_EXAMPLE = EXAMPLE.with_name('pico-neopixel-window-cover.json')
 
 
 class LocalServerTests(unittest.TestCase):
+    def test_generated_preview_uses_verified_meshes_and_origin_gate(self):
+        import hashlib
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        worker = threading.Thread(target=server.serve_forever, daemon=True)
+        worker.start()
+        base = f'http://127.0.0.1:{server.server_port}'
+        try:
+            def post(origin, spec=WINDOW_EXAMPLE):
+                request = urllib.request.Request(base + '/api/tray-preview', spec.read_bytes(), {'Content-Type': 'application/json', 'Origin': origin}, method='POST')
+                return urllib.request.urlopen(request, timeout=150)
+            with self.assertRaises(urllib.error.HTTPError) as denied:
+                post('https://outside.example')
+            self.assertEqual(denied.exception.code, 403)
+            with post(base) as response:
+                preview = json.load(response)
+            self.assertEqual(preview['schema'], 'hardware-studio-cad-preview-v1')
+            self.assertEqual([entry['name'] for entry in preview['meshes']], ['tray.stl', 'lid.stl'])
+            for entry in preview['meshes']:
+                self.assertEqual(hashlib.sha256(base64.b64decode(entry['dataBase64'])).hexdigest(), preview['verification']['sha256'][entry['name']])
+            self.assertEqual(preview['verification']['outer_span_mm'], [66., 45., 14.])
+            self.assertEqual(preview['verification']['lid']['outer_span_mm'], [71., 50., 5.5])
+            with post(base, EXAMPLE) as response:
+                uncovered = json.load(response)
+            self.assertEqual([entry['name'] for entry in uncovered['meshes']], ['tray.stl'])
+            self.assertIsNone(uncovered['verification']['lid'])
+        finally:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=5)
+
     def test_static_files_require_local_host_and_do_not_list_directories(self):
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
         worker = threading.Thread(target=server.serve_forever, daemon=True)

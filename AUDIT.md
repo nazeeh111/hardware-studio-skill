@@ -31,8 +31,8 @@ The scan did not find a source-backed XSS, CSV formula injection, ZIP traversal,
 
 ## Verification after fixes
 
-- Node app tests: **34 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
-- OpenCascade generator, fit and loopback-server tests: **11 passed**, including the new GET/HEAD Host and directory checks.
+- Node app tests: **36 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
+- OpenCascade generator, fit and loopback-server tests: **12 passed**, including the new GET/HEAD Host and directory checks.
 - The app's source syntax, example structural checks, Markdown links, live Pages bytes and installed skill copy should be rechecked at each new publication; a successful local test is not a deployed revision.
 
 The 3D viewer was checked in a local browser with the 4,148-triangle tray/cover example, cover lift, local STL file selection and browser GLB download. A 390-pixel viewport had no horizontal overflow. Blender 5.1.2 imported the downloaded GLB with two separate meshes and the correct world-space spans of 66 × 45 × 14 mm and 71 × 50 × 5.5 mm. The GLB excludes the display-only lift. These later viewer files were not part of the earlier sealed security scan.
@@ -42,3 +42,6 @@ An independent source reviewer caught silent partial ASCII-STL parsing and an in
 ## Open engineering work
 
 The example power worksheet remains incomplete. Current draw, branch ratings, voltage drop, connector and wire fit, exact solder-hole assignment, cable strain relief, physical assembly, measured behavior and fabrication evidence are not supplied. Arbitrary idea-to-CAD, reliable image understanding, live sourcing and authenticated Blueprint workflows remain outside this implementation.
+
+
+The direct workbench-to-viewer flow generated a custom 90 × 60 × 20 mm tray and 95 × 65 × 5.5 mm window cover in an isolated local browser. The viewer checked mesh hashes, triangle counts and dimensions against the fresh readback, survived reload using the frozen session snapshot, and downloaded a CAD ZIP. Independent inspection of that actual ZIP passed CRC and confirmed the same specification, spans and STL hashes. Snapshot expiry, changed specs, corrupted mesh bytes and mismatched readback dimensions have negative tests. A source reviewer caught an uncovered-tray null-lid error; it was fixed and covered in both client and endpoint tests. All four server tests passed after the fix. This workflow has not been included in a new security scan.
