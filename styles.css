@@ -463,3 +463,5 @@ dialog::backdrop { background: #101d19b8; }
 .inventory-symbol svg { width:150px; height:120px; }
 .inventory-part h5 { font:500 17px/1.25 var(--display); letter-spacing:-.035em; margin:0; overflow-wrap:anywhere; }
 @media(max-width:600px) { .assembly-source-body { grid-template-columns:1fr; gap:20px; }.assembly-source-aside { border-left:0; border-top:1px solid #45604d; padding:16px 0 0; }.assembly-source-aside p { margin-bottom:9px; }.assembly-source h4 { font-size:22px; }.assembly-source-head { font-size:8px; }.assembly-source-footer a { padding:4px 0; } }
+
+.shared-cad-tools{margin:16px 0 0;border-top:1px solid #bdc9b4;padding-top:12px}.shared-cad-tools>summary{font:500 11px var(--mono);color:#536d4c;cursor:pointer}.shared-cad-tools .assembly-source{margin-top:12px}

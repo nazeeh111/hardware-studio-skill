@@ -1,0 +1,169 @@
+{
+  "schema": "hardware-studio-assembly-v1",
+  "title": "Instrument plate + two standoffs",
+  "units": "mm",
+  "assets": [
+    {
+      "partId": "plate",
+      "source": {
+        "schema": "hardware-studio-solid-v1",
+        "title": "Instrument mounting plate",
+        "units": "mm",
+        "features": [
+          {
+            "id": "box-0",
+            "operation": "add",
+            "shape": "box",
+            "origin": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "size": [
+              48.0,
+              32.0,
+              3.0
+            ]
+          },
+          {
+            "id": "cyl-0",
+            "operation": "cut",
+            "shape": "cylinder",
+            "origin": [
+              8.0,
+              16.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 2.0,
+            "height": 3.0
+          },
+          {
+            "id": "cyl-1",
+            "operation": "cut",
+            "shape": "cylinder",
+            "origin": [
+              40.0,
+              16.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 2.0,
+            "height": 3.0
+          }
+        ],
+        "probes": []
+      }
+    },
+    {
+      "partId": "standoff",
+      "source": {
+        "schema": "hardware-studio-solid-v1",
+        "title": "Bored standoff \u00b7 8 OD \u00d7 4 ID \u00d7 10",
+        "units": "mm",
+        "features": [
+          {
+            "id": "outer",
+            "operation": "add",
+            "shape": "cylinder",
+            "origin": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 4.0,
+            "height": 10.0
+          },
+          {
+            "id": "bore",
+            "operation": "cut",
+            "shape": "cylinder",
+            "origin": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 2.0,
+            "height": 10.0
+          }
+        ],
+        "probes": [
+          {
+            "id": "bore-core",
+            "expect": "void",
+            "shape": "cylinder",
+            "origin": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 1.9,
+            "height": 10.0
+          },
+          {
+            "id": "annular-wall",
+            "expect": "material",
+            "shape": "box",
+            "origin": [
+              2.5,
+              -0.5,
+              1.0
+            ],
+            "size": [
+              1.0,
+              1.0,
+              8.0
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "plate-1",
+      "partId": "plate",
+      "position": [
+        32.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        90.0
+      ]
+    },
+    {
+      "id": "standoff-1",
+      "partId": "standoff",
+      "position": [
+        16.0,
+        8.0,
+        2.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "standoff-2",
+      "partId": "standoff",
+      "position": [
+        16.0,
+        40.0,
+        3.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

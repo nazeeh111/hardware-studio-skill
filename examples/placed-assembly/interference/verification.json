@@ -1,0 +1,229 @@
+{
+  "status": "interference",
+  "readback": "fresh-process same-kernel source and placement readback passed",
+  "instances": [
+    {
+      "id": "plate-1",
+      "partId": "plate",
+      "name": "instance-001.stl",
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        32.0,
+        48.0,
+        3.0
+      ],
+      "volume_mm3": 4532.601776313842,
+      "stl_min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "stl_max_mm": [
+        32.0,
+        48.0,
+        3.0
+      ],
+      "stl_triangles": 692,
+      "sha256": {
+        "step": "509924d575bd8695f153c8ae4fb4c1710607f2c681d8f77e6cf1671f24a33590",
+        "stl": "ec5eb168b10c2b0b99bd85a190e04a462f97dedf24f237dc6877147f61a30f98"
+      }
+    },
+    {
+      "id": "standoff-1",
+      "partId": "standoff",
+      "name": "instance-002.stl",
+      "min_mm": [
+        12.0,
+        4.0,
+        2.0
+      ],
+      "max_mm": [
+        20.0,
+        12.0,
+        12.0
+      ],
+      "volume_mm3": 376.99111843078333,
+      "stl_min_mm": [
+        12.0,
+        4.0,
+        2.0
+      ],
+      "stl_max_mm": [
+        20.0,
+        12.0,
+        12.0
+      ],
+      "stl_triangles": 672,
+      "sha256": {
+        "step": "8abe10f788b557b47747245e4e7b5a1674507e5bb861982e748199f36746cf19",
+        "stl": "9a6f1b7306c423b8079e618ba5f845e2a50dd8ae3864b8dcddfe1a7bbdf15151"
+      }
+    },
+    {
+      "id": "standoff-2",
+      "partId": "standoff",
+      "name": "instance-003.stl",
+      "min_mm": [
+        12.0,
+        36.0,
+        3.0
+      ],
+      "max_mm": [
+        20.0,
+        44.0,
+        13.0
+      ],
+      "volume_mm3": 376.9911184307834,
+      "stl_min_mm": [
+        12.0,
+        36.0,
+        3.0
+      ],
+      "stl_max_mm": [
+        20.0,
+        44.0,
+        13.0
+      ],
+      "stl_triangles": 672,
+      "sha256": {
+        "step": "d67a39b8d967acfb8e80f60619b1b6f569a00474d40ab8417a6479efcaadfe75",
+        "stl": "b67b01a55897af124cee8bc7c9f9e0151a71131b7f8576c0f6b0c9ef6f4a20aa"
+      }
+    }
+  ],
+  "assets": [
+    {
+      "partId": "plate",
+      "directory": "assets/part-001",
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ],
+      "volume_mm3": 4532.6017763138425,
+      "stl_min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "stl_max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ],
+      "stl_triangles": 692,
+      "probes": [],
+      "sha256": {
+        "spec.json": "ed8076e0c79f89a20a626c1f9471b2ffae439cb0f9036ac73d2fb9e4e3ca3958",
+        "solid.step": "dd91f90945a543387ee3ccc64e784d724ab10c880322d6c9929efa31438e5c48",
+        "solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef"
+      }
+    },
+    {
+      "partId": "standoff",
+      "directory": "assets/part-002",
+      "min_mm": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "max_mm": [
+        4.0,
+        4.0,
+        10.0
+      ],
+      "volume_mm3": 376.99111843078333,
+      "stl_min_mm": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "stl_max_mm": [
+        4.0,
+        4.0,
+        10.0
+      ],
+      "stl_triangles": 672,
+      "probes": [
+        {
+          "id": "bore-core",
+          "expect": "void",
+          "material_fraction": 0.0,
+          "passed": true
+        },
+        {
+          "id": "annular-wall",
+          "expect": "material",
+          "material_fraction": 1.0,
+          "passed": true
+        }
+      ],
+      "sha256": {
+        "spec.json": "1db7fe069a27e1391ab8602ab8a5e682777477e000c9897e4abb85ae0775bbce",
+        "solid.step": "2563cec20ae307a92ee813e6b85793d3b3b7248423600a3a87f84a73ebc68aab",
+        "solid.stl": "843a525b28ff4ee24e097b5af77a51a8e016ef0ba1e57bd7851469c949829d93"
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "firstId": "plate-1",
+      "secondId": "standoff-1",
+      "overlap_mm3": 37.699111843078256,
+      "minimum_distance_mm": 0.0,
+      "interference": true
+    },
+    {
+      "firstId": "plate-1",
+      "secondId": "standoff-2",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 0.0,
+      "interference": false
+    },
+    {
+      "firstId": "standoff-1",
+      "secondId": "standoff-2",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 24.0,
+      "interference": false
+    }
+  ],
+  "assembly": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      32.0,
+      48.0,
+      13.0
+    ],
+    "volume_mm3": 5286.5840131754185,
+    "solid_count": 3,
+    "sha256": "e28c34e7ba7c21a54c7a616d9220c7e43dee96c1257834992552bd24f9fe13e4"
+  },
+  "overlap_limit_mm3": 0.01,
+  "sha256": {
+    "spec.json": "c44c29c885a2f24f9458e50baf05fc64119f86deba799fe9fad8272055c6d5a4",
+    "build-report.json": "bead2ee5bd8422da38adf180885894528c353f5e9502795f8cd58fb1e14cbecf"
+  },
+  "limits": [
+    "Explicit nominal placements only; no mating constraints, joint solver or motion analysis.",
+    "Euler degrees apply around the source origin in X, Y, Z order, then XYZ translation (T*Rz*Ry*Rx).",
+    "Pairwise interference means overlap greater than 0.01 cubic mm; touching is allowed. Smaller intersections remain in the report.",
+    "Fresh-process readback and source reconstruction use the same OpenCascade kernel; this is not independent-kernel verification.",
+    "No manufacturing tolerances, load, strength, fastener fit, supplier geometry or physical fit were validated.",
+    "Unplaced assets are exported but are excluded from the assembly and pair checks."
+  ]
+}

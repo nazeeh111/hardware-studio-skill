@@ -9,6 +9,8 @@ import base64
 import binascii
 import io
 import json
+import os
+import signal
 import subprocess
 import sys
 import tempfile
@@ -26,7 +28,9 @@ ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = Path(__file__).with_name('generate.py')
 FIT = Path(__file__).with_name('fit.py')
 SOLID_GENERATOR = Path(__file__).resolve().parents[1] / 'solid-generator' / 'solid.py'
+ASSEMBLY_GENERATOR = Path(__file__).resolve().parents[1] / 'assembly-generator' / 'assembly.py'
 MAX_REQUEST_BYTES = 65_536
+MAX_ASSEMBLY_REQUEST_BYTES = 262_144
 MAX_FIT_REQUEST_BYTES = 24_000_000
 MAX_STEP_BYTES = 8_000_000
 PACKAGE_FILES = ('spec.json', 'tray.step', 'tray.stl', 'layout.svg', 'build-report.json', 'verification.json')
@@ -86,6 +90,55 @@ def generate_solid_package(raw, preview=False):
         with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
             for name in files:
                 zipped.write(package / name, arcname=name)
+        return archive.getvalue()
+
+
+def run_assembly_process(command, timeout=180):
+    """Keep the generator and its verifier within one supervised POSIX group."""
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                               text=True, start_new_session=True)
+    try:
+        stdout, stderr = process.communicate(timeout=timeout)
+    except BaseException:
+        # Killing only the direct child leaves its fresh-process verifier alive,
+        # possibly writing files after temporary cleanup and lock release. The
+        # group remains addressable even if the generator exited first while a
+        # verifier still holds its output pipes open.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        process.communicate()
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def generate_assembly_package(raw, preview=False):
+    """Generate explicit, unfused placements with fresh-process readback."""
+    with tempfile.TemporaryDirectory(prefix='hardware-studio-assembly-') as temporary:
+        root = Path(temporary)
+        source = root / 'input.json'
+        source.write_bytes(raw)
+        package = root / 'package'
+        result = run_assembly_process([sys.executable, str(ASSEMBLY_GENERATOR), '--spec', str(source), '--out', str(package)])
+        if result.returncode:
+            raise ValueError('Assembly generation rejected the input or a geometry/readback check. Use valid solid assets, unique IDs and explicit bounded placements.')
+        if preview:
+            spec = json.loads((package / 'spec.json').read_text())
+            report = json.loads((package / 'verification.json').read_text())
+            instances = report['instances']
+            names = [package / 'instances' / item['name'] for item in instances]
+            if len(names) > 16 or sum(path.stat().st_size for path in names) > 16_000_000 or sum(item['stl_triangles'] for item in instances) > 400_000:
+                raise ValueError('The assembly meshes exceed the browser preview limits.')
+            return {'schema': 'hardware-studio-assembly-preview-v1', 'spec': spec, 'verification': report,
+                    'meshes': [{'name': item['name'], 'id': item['id'], 'partId': item['partId'],
+                                'dataBase64': base64.b64encode(path.read_bytes()).decode('ascii')}
+                               for item, path in zip(instances, names)]}
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as zipped:
+            for path in sorted(package.rglob('*')):
+                if path.is_file():
+                    zipped.write(path, arcname=path.relative_to(package).as_posix())
         return archive.getvalue()
 
 
@@ -167,7 +220,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1']})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1', 'placed-assembly-v1']})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()
@@ -183,7 +236,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path not in ('/api/tray', '/api/tray-preview', '/api/fit', '/api/solid', '/api/solid-preview'):
+        if path not in ('/api/tray', '/api/tray-preview', '/api/fit', '/api/solid', '/api/solid-preview', '/api/assembly', '/api/assembly-preview'):
             return self._json(404, {'error': 'Unknown API route.'})
         if not self._local_origin():
             return self._json(403, {'error': 'Local origin required.'})
@@ -193,7 +246,7 @@ class Handler(SimpleHTTPRequestHandler):
             length = int(self.headers.get('Content-Length', '0'))
         except ValueError:
             return self._json(400, {'error': 'Invalid request length.'})
-        limit = MAX_FIT_REQUEST_BYTES if path == '/api/fit' else MAX_REQUEST_BYTES
+        limit = MAX_FIT_REQUEST_BYTES if path == '/api/fit' else MAX_ASSEMBLY_REQUEST_BYTES if path.startswith('/api/assembly') else MAX_REQUEST_BYTES
         if not 0 < length <= limit:
             return self._json(413, {'error': 'The request is too large.'})
         raw = self.rfile.read(length)
@@ -201,18 +254,18 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(400, {'error': 'Incomplete request.'})
         try:
             spec = json.loads(raw)
-            expected = 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-solid-v1' if path.startswith('/api/solid') else 'hardware-studio-tray-v1'
+            expected = 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-assembly-v1' if path.startswith('/api/assembly') else 'hardware-studio-solid-v1' if path.startswith('/api/solid') else 'hardware-studio-tray-v1'
             if not isinstance(spec, dict) or spec.get('schema') != expected:
                 return self._json(400, {'error': f'Expected a {expected} request.'})
-        except (UnicodeDecodeError, ValueError):
+        except (UnicodeDecodeError, ValueError, RecursionError):
             return self._json(400, {'error': 'Invalid JSON.'})
         if not build_lock.acquire(blocking=False):
             return self._json(409, {'error': 'Another CAD build is running. Try again after it finishes.'})
         try:
             try:
-                output = check_fit_request(raw) if path == '/api/fit' else generate_solid_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/solid') else generate_package(raw, preview=path == '/api/tray-preview')
+                output = check_fit_request(raw) if path == '/api/fit' else generate_assembly_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/assembly') else generate_solid_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/solid') else generate_package(raw, preview=path == '/api/tray-preview')
             except subprocess.TimeoutExpired:
-                return self._json(504, {'error': 'CAD generation exceeded two minutes.'})
+                return self._json(504, {'error': 'Assembly generation exceeded three minutes.' if path.startswith('/api/assembly') else 'CAD generation exceeded two minutes.'})
             except ValueError as error:
                 return self._json(422, {'error': str(error)})
             except Exception:
@@ -220,7 +273,7 @@ class Handler(SimpleHTTPRequestHandler):
         finally:
             build_lock.release()
         try:
-            is_archive = path in ('/api/tray', '/api/solid')
+            is_archive = path in ('/api/tray', '/api/solid', '/api/assembly')
             body = output if is_archive else json.dumps(output).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/zip' if is_archive else 'application/json; charset=utf-8')

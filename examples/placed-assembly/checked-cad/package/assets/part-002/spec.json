@@ -1,0 +1,63 @@
+{
+  "schema": "hardware-studio-solid-v1",
+  "title": "Bored standoff \u00b7 8 OD \u00d7 4 ID \u00d7 10",
+  "units": "mm",
+  "features": [
+    {
+      "id": "outer",
+      "operation": "add",
+      "shape": "cylinder",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "z",
+      "radius": 4.0,
+      "height": 10.0
+    },
+    {
+      "id": "bore",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "z",
+      "radius": 2.0,
+      "height": 10.0
+    }
+  ],
+  "probes": [
+    {
+      "id": "bore-core",
+      "expect": "void",
+      "shape": "cylinder",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "z",
+      "radius": 1.9,
+      "height": 10.0
+    },
+    {
+      "id": "annular-wall",
+      "expect": "material",
+      "shape": "box",
+      "origin": [
+        2.5,
+        -0.5,
+        1.0
+      ],
+      "size": [
+        1.0,
+        1.0,
+        8.0
+      ]
+    }
+  ]
+}

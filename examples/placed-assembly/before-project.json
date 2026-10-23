@@ -1,0 +1,152 @@
+{
+  "id": "placed-assembly-study",
+  "title": "Instrument plate + two standoffs",
+  "brief": "Place the 48 × 32 × 3 mm plate with two 4 mm holes at local (8,16) and (40,16). Rotate the plate 90 degrees around its source Z origin, then translate it to (32,0,0) mm. Place two annular standoffs, outer diameter 8 mm, bore diameter 4 mm, length 10 mm, along +Z on the plate top at world (16,8,3) and (16,40,3). No fasteners or fit tolerance specified.",
+  "summary": "An explicit rigid CAD placement study. The plate source is the retained local-model result; standoff dimensions are specified for this study. Nominal contact is not physical fit.",
+  "starterId": "blank",
+  "createdAt": "2026-10-23T23:34:42.248Z",
+  "updatedAt": "2026-10-23T23:34:42.249Z",
+  "parts": [
+    {
+      "id": "plate",
+      "name": "Instrument mounting plate",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "48 × 32 × 3 mm; two diameter4 Z bores at local(8,16),(40,16).",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "standoff",
+      "name": "Bored standoff",
+      "category": "Mechanical",
+      "qty": 2,
+      "unitCost": 0,
+      "detail": "Outer diameter8, inner diameter4, length10mm; no material or clearance specified.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [
+    {
+      "from": "plate",
+      "to": "standoff",
+      "label": "Two standoffs on the top face",
+      "note": "Nominal annular contact at Z3, coaxial with plate holes. Fastener and actual fit remain unspecified."
+    }
+  ],
+  "steps": [
+    {
+      "id": "prepare",
+      "phase": "Prepare",
+      "title": "Confirm source dimensions",
+      "detail": "Compare source, bounds and independent bore checks against this study.",
+      "partIds": [
+        "plate",
+        "standoff"
+      ],
+      "done": false
+    },
+    {
+      "id": "place",
+      "phase": "Assemble",
+      "title": "Inspect the specified placements",
+      "detail": "Inspect transformed STEP/STL, nominal contact and pairwise overlap; do not fabricate from an unreviewed source.",
+      "partIds": [
+        "plate",
+        "standoff"
+      ],
+      "done": false
+    },
+    {
+      "id": "test",
+      "phase": "Test",
+      "title": "Measure actual parts before fabrication",
+      "detail": "Select material and hardware, add manufacturing tolerance and measure actual mating parts. This study supplies no physical evidence.",
+      "partIds": [
+        "plate",
+        "standoff"
+      ],
+      "done": false
+    }
+  ],
+  "powerRails": [],
+  "tools": [
+    "CAD inspection tool",
+    "Calipers for actual mating parts"
+  ],
+  "assumptions": [
+    "All coordinates are millimeters. Rotation is about source origin, before translation.",
+    "No material, load, fastener, manufacturing clearance or physical test is defined."
+  ],
+  "notes": "",
+  "cadUrl": "",
+  "wiringUrl": "",
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": {
+    "schema": "hardware-studio-solid-v1",
+    "title": "Instrument mounting plate",
+    "units": "mm",
+    "features": [
+      {
+        "id": "box-0",
+        "operation": "add",
+        "shape": "box",
+        "origin": [
+          0,
+          0,
+          0
+        ],
+        "size": [
+          48,
+          32,
+          3
+        ]
+      },
+      {
+        "id": "cyl-0",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          8,
+          16,
+          0
+        ],
+        "axis": "z",
+        "radius": 2,
+        "height": 3
+      },
+      {
+        "id": "cyl-1",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          40,
+          16,
+          0
+        ],
+        "axis": "z",
+        "radius": 2,
+        "height": 3
+      }
+    ],
+    "probes": []
+  },
+  "assemblySpec": null,
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

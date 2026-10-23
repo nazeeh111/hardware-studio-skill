@@ -1,5 +1,6 @@
 import { validateTraySpec } from './tray-spec.js';
 import { validateSolidSpec } from './solid-spec.js?v=2';
+import { validateAssemblySpec, assemblyIssues } from './assembly-spec.js?v=1';
 import { validateSketch } from './sketch-data.js?v=1';
 
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
@@ -52,6 +53,7 @@ export function parseSavedWorkspace(raw) {
     safeReferenceImage(project.referenceImage);
     if (project.traySpec != null) validateTraySpec(project.traySpec);
     if (project.solidSpec != null) validateSolidSpec(project.solidSpec);
+    if (project.assemblySpec != null) validateAssemblySpec(project.assemblySpec);
     safeTextList(project.tools, 'Tools');
     safeTextList(project.assumptions, 'Assumptions');
     project.steps.forEach(step => safeStepPartIds(step.partIds));
@@ -72,6 +74,14 @@ export function setProjectSolidSpec(project, input) {
   const next = input == null ? null : validateSolidSpec(input);
   if (JSON.stringify(project.solidSpec ?? null) === JSON.stringify(next)) return false;
   project.solidSpec = next;
+  project.review.mechanical = false;
+  return true;
+}
+
+export function setProjectAssemblySpec(project, input) {
+  const next = input == null ? null : validateAssemblySpec(input);
+  if (JSON.stringify(project.assemblySpec ?? null) === JSON.stringify(next)) return false;
+  project.assemblySpec = next;
   project.review.mechanical = false;
   return true;
 }
@@ -156,7 +166,7 @@ export function makeProject(starter, title) {
     parts: structuredClone(starter.parts), wires: structuredClone(starter.wires), mechanicalConnections: structuredClone(starter.mechanicalConnections || []),
     steps: structuredClone(starter.steps).map((step, i) => ({ ...step, id: `step-${i + 1}`, partIds: step.partIds || [], done: false })),
     powerRails: structuredClone(starter.powerRails || []),
-    tools: structuredClone(starter.tools || []), assumptions: structuredClone(starter.assumptions || []), notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, solidSpec: null, review: { electrical: false, mechanical: false, sourcing: false }
+    tools: structuredClone(starter.tools || []), assumptions: structuredClone(starter.assumptions || []), notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, solidSpec: null, assemblySpec: null, review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
 
@@ -164,7 +174,7 @@ export function blankProject(title = 'Untitled concept') {
   return {
     id: crypto.randomUUID(), title, brief: '', summary: 'Describe the intended function, constraints and operating environment.',
     starterId: 'blank', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], tools: [], assumptions: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, solidSpec: null,
+    parts: [], wires: [], mechanicalConnections: [], steps: [], powerRails: [], tools: [], assumptions: [], notes: '', cadUrl: '', wiringUrl: '', referenceImage: null, traySpec: null, solidSpec: null, assemblySpec: null,
     review: { electrical: false, mechanical: false, sourcing: false }
   };
 }
@@ -209,6 +219,10 @@ export function mechanicalOnly(project) {
 
 export function validate(project) {
   const issues = [];
+  if (project.assemblySpec != null) {
+    try { issues.push(...assemblyIssues(project.assemblySpec, project.parts)); }
+    catch (error) { issues.push({kind:'error',text:`Assembly source needs correction: ${error.message}`}); }
+  }
   const ids = new Set();
   const partsById = new Map();
   for (const p of project.parts) {
@@ -355,6 +369,7 @@ export function safeProject(input) {
     referenceImage: safeReferenceImage(input.referenceImage),
     traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec),
     solidSpec: input.solidSpec == null ? null : validateSolidSpec(input.solidSpec),
+    assemblySpec: input.assemblySpec == null ? null : validateAssemblySpec(input.assemblySpec),
     cadUrl: /^https?:\/\//i.test(String(input.cadUrl || '')) ? String(input.cadUrl).slice(0, 2000) : '',
     wiringUrl: /^https?:\/\//i.test(String(input.wiringUrl || '')) ? String(input.wiringUrl).slice(0, 2000) : '',
     parts: input.parts.map((p, i) => ({ id: String(p.id || `part-${i}`).slice(0, 80), name: String(p.name || '').slice(0, 200), category: String(p.category || 'Other').slice(0, 80), qty: Number(p.qty), unitCost: Number(p.unitCost), detail: String(p.detail || '').slice(0, 2000), voltage: String(p.voltage || '').slice(0, 60), pins: safePinList(p.pins), sourceUrl: /^https?:\/\//i.test(String(p.sourceUrl || '')) ? String(p.sourceUrl).slice(0, 2000) : '', specUrl: /^https?:\/\//i.test(String(p.specUrl || '')) ? String(p.specUrl).slice(0, 2000) : '', checkedAt: '', verified: false })),
@@ -385,6 +400,7 @@ export function localAiDraft(input, brief, model) {
   project.wiringUrl = '';
   project.traySpec = null;
   project.solidSpec = null;
+  project.assemblySpec = null;
   project.parts = project.parts.map(part => ({ ...part, pins: [], unitCost: 0, sourceUrl: '', specUrl: '', checkedAt: '', verified: false }));
   project.steps = project.steps.map(step => ({ ...step, done: false }));
   project.powerRails = [];

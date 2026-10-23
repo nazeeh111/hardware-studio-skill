@@ -2,6 +2,7 @@
 import { readFile } from 'node:fs/promises';
 import { validateTraySpec } from './tray-spec.mjs';
 import { validateSolidSpec } from './solid-spec.mjs';
+import {validateAssemblySpec,assemblyIssues} from './assembly-spec.mjs';
 
 const path = process.argv[2];
 if (!path) { console.error('Usage: node check-project.mjs /absolute/path/to/project.json'); process.exit(2); }
@@ -23,6 +24,7 @@ try {
     try { validateSolidSpec(project.solidSpec); }
     catch (error) { issues.push(`solidSpec: ${error.message}`); }
   }
+  if(project?.assemblySpec!=null){try{validateAssemblySpec(project.assemblySpec);issues.push(...assemblyIssues(project.assemblySpec,Array.isArray(project.parts)?project.parts:[]).map(i=>'assemblySpec: '+i.text));}catch(error){issues.push('assemblySpec: '+error.message);}}
   const ids = new Set();
   const pinLists = new Map();
   for (const [i, part] of (Array.isArray(project?.parts) ? project.parts : []).entries()) {

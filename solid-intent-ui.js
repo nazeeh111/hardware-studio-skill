@@ -8,19 +8,22 @@ const option=(value,label)=>{const node=document.createElement('option');node.va
 
 // All source/project reads and the checked write are supplied by the workbench.
 // This controller never writes project records or engineering review marks.
-export function installSolidIntent({readState,apply,project,storageKey}){
+export function installSolidIntent({readState,apply,project,storageKey,boundPartId=null}){
  const $=id=>document.getElementById('solid-'+id),instruction=$('instruction'),mode=$('mode'),target=$('target'),models=$('model');
  let available=new Map(),controller=null,pending=null,previous=null,retention=true;
  const status=text=>{$('ai-status').textContent=text;};
  function retain(){if(!retention)return;try{sessionStorage.setItem(storageKey,JSON.stringify({instruction:instruction.value,mode:mode.value,target:target.value,model:models.value}));}catch{retention=false;$('intent-retention').textContent='Tab storage unavailable. Copy this request before leaving.';}}
  function context(){
   if(!project)return null;
-  const p=project(),part=p.parts.find(p=>p.id===target.value);
-  if(!part)throw new Error('Select the part this CAD source should represent. Add it in the studio if needed.');
+  const p=project(),matches=p.parts.filter(part=>part.id===(boundPartId||target.value));
+  if(!matches.length)throw new Error('Select the part this CAD source should represent. Add it in the studio if needed.');
+  if(matches.length!==1)throw new Error('The target part ID is duplicated. Resolve duplicate part IDs in the studio before requesting or applying CAD.');
+  const [part]=matches;
   return {project:{id:p.id,title:p.title,brief:p.brief,summary:p.summary},target:{id:part.id,name:part.name,category:part.category,detail:part.detail,qty:part.qty}};
  }
  function capture(){
   const state=readState();
+  if(state.contextError)throw new Error(state.contextError);
   if(state.dirty)throw new Error('Apply or discard unapplied source before requesting or applying a proposal.');
   if(state.blocked)throw new Error('Resolve saved-source recovery before requesting or applying a proposal.');
   if(state.currentRaw!==state.expectedRaw)throw new Error('Saved source changed in another tab. Reload after exporting your work.');
@@ -70,16 +73,19 @@ export function installSolidIntent({readState,apply,project,storageKey}){
  try{const raw=sessionStorage.getItem(storageKey);if(raw!==null){if(raw.length>12000)throw new Error();restored=JSON.parse(raw);if(typeof restored.instruction!=='string'||restored.instruction.length>2000||!['create','edit'].includes(restored.mode))throw new Error();instruction.value=restored.instruction;mode.value=restored.mode;}}
  catch{retention=false;$('intent-retention').textContent='The retained request could not be read. It has not been replaced; new text stays in memory.';}
  try{
-  const state=readState();if(!restored)mode.value=state.spec?'edit':'create';
+  const state=readState();if(!restored||(boundPartId&&!state.spec))mode.value=state.spec?'edit':'create';
   $('target-field').hidden=!project;
-  if(project){target.append(option('','Choose a project part'));for(const part of project().parts)target.append(option(part.id,part.name));if(restored?.target&&[...target.options].some(o=>o.value===restored.target))target.value=restored.target;}
+  if(project){
+   if(boundPartId){const matches=project().parts.filter(part=>part.id===boundPartId);if(matches.length!==1)throw new Error('The bound project part must have exactly one matching ID. Resolve missing or duplicate part IDs in the studio.');const [part]=matches;target.append(option(part.id,part.name+' / CAD attachment'));target.value=part.id;target.disabled=true;}
+   else{target.append(option('','Choose a project part'));for(const part of project().parts)target.append(option(part.id,part.name));if(restored?.target&&[...target.options].some(o=>o.value===restored.target))target.value=restored.target;}
+  }
  }catch(error){status(error.message);}
  for(const node of [instruction,mode,target,models])node.addEventListener(node===instruction?'input':'change',()=>{retain();refresh();});
  $('propose').addEventListener('click',async()=>{
   if(controller||!local()||!available.has(models.value))return;
   let captured;try{captured=capture();}catch(error){status(error.message);return;}
   const model=available.get(models.value),active=new AbortController();controller=active;const timer=setTimeout(()=>active.abort(),300000);retain();
-  const attempt={schema:'hardware-studio-solid-intent-v1',request:captured.request,identity:captured.identity,model:{name:model.name,digest:model.digest},capturedAt:new Date().toISOString(),output:null,rawResponse:null,error:null};
+  const attempt={schema:'hardware-studio-solid-intent-v1',request:captured.request,identity:captured.identity,model:{name:model.name,digest:model.digest},capturedAt:new Date().toISOString(),output:null,rawResponse:null,error:null,...(boundPartId?{binding:{kind:'assembly-part',projectId:captured.request.context.project.id,partId:boundPartId}}:{})};
   // Keep a completed proposal downloadable through failed or cancelled retries.
   if(pending?.output)previous=pending;
   pending=attempt;render();status('Proposing '+(mode.value==='create'?'a new part from the captured request':'edits to the captured source')+'… Cancel is available.');
@@ -103,7 +109,7 @@ export function installSolidIntent({readState,apply,project,storageKey}){
  $('discard').addEventListener('click',()=>{if(controller)return;pending=null;render();status('Proposal discarded. Current source retained.');});
  $('accept').addEventListener('click',()=>{
   if(controller||!pending||pending.output?.status!=='ready')return;
-  try{if(!current(pending))throw new Error('Request, model, target, project or source changed. Request a fresh proposal.');apply(pending.output.spec);pending.appliedAt=new Date().toISOString();refresh();status('Proposed source saved. Generate CAD to check geometry. The selected part is request context, not an assembly binding.');}
+  try{if(!current(pending))throw new Error('Request, model, target, project or source changed. Request a fresh proposal.');apply(pending.output.spec);pending.appliedAt=new Date().toISOString();refresh();status(boundPartId?'Proposed source saved for the bound assembly part. Other sources and placements were retained. Generate CAD to check geometry.':'Proposed source saved. Generate CAD to check geometry. The selected part is request context, not an assembly binding.');}
   catch(error){status(error.message);refresh();}
  });
  function download(record,name){
@@ -111,7 +117,8 @@ export function installSolidIntent({readState,apply,project,storageKey}){
   // The private identity includes a full selected-project signature for stale
   // checks. Export only the explicitly captured, bounded design context.
   const {identity,...report}=record;
-  const entries=[{name:'proposal.json',data:JSON.stringify(report,null,2)+'\n'},{name:'README.txt',data:'Local model proposal, not verified CAD. request retains the project brief and selected target part. It is context only: the project still has one shared solid source and no solved assembly or per-part CAD binding. Model text is untrusted. Review dimensions, apply explicitly, then generate and inspect a separate checked CAD package. No engineering evidence or review marks are set.\n'}];
+  const scope=boundPartId?'The captured target identifies the bound assembly part. Applying replaces only that part source, preserving other sources and placements. This ZIP does not prove the proposal was applied or geometrically verified.':'It is context only: the project still has one shared solid source and no solved assembly or per-part CAD binding.';
+  const entries=[{name:'proposal.json',data:JSON.stringify(report,null,2)+'\n'},{name:'README.txt',data:'Local model proposal, not verified CAD. The request retains the project brief and selected target part. '+scope+' Model text is untrusted. Review dimensions, apply explicitly, then generate and inspect a separate checked CAD package. No engineering evidence or review marks are set.\n'}];
   if(report.request.base)entries.push({name:'before-source.json',data:JSON.stringify(report.request.base,null,2)+'\n'});
   if(report.output?.spec)entries.push({name:'proposed-source.json',data:JSON.stringify(report.output.spec,null,2)+'\n'});
   const url=URL.createObjectURL(new Blob([createZip(entries)],{type:'application/zip'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);

@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-23",
+  "schema": "hardware-studio-assembly-trial-v1",
+  "observed": {
+    "explicitLegacyCopyToPlate": true,
+    "boundStandoffStartedEmpty": true,
+    "boundModelTargetLocked": true,
+    "manualPlacementsSaved": true,
+    "viewerMeshes": 3,
+    "viewerTriangles": 2036,
+    "pairDistancesMm": [
+      0,
+      0,
+      24
+    ],
+    "pairOverlapsMm3": [
+      0,
+      0,
+      0
+    ],
+    "deliberateIntrusionMm": 1,
+    "independentIntrusionVolumeMm3": 37.699111843078256,
+    "historyRestoredValidPlacements": true,
+    "actualProjectZipMatchesSource": true,
+    "reviewFlagsRemainFalse": true,
+    "blankCoordinateSurvivesReload": true,
+    "incompleteApplyBlocked": true,
+    "discardRetainsAppliedSource": true,
+    "narrow390IframeControlsFit": true,
+    "glbAndInspectionMatchWorldGeometry": true,
+    "canonicalThreeProjectsAndLegacyCadPreserved": true
+  },
+  "checks": {
+    "nodeTestsPassed": 182,
+    "assemblyTestsPassed": 9,
+    "existingCadServerTestsPassed": 5,
+    "independentIntent": "intent-verification.json",
+    "independentInterference": "interference/independent-check.json",
+    "portableExports": "export-verification.json"
+  },
+  "sourceSha256": {
+    "assembly-workbench.js": "bdab027b81c93d9324be5a5c99765ca09db1dc53d5b229531af0dcd266bcfe63",
+    "assembly-editor.js": "3ced7958f93b5786b73a3e5e9e7605c4a4195b827e3b34427c92b4eccde717a3",
+    "assembly-spec.js": "86f1a30c3e6660366d0b74e65621f5e8da237c8ff4973d24e68e8e9fe612d677",
+    "assembly-preview.js": "36e3f296f034d9ed127435f5f147a66863b5dc1dadb6005f8ffb94fc83a8604d",
+    "solid-workbench.js": "42319fe85c92cdf006c14c795c583dd434394ecab5d39c9a153e7f5eb442ad9d",
+    "solid-intent-ui.js": "39659a30f28806eb4877a7c911f54cf45faacf49a4207a9a2ae9a718301bb010",
+    "project-geometry.js": "24cd6df13489d7c27ff02a894fe5c8bae738ca98d2f4669757d5eafc3c51100c",
+    "tools/assembly-generator/assembly.py": "0cee214522bcbe4924f0b39f4d8f39f45bd2ae24dc7da7693a87d92b46164bf7",
+    "tools/tray-generator/server.py": "343a1d4393073e628e26976102c359f8d4ec9e62a2eb8455e10de879c7dc0f58"
+  },
+  "limits": [
+    "Explicit rigid placements, not automatic constraint or joint solving.",
+    "Same-kernel nominal geometry checks, without physical fit, manufacturing or material validation.",
+    "No new model call was made for this assembly trial; the plate source is the recorded prior local-model result.",
+    "Narrow layout was viewed in a390px iframe, not on a physical phone."
+  ]
+}

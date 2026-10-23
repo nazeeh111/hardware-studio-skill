@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { STARTERS, makeProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, safeReferenceImage, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from '../core.js';
+import {emptyAssembly,setAssemblyPartSource} from '../assembly-spec.js';
 
 const trayFixture = JSON.parse(readFileSync(new URL('../tools/tray-generator/examples/pico-neopixel-tray.json', import.meta.url)));
 
@@ -144,6 +145,7 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   raw.cadUrl = 'https://example.com/unverified-cad';
   raw.wiringUrl = 'https://example.com/unverified-wiring';
   raw.traySpec = trayFixture;
+  raw.assemblySpec = emptyAssembly('Model-generated assembly');
   raw.review = { electrical: true, mechanical: true, sourcing: true };
   const draft = localAiDraft(raw, 'USB plant monitor', 'qwen3:4b');
   assert.equal(draft.starterId, 'ai');
@@ -155,10 +157,25 @@ test('local model output cannot mark estimates or reviews as verified', () => {
   assert.equal(draft.cadUrl, '');
   assert.equal(draft.wiringUrl, '');
   assert.equal(draft.traySpec, null);
+  assert.equal(draft.assemblySpec, null);
   assert.equal(draft.review.electrical, false);
   assert.match(draft.summary, /unverified/);
   assert.doesNotMatch(draft.summary, /validated in CAD/);
   assert.match(draft.notes, /MODEL NOTES \/ UNVERIFIED/);
+});
+
+test('assembly CAD survives BOM removal while project validation exposes the orphan', () => {
+  const p = makeProject(STARTERS[0]);
+  assert.equal(p.assemblySpec,null);
+  const source = {schema:'hardware-studio-solid-v1',title:'Case',units:'mm',features:[{id:'body',operation:'add',shape:'box',origin:[0,0,0],size:[20,20,3]}],probes:[]};
+  const partId = p.parts[0].id;
+  p.assemblySpec = setAssemblyPartSource(null,partId,source,'Assembly');
+  p.assemblySpec.instances.push({id:'case-1',partId,position:[0,0,0],rotation:[0,0,0]});
+  p.parts = p.parts.filter(part => part.id !== partId);
+  const bytes = JSON.stringify(p.assemblySpec);
+  assert.ok(validate(p).some(issue => issue.code === 'missing-bom-part' && issue.partId === partId));
+  assert.equal(JSON.stringify(p.assemblySpec),bytes);
+  assert.deepEqual(safeProject(p).assemblySpec,p.assemblySpec);
 });
 
 test('local model output with broken references is rejected', () => {

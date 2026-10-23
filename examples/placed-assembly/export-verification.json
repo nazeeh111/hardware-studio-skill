@@ -1,0 +1,28 @@
+{
+  "inspectionManifestMatchesActualTransformedStl": true,
+  "meshes": 3,
+  "triangles": 2036,
+  "assumedMmBounds": {
+    "min": [
+      0,
+      0,
+      0
+    ],
+    "max": [
+      32,
+      48,
+      13
+    ],
+    "spans": [
+      32,
+      48,
+      13
+    ]
+  },
+  "glbNodes": 3,
+  "glbVertexPositionsMatchStlInMeters": true,
+  "glbBasis": "each node converts source Z-up to scene Y-up",
+  "limits": [
+    "Mesh export and nominal CAD readback are not physical fit or manufacturing validation."
+  ]
+}

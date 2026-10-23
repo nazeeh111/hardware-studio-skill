@@ -1,0 +1,132 @@
+{
+  "schema": "hardware-studio-inspection-sheet-v1",
+  "units": "mm (assumed from STL coordinates)",
+  "visibleMeshesOnly": true,
+  "displayLiftIncluded": false,
+  "positions": "original shared mesh positions",
+  "projection": "orthographic; no perspective",
+  "pixelsPerAssumedMm": 10,
+  "bounds": {
+    "min": [
+      0,
+      0,
+      0
+    ],
+    "max": [
+      32,
+      48,
+      13
+    ],
+    "spans": [
+      32,
+      48,
+      13
+    ]
+  },
+  "views": [
+    {
+      "name": "TOP",
+      "axes": "X → / Y ↑ · looking from +Z",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "FRONT",
+      "axes": "X → / Z ↑ · looking from −Y",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "RIGHT",
+      "axes": "Y → / Z ↑ · looking from +X",
+      "rotationColumnMajor": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "geometryEncoding": "Float32 little-endian interleaved x,y,z,nx,ny,nz for each rendered vertex",
+  "meshes": [
+    {
+      "name": "Instrument mounting plate / plate-1",
+      "triangles": 692,
+      "bounds": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          32,
+          48,
+          3
+        ]
+      },
+      "geometrySha256": "545fa8a288560d613b1fd2cbde47e617c4b0d3ca5d027e671e74fbddfa3ed733"
+    },
+    {
+      "name": "Bored standoff · 8 OD × 4 ID × 10 / standoff-1",
+      "triangles": 672,
+      "bounds": {
+        "min": [
+          12,
+          4,
+          3
+        ],
+        "max": [
+          20,
+          12,
+          13
+        ]
+      },
+      "geometrySha256": "f830551396d713805fdd758e6ffa1ff304ab66c46983ea3f5acfb6f517c83131"
+    },
+    {
+      "name": "Bored standoff · 8 OD × 4 ID × 10 / standoff-2",
+      "triangles": 672,
+      "bounds": {
+        "min": [
+          12,
+          36,
+          3
+        ],
+        "max": [
+          20,
+          44,
+          13
+        ]
+      },
+      "geometrySha256": "be3d9846052c5ee3fe4e966cd5371f66f6033eeae8722acfb338ac11e7668bf0"
+    }
+  ],
+  "limits": [
+    "Rendered mesh surfaces only; hidden cavities may not be visible.",
+    "Not a dimensioned engineering drawing or evidence of solid validity, fit, strength, tolerances or physical manufacture.",
+    "Pixel scale applies to the original PNG, not a resized or printed image."
+  ]
+}

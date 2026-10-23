@@ -1,0 +1,96 @@
+{
+  "volume_mm3": 5286.584013175397,
+  "min_mm": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "max_mm": [
+    32.0,
+    48.0,
+    13.0
+  ],
+  "assets": [
+    {
+      "partId": "plate",
+      "feature_history": [
+        {
+          "id": "box-0",
+          "operation": "add",
+          "volume_mm3": 4608.0,
+          "volume_delta_mm3": 4608.0,
+          "span_mm": [
+            48.0,
+            32.0,
+            3.0
+          ]
+        },
+        {
+          "id": "cyl-0",
+          "operation": "cut",
+          "volume_mm3": 4570.300888156923,
+          "volume_delta_mm3": -37.699111843076935,
+          "span_mm": [
+            48.0,
+            32.0,
+            3.0
+          ]
+        },
+        {
+          "id": "cyl-1",
+          "operation": "cut",
+          "volume_mm3": 4532.601776313845,
+          "volume_delta_mm3": -37.699111843077844,
+          "span_mm": [
+            48.0,
+            32.0,
+            3.0
+          ]
+        }
+      ],
+      "probes": []
+    },
+    {
+      "partId": "standoff",
+      "feature_history": [
+        {
+          "id": "outer",
+          "operation": "add",
+          "volume_mm3": 502.6548245743668,
+          "volume_delta_mm3": 502.6548245743668,
+          "span_mm": [
+            8.0,
+            8.0,
+            10.0
+          ]
+        },
+        {
+          "id": "bore",
+          "operation": "cut",
+          "volume_mm3": 376.99111843077515,
+          "volume_delta_mm3": -125.66370614359164,
+          "span_mm": [
+            8.0,
+            8.0,
+            10.0
+          ]
+        }
+      ],
+      "probes": [
+        {
+          "id": "bore-core",
+          "expect": "void",
+          "material_fraction": 0.0,
+          "passed": true
+        },
+        {
+          "id": "annular-wall",
+          "expect": "material",
+          "material_fraction": 1.0,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "placement_convention": "T*Rz*Ry*Rx; degrees around source origin; mm translation"
+}

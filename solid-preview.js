@@ -1,4 +1,4 @@
-import {solidContext} from './project-geometry.js?v=2';
+import {solidContext} from './project-geometry.js?v=3';
 import {validateSolidSpec} from './solid-spec.js?v=2';
 import {parseStl} from './stl.js?v=1';
 export const SOLID_PREVIEW_KEY='hardware-studio-solid-snapshot-v1';

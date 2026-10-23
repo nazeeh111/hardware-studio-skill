@@ -1,0 +1,120 @@
+{
+  "schema": "hardware-studio-interference-intent-check-v1",
+  "status": "passed",
+  "observed_assembly_status": "interference",
+  "archive_crc": "passed",
+  "archive_members": 16,
+  "retained_json_bytes_equal_archive": true,
+  "only_source_change": "standoff-1 position Z: 3 -> 2 mm; all other source fields and both asset sources unchanged",
+  "sha256": {
+    "browser_zip": "f895ae4b4074a1027281ff0a049996c6310e51f80eadd7f3882eb3d05262ed44",
+    "spec.json": "c44c29c885a2f24f9458e50baf05fc64119f86deba799fe9fad8272055c6d5a4",
+    "verification.json": "94f7ff7060d3f9064f65b39e8b85666a811fd675e2ba666b7b47d13e4c746028",
+    "expected_baseline": "87b955fb1b14764259e3f14b05e9b4967bd21a55a63fc174238c5a6e8e96acdc",
+    "verifier": "5ddddef4664729e7d8dc696c611f30fbd9737825522555f49bedc21350d432d7"
+  },
+  "instances": [
+    {
+      "instance": 1,
+      "change": "unchanged",
+      "bounds_mm": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          32.0,
+          48.0,
+          3.0
+        ]
+      ],
+      "volume_mm3": 4532.601776313842,
+      "matches_baseline_after_explicit_change": true
+    },
+    {
+      "instance": 2,
+      "change": "Z -1 mm",
+      "bounds_mm": [
+        [
+          12.0,
+          4.0,
+          2.0
+        ],
+        [
+          20.0,
+          12.0,
+          12.0
+        ]
+      ],
+      "volume_mm3": 376.99111843078333,
+      "matches_baseline_after_explicit_change": true
+    },
+    {
+      "instance": 3,
+      "change": "unchanged",
+      "bounds_mm": [
+        [
+          12.0,
+          36.0,
+          3.0
+        ],
+        [
+          20.0,
+          44.0,
+          13.0
+        ]
+      ],
+      "volume_mm3": 376.9911184307834,
+      "matches_baseline_after_explicit_change": true
+    }
+  ],
+  "combined": {
+    "solid_count": 3,
+    "bounds_mm": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        32.0,
+        48.0,
+        13.0
+      ]
+    ],
+    "volume_mm3": 5286.5840131754185,
+    "expected_volume_mm3": 5286.584013175396
+  },
+  "pairs": [
+    {
+      "firstId": "plate-1",
+      "secondId": "standoff-1",
+      "overlap_mm3": 37.699111843078256,
+      "analytic_expected_overlap_mm3": 37.69911184307752,
+      "minimum_distance_mm": 0.0,
+      "expected_distance_mm": 0
+    },
+    {
+      "firstId": "plate-1",
+      "secondId": "standoff-2",
+      "overlap_mm3": 0.0,
+      "analytic_expected_overlap_mm3": 0,
+      "minimum_distance_mm": 0.0,
+      "expected_distance_mm": 0
+    },
+    {
+      "firstId": "standoff-1",
+      "secondId": "standoff-2",
+      "overlap_mm3": 0.0,
+      "analytic_expected_overlap_mm3": 0,
+      "minimum_distance_mm": 24.0,
+      "expected_distance_mm": 24
+    }
+  ],
+  "reported_pairs_match_independent_checks": true,
+  "limits": [
+    "Independent direct STEP geometry comparison and analytic overlap checks use the same OpenCascade kernel as generation.",
+    "This deliberately overlapping nominal geometry is an interference demonstration, not a physically validated fit or build."
+  ]
+}

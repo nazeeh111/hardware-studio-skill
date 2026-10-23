@@ -1,4 +1,4 @@
-import { localAiDraft, mechanicalOnly, safeProject } from './core.js?v=40';
+import { localAiDraft, mechanicalOnly, safeProject } from './core.js?v=41';
 
 const text = (maxLength, minLength = 0) => ({ type: 'string', minLength, maxLength, ...(minLength ? { pattern: '\\S' } : {}) });
 const id = () => ({ type: 'string', minLength: 1, maxLength: 80, pattern: '^[A-Za-z0-9][A-Za-z0-9_-]*$' });

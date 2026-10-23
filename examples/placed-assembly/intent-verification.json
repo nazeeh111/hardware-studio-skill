@@ -1,0 +1,521 @@
+{
+  "schema": "hardware-studio-placed-assembly-intent-check-v1",
+  "status": "passed",
+  "scope": "This retained, explicitly dimensioned nominal placement study only.",
+  "source_equality": {
+    "browser_source_expected_assembly": true,
+    "zip_spec_expected_assembly": true,
+    "plate_matches_before_project": true
+  },
+  "archive_crc": "passed",
+  "extracted_member_count": 16,
+  "all_extracted_bytes_equal_archive": true,
+  "sha256": {
+    "browser_zip": "a527297cdef13579a558872d72240670cb02b99c0c825516b779a7469af28f09",
+    "browser_source": "4254059c3d35e34898a0bc907102ad7abc1a1e43d4851bf10a96da53eb16123b",
+    "expected_source": "87b955fb1b14764259e3f14b05e9b4967bd21a55a63fc174238c5a6e8e96acdc",
+    "before_project": "1f7e814271dbe80d19343885465f6972b19d7eac225da5fbb4ad7bb0b4241ba7",
+    "assembly_step": "09cec6d2ae531fade88f20339fc6f356164ec5f15d61e2c9754d93b3e8894ca9",
+    "verifier": "326ae3c1ec84e78765f0b458c73cb010aa418f5478026fe4746aff630a47630b"
+  },
+  "instances": [
+    {
+      "file": "instances/instance-001.step",
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        32.0,
+        48.0,
+        3.0
+      ],
+      "volume_mm3": 4532.601776313842,
+      "analytic_expected_volume_mm3": 4532.601776313845,
+      "cylindrical_faces": [
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            16.0,
+            8.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              14.0,
+              6.0,
+              0.0
+            ],
+            "max_mm": [
+              18.0,
+              10.0,
+              3.0
+            ]
+          }
+        },
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            16.0,
+            40.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              14.0,
+              38.0,
+              0.0
+            ],
+            "max_mm": [
+              18.0,
+              42.0,
+              3.0
+            ]
+          }
+        }
+      ],
+      "bore_void_checks": [
+        {
+          "center_xy_mm": [
+            16,
+            8
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        },
+        {
+          "center_xy_mm": [
+            16,
+            40
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        }
+      ],
+      "material_probe_overlap_mm3": 1.9999999999999996,
+      "stl": {
+        "triangles": 692,
+        "min_mm": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "max_mm": [
+          32.0,
+          48.0,
+          3.0
+        ]
+      },
+      "step_sha256": "a0ae7460bff5041a6c2eb628e5e1186e2e84657f946408c91738f570b7572fba",
+      "stl_sha256": "ec5eb168b10c2b0b99bd85a190e04a462f97dedf24f237dc6877147f61a30f98"
+    },
+    {
+      "file": "instances/instance-002.step",
+      "min_mm": [
+        12.0,
+        4.0,
+        3.0
+      ],
+      "max_mm": [
+        20.0,
+        12.0,
+        13.0
+      ],
+      "volume_mm3": 376.99111843078333,
+      "analytic_expected_volume_mm3": 376.99111843077515,
+      "cylindrical_faces": [
+        {
+          "radius_mm": 4.0,
+          "center_xy_mm": [
+            16.0,
+            8.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              12.0,
+              4.0,
+              3.0
+            ],
+            "max_mm": [
+              20.0,
+              12.0,
+              13.0
+            ]
+          }
+        },
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            16.0,
+            8.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              14.0,
+              6.0,
+              3.0
+            ],
+            "max_mm": [
+              18.0,
+              10.0,
+              13.0
+            ]
+          }
+        }
+      ],
+      "bore_void_checks": [
+        {
+          "center_xy_mm": [
+            16,
+            8
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        }
+      ],
+      "material_probe_overlap_mm3": 7.999999999999998,
+      "stl": {
+        "triangles": 672,
+        "min_mm": [
+          12.0,
+          4.0,
+          3.0
+        ],
+        "max_mm": [
+          20.0,
+          12.0,
+          13.0
+        ]
+      },
+      "step_sha256": "1a37935d6f42134aa6cd40585e592400f41028dbf35e93e3c7d7e1e741973279",
+      "stl_sha256": "9a9ec57711410342998c17791dda48127764845a8c7a41e28c8affde1ca768ad"
+    },
+    {
+      "file": "instances/instance-003.step",
+      "min_mm": [
+        12.0,
+        36.0,
+        3.0
+      ],
+      "max_mm": [
+        20.0,
+        44.0,
+        13.0
+      ],
+      "volume_mm3": 376.9911184307834,
+      "analytic_expected_volume_mm3": 376.99111843077515,
+      "cylindrical_faces": [
+        {
+          "radius_mm": 4.0,
+          "center_xy_mm": [
+            16.0,
+            40.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              12.0,
+              36.0,
+              3.0
+            ],
+            "max_mm": [
+              20.0,
+              44.0,
+              13.0
+            ]
+          }
+        },
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            16.0,
+            40.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              14.0,
+              38.0,
+              3.0
+            ],
+            "max_mm": [
+              18.0,
+              42.0,
+              13.0
+            ]
+          }
+        }
+      ],
+      "bore_void_checks": [
+        {
+          "center_xy_mm": [
+            16,
+            40
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        }
+      ],
+      "material_probe_overlap_mm3": 7.999999999999998,
+      "stl": {
+        "triangles": 672,
+        "min_mm": [
+          12.0,
+          36.0,
+          3.0
+        ],
+        "max_mm": [
+          20.0,
+          44.0,
+          13.0
+        ]
+      },
+      "step_sha256": "6abc8474e9a3a5cd66d8836b0b3a73d4c21879ee0568f8dc204fe1e7d1a424a3",
+      "stl_sha256": "b67b01a55897af124cee8bc7c9f9e0151a71131b7f8576c0f6b0c9ef6f4a20aa"
+    }
+  ],
+  "local_assets": [
+    {
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ],
+      "volume_mm3": 4532.6017763138425,
+      "analytic_expected_volume_mm3": 4532.601776313845,
+      "cylindrical_faces": [
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            8.0,
+            16.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              6.0,
+              14.0,
+              0.0
+            ],
+            "max_mm": [
+              10.0,
+              18.0,
+              3.0
+            ]
+          }
+        },
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            40.0,
+            16.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              38.0,
+              14.0,
+              0.0
+            ],
+            "max_mm": [
+              42.0,
+              18.0,
+              3.0
+            ]
+          }
+        }
+      ],
+      "bore_void_checks": [
+        {
+          "center_xy_mm": [
+            8,
+            16
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        },
+        {
+          "center_xy_mm": [
+            40,
+            16
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        }
+      ],
+      "material_probe_overlap_mm3": 1.9999999999999996
+    },
+    {
+      "min_mm": [
+        -4.0,
+        -4.0,
+        0.0
+      ],
+      "max_mm": [
+        4.0,
+        4.0,
+        10.0
+      ],
+      "volume_mm3": 376.99111843078333,
+      "analytic_expected_volume_mm3": 376.99111843077515,
+      "cylindrical_faces": [
+        {
+          "radius_mm": 4.0,
+          "center_xy_mm": [
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              -4.0,
+              -4.0,
+              0.0
+            ],
+            "max_mm": [
+              4.0,
+              4.0,
+              10.0
+            ]
+          }
+        },
+        {
+          "radius_mm": 2.0,
+          "center_xy_mm": [
+            0.0,
+            0.0
+          ],
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "surface_bounds": {
+            "min_mm": [
+              -2.0,
+              -2.0,
+              0.0
+            ],
+            "max_mm": [
+              2.0,
+              2.0,
+              10.0
+            ]
+          }
+        }
+      ],
+      "bore_void_checks": [
+        {
+          "center_xy_mm": [
+            0,
+            0
+          ],
+          "probe_radius_mm": 1.9,
+          "overlap_mm3": 0.0
+        }
+      ],
+      "material_probe_overlap_mm3": 7.999999999999998
+    }
+  ],
+  "combined": {
+    "min_mm": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "max_mm": [
+      32.0,
+      48.0,
+      13.0
+    ],
+    "solid_count": 3,
+    "volume_mm3": 5286.58401317542,
+    "analytic_expected_volume_mm3": 5286.584013175396
+  },
+  "pairs": [
+    {
+      "first_instance": 1,
+      "second_instance": 2,
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 0.0,
+      "expected_distance_mm": 0
+    },
+    {
+      "first_instance": 1,
+      "second_instance": 3,
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 0.0,
+      "expected_distance_mm": 0
+    },
+    {
+      "first_instance": 2,
+      "second_instance": 3,
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 24.0,
+      "expected_distance_mm": 24
+    }
+  ],
+  "negative_controls": [
+    {
+      "control": "standoff shifted +1 mm in world X",
+      "rejected": true,
+      "same_volume_mm3": 376.99111843078333,
+      "reason": "Expected 12, got 13.0."
+    },
+    {
+      "control": "plate rotated an extra +90 degrees about world Z",
+      "rejected": true,
+      "same_volume_mm3": 4532.6017763138425,
+      "reason": "Expected 0, got -48.00000000000001."
+    }
+  ],
+  "limits": [
+    "Direct STEP inspection and analytic expectations are independent of the generator report, but use the same OpenCascade kernel.",
+    "No joint constraints, fastener, material, load, manufacturing clearance, supplier accuracy or physical fit was tested.",
+    "Zero nominal distance is contact; it does not establish a manufacturable mating fit."
+  ]
+}

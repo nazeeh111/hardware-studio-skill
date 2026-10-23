@@ -1,9 +1,10 @@
+import {ASSEMBLY_PREVIEW_KEY,readAssemblySnapshot,assemblyMeshes,assemblyReadbackText} from './assembly-preview.js?v=1';
 import { installVisionPanel } from './vision-panel.js?v=3';
 import { INSPECTION_VIEWS, inspectionScene, inspectionManifest } from './inspection-sheet.js?v=2';
 import { createZip } from './zip.js?v=1';
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
 import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
-import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=3';
+import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=4';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
 let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, geometryRevision=0, pointers=new Map();
@@ -127,7 +128,7 @@ canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();status
 new ResizeObserver(draw).observe(canvas);draw();
 
 function leaveGeneratedMode(){
-  previewRecord=null;$('#generated-controls').hidden=true;$('#geometry-inputs').open=true;document.querySelector('.viewer-tools').insertBefore($('#geometry-inputs'),$('#viewer-status'));document.querySelector('.viewer-tools h2').textContent='A closer look.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / LOAD GEOMETRY';
+  previewRecord=null;$('#assembly-readback').hidden=true;$('#generated-status').classList.remove('interference');$('#generated-controls').hidden=true;$('#geometry-inputs').open=true;document.querySelector('.viewer-tools').insertBefore($('#geometry-inputs'),$('#viewer-status'));document.querySelector('.viewer-tools h2').textContent='A closer look.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / LOAD GEOMETRY';
   const url=new URL(location.href);if(url.searchParams.has('generated')){url.searchParams.delete('generated');history.replaceState(null,'',url);}
 }
 function generatedButtons(){ $('#retry-generated').disabled=generatedBusy;$('#download-generated').disabled=generatedBusy||!previewRecord||!meshes.length; }
@@ -137,12 +138,12 @@ async function generatePreview(){
   status('Generating fresh STEP/STL and reopening the exports locally…');
   $('#generated-status').textContent=`Frozen model: ${record.spec.title}. This preview uses the workbench dimensions captured when you opened it.`;
   try {
-    const response=await fetch(record.schema===SOLID_PREVIEW_KEY?'./api/solid-preview':'./api/tray-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    const response=await fetch(record.schema===ASSEMBLY_PREVIEW_KEY?'./api/assembly-preview':record.schema===SOLID_PREVIEW_KEY?'./api/solid-preview':'./api/tray-preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(record.schema===ASSEMBLY_PREVIEW_KEY?190000:130000)});
     if(!response.ok){let message='The local CAD service could not generate the preview.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}
-    const next=await (record.schema===SOLID_PREVIEW_KEY?solidMeshes:previewMeshes)(await response.json(),record.spec);
+    const payload=await response.json();const next=await (record.schema===ASSEMBLY_PREVIEW_KEY?assemblyMeshes:record.schema===SOLID_PREVIEW_KEY?solidMeshes:previewMeshes)(payload,record.spec);
     if(token!==sequence||previewRecord!==record)return;
     replaceMeshes(next);
-    $('#generated-status').textContent='Readback matched: STL hash, triangle count and dimensions. Physical fit remains untested.';
+    if(record.schema===ASSEMBLY_PREVIEW_KEY){const text=assemblyReadbackText(payload.verification);$('#generated-status').textContent=text.split('\n')[0]+' Joints, motion, tolerances and physical fit remain untested.';$('#generated-status').classList.toggle('interference',payload.verification.status==='interference');$('#assembly-readback').hidden=false;$('#assembly-pairs-summary').textContent='Nominal pair checks / '+payload.verification.pairs.length;$('#assembly-pairs').textContent=text;}else{$('#generated-status').textContent='Readback matched: STL hash, triangle count and dimensions. Physical fit remains untested.';$('#assembly-readback').hidden=true;$('#generated-status').classList.remove('interference');}
   }catch(error){if(token===sequence&&previewRecord===record){status(error.name==='TimeoutError'?'Preview timed out. Check the local server before retrying.':error.message,true);$('#generated-status').textContent='Preview unavailable. Return to the workbench or retry with the same frozen dimensions.';}}
   finally{generatedBusy=false;generatedButtons();}
 }
@@ -152,7 +153,7 @@ $('#download-generated').addEventListener('click',async()=>{
   const record=previewRecord;generatedBusy=true;generatedButtons();
   $('#generated-status').textContent='Regenerating a CAD ZIP from these frozen dimensions…';
   try{
-    const response=await fetch(record.schema===SOLID_PREVIEW_KEY?'./api/solid':'./api/tray',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(130000)});
+    const response=await fetch(record.schema===ASSEMBLY_PREVIEW_KEY?'./api/assembly':record.schema===SOLID_PREVIEW_KEY?'./api/solid':'./api/tray',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record.spec),signal:AbortSignal.timeout(record.schema===ASSEMBLY_PREVIEW_KEY?190000:130000)});
     if(!response.ok){let detail='CAD ZIP generation failed.';try{detail=(await response.json()).error||detail;}catch{}throw new Error(detail);}
     if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('The local service did not return a CAD ZIP.');
     const blob=await response.blob();if(previewRecord!==record)return;
@@ -162,8 +163,8 @@ $('#download-generated').addEventListener('click',async()=>{
   finally{generatedBusy=false;generatedButtons();}
 });
 const generatedMode=new URL(location.href).searchParams.get('generated');
-if(generatedMode==='1'||generatedMode==='solid'){
+if(generatedMode==='1'||generatedMode==='solid'||generatedMode==='assembly'){
   if(generatedMode==='solid'){document.querySelector('.back').href='./solid.html';document.querySelector('.back').textContent='SOLID MODELER ↗';}
-  try{previewRecord=generatedMode==='solid'?readSolidSnapshot(sessionStorage.getItem(SOLID_PREVIEW_KEY)):readPreviewSnapshot(sessionStorage.getItem(PREVIEW_KEY));document.querySelector('.back').href=previewRecord.returnTo;if(generatedMode==='solid')document.querySelector('.back').textContent='SOLID MODELER ↗';$('#generated-controls').hidden=false;$('#geometry-inputs').open=false;document.querySelector('.viewer-tools').append($('#geometry-inputs'));document.querySelector('.viewer-tools h2').textContent='Generated model.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / MODEL OUTPUT';void generatePreview();}
+  try{previewRecord=generatedMode==='assembly'?readAssemblySnapshot(sessionStorage.getItem(ASSEMBLY_PREVIEW_KEY)):generatedMode==='solid'?readSolidSnapshot(sessionStorage.getItem(SOLID_PREVIEW_KEY)):readPreviewSnapshot(sessionStorage.getItem(PREVIEW_KEY));document.querySelector('.back').href=previewRecord.returnTo;if(generatedMode==='solid')document.querySelector('.back').textContent='SOLID MODELER ↗';if(generatedMode==='assembly')document.querySelector('.back').textContent='ASSEMBLY WORKBENCH ↗';$('#generated-controls').hidden=false;$('#geometry-inputs').open=false;document.querySelector('.viewer-tools').append($('#geometry-inputs'));document.querySelector('.viewer-tools h2').textContent='Generated model.';document.querySelector('.viewer-tools>.eyebrow').textContent='01 / MODEL OUTPUT';void generatePreview();}
   catch(error){status(error.message,true);}
 }
