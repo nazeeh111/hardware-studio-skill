@@ -1,0 +1,15 @@
+{
+  "schema": "hardware-studio-tray-v1",
+  "units": "mm",
+  "title": "Prototype tray study",
+  "outer": {
+    "length": 120.0,
+    "width": 80.0,
+    "height": 25.0
+  },
+  "wall": 3.0,
+  "floor": 3.0,
+  "mounts": [],
+  "cutouts": [],
+  "lid": null
+}

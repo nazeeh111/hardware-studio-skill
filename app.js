@@ -1,7 +1,9 @@
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=32';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, localAiDraft, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, setProjectTraySpec } from './core.js?v=33';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { createZip } from './zip.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=2';
+import { createSketchPad } from './sketch-pad.js?v=1';
+import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
 
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -16,10 +18,13 @@ let traySyncTimer;
 let draftController = null;
 let pendingDraft = null;
 let pendingReference = null;
+const PENDING_REFERENCE_KEY='hardware-studio-pending-reference-v1';
+let sketchPad, sketchProjectId=null;
 let briefAnswers = {};
 let modelCapabilities = new Map();
 let unreadableSavedData = null;
 let storageUnavailable = false;
+let expectedWorkspaceRaw = null, conflictingWorkspace = null;
 const OLLAMA_URL = 'http://127.0.0.1:11434';
 const LOCAL_AI_SCHEMA = {
   type: 'object',
@@ -89,9 +94,16 @@ async function prepareReferenceImage(file) {
 }
 
 function renderReferenceInput() {
+  $('#draw-sketch').textContent=pendingReference?.sketch?'✎ Edit sketch':'✎ Draw sketch';
   const preview = $('#reference-preview');
   preview.hidden = !pendingReference;
   preview.innerHTML = pendingReference ? `<img src="${html(pendingReference.dataUrl)}" alt="Selected visual reference"><span>${html(pendingReference.name)} · ready to save</span><button id="remove-reference" type="button" aria-label="Remove reference image">×</button>` : '';
+}
+function updatePendingReference(reference){
+  pendingReference=reference;let retained=true;
+  try{if(reference)sessionStorage.setItem(PENDING_REFERENCE_KEY,JSON.stringify(reference));else sessionStorage.removeItem(PENDING_REFERENCE_KEY);}
+  catch{retained=false;showToast('Tab storage is unavailable. Create a project to keep this reference before reloading.');}
+  renderReferenceInput();return retained;
 }
 
 function renderBriefGuidance() {
@@ -122,6 +134,7 @@ async function draftWithLocalAi() {
   $('#create-from-brief').disabled = true;
   $('#local-model').disabled = true;
   $('#choose-reference').disabled = true;
+  $('#draw-sketch').disabled = true;
   $('#reference-file').disabled = true;
   if ($('#remove-reference')) $('#remove-reference').disabled = true;
   $('#local-ai-status').textContent = 'Drafting on this computer. This can take a few minutes.';
@@ -155,6 +168,7 @@ async function draftWithLocalAi() {
     $('#create-from-brief').disabled = false;
     $('#local-model').disabled = false;
     $('#choose-reference').disabled = false;
+    $('#draw-sketch').disabled = false;
     $('#reference-file').disabled = false;
     if ($('#remove-reference')) $('#remove-reference').disabled = false;
     $('#local-ai-status').textContent = failure || 'Optional local model draft. No paid API.';
@@ -207,8 +221,15 @@ function save(reason = 'edit', { skipRevision = false } = {}) {
     catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep this project.'); return false; }
     showRecovery(); showToast('Saved workspace data became unreadable. Download it before editing further.'); return false;
   }
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects, currentId })); }
-  catch { showToast('Local storage is full. Export your project to keep a copy.'); return false; }
+  try { expectedWorkspaceRaw = writeWorkspace(localStorage, STORAGE_KEY, expectedWorkspaceRaw, JSON.stringify({ projects, currentId })); }
+  catch (error) {
+    if (error instanceof WorkspaceConflictError) {
+      conflictingWorkspace = JSON.stringify({ projects, currentId }, null, 2);
+      $('#conflict-reload').disabled = true;
+      if (!$('#conflict-dialog').open) $('#conflict-dialog').showModal();
+    } else showToast('Local storage could not be written. Export your project to keep a copy.');
+    return false;
+  }
   if (!skipRevision && before && projectContentChanged(before, p)) {
     try { recordRevision(before, reason); }
     catch { queueMicrotask(() => showToast('Project saved, but revision history could not be stored. Export JSON for a backup.')); }
@@ -272,7 +293,7 @@ function exportPackage(p) {
   const traySpec = p.traySpec;
   const partNames = new Map(p.parts.map(part => [part.id, part.name]));
   const buildPlan = `${title}\nBuild plan exported ${generatedAt}\n\nTOOLS AND CONSUMABLES\n${(p.tools || []).length ? p.tools.map(tool => `- ${tool}`).join('\n') : '(not recorded)'}\n\nASSUMPTIONS AND PREREQUISITES\n${(p.assumptions || []).length ? p.assumptions.map(item => `- ${item}`).join('\n') : '(not recorded)'}\n\nSTEPS\n${p.steps.map((step, index) => `${index + 1}. [${step.phase}] ${step.title}${step.done ? ' (checked in this browser)' : ''}\n   ${step.detail}\n   Parts: ${(step.partIds || []).map(id => partNames.get(id) || `Missing: ${id}`).join(', ') || '(not linked)'}`).join('\n\n')}\n\nThis is a planning record, not a verified build procedure.\n`;
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Connection register](connections.csv): each recorded relationship and its pin-name review state; rows may still combine conductors.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
+  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Connection register](connections.csv): each recorded relationship and its pin-name review state; rows may still combine conductors.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}${reference?.sketch ? '\n- [Editable sketch](reference-sketch.json): original bounded strokes and labels, also retained in project.json; annotations are not measured specifications.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
   const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
   const archive = createZip([
     { name: 'README.md', data: readme },
@@ -285,7 +306,8 @@ function exportPackage(p) {
     { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
     { name: 'review.txt', data: report },
     ...(traySpec ? [{ name: 'tray-spec.json', data: JSON.stringify(traySpec, null, 2) + '\n' }] : []),
-    ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : [])
+    ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : []),
+    ...(reference?.sketch ? [{ name: 'reference-sketch.json', data: JSON.stringify(reference.sketch,null,2) }] : [])
   ]);
   download(`${filename(p)}-package.zip`, archive, 'application/zip');
   showToast('Project package downloaded. Diagrams are conceptual and checks remain open.');
@@ -379,7 +401,7 @@ function panelHead(kicker, title, description, actions = '') { return `<div clas
 function renderOverview(p) {
   const reference = safeReferenceImage(p.referenceImage);
   return panelHead('DESIGN RECORD', 'Working concept', 'Keep the goal, open decisions and review status in one place.') +
-    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div>${reference ? `<div class="project-reference"><div><span class="eyebrow accent">VISUAL REFERENCE / UNVERIFIED</span><p>${html(reference.name)} · Sketches and photos do not establish dimensions or electrical details.</p><button id="remove-project-reference" class="text-link" type="button">Remove image</button></div><img src="${html(reference.dataUrl)}" alt="Project visual reference"></div>` : ''}<div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
+    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div>${reference ? `<div class="project-reference"><div><span class="eyebrow accent">VISUAL REFERENCE / UNVERIFIED</span><p>${html(reference.name)} · Sketches and photos do not establish dimensions or electrical details.</p>${reference.sketch ? '<button id="edit-project-sketch" class="text-link" type="button">Edit sketch</button> · ' : ''}<button id="remove-project-reference" class="text-link" type="button">Remove image</button></div><img src="${html(reference.dataUrl)}" alt="Project visual reference"></div>` : ''}<div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
 }
 function renderParts(p) {
   const rows = p.parts.map((part, i) => { const checked = partReviewRecorded(part); return `<tr><td><div class="part-name">${html(part.name)}</div><div class="part-detail">${html(part.detail)}</div>${part.pins?.length ? `<div class="part-pin-count">${part.pins.length} recorded pin${part.pins.length === 1 ? '' : 's'}</div>` : ''}${safeUrl(part.sourceUrl) ? `<a class="source-link" href="${html(safeUrl(part.sourceUrl))}" target="_blank" rel="noopener noreferrer">Supplier ↗</a>` : ''}${safeUrl(part.specUrl) ? ` <a class="source-link" href="${html(safeUrl(part.specUrl))}" target="_blank" rel="noopener noreferrer">Specification ↗</a>` : ''}</td><td><span class="badge">${html(part.category)}</span></td><td>${html(part.qty)}</td><td>${Number(part.unitCost) === 0 ? '—' : money(part.unitCost)}</td><td><span class="badge ${checked ? '' : 'warn'}">${checked ? `Checked ${html(part.checkedAt.slice(0, 10))}` : part.verified ? 'Evidence missing' : 'Review'}</span></td><td><button class="text-link" data-edit-part="${i}" type="button">Edit</button></td></tr>`; }).join('');
@@ -583,14 +605,16 @@ function handleClick(event) {
     const next = blankProject(title); next.brief = composed.text; next.referenceImage = pendingReference;
     const openSummary = composed.openQuestions.length ? `${composed.openQuestions.length} design question${composed.openQuestions.length === 1 ? '' : 's'} ${composed.openQuestions.length === 1 ? 'remains' : 'remain'} open.` : 'Intake questions answered.';
     next.summary = `Custom concept. Add parts, connections and build steps. ${openSummary} No automatic design was generated.`;
-    if (addProject(next)) { $('#brief-input').value = ''; briefAnswers = {}; pendingReference = null; renderReferenceInput(); renderBriefGuidance(); }
+    if (addProject(next)) { $('#brief-input').value = ''; briefAnswers = {}; updatePendingReference(null); renderBriefGuidance(); }
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
   else if (button.id === 'choose-reference') $('#reference-file').click();
-  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; briefAnswers = {}; pendingReference = null; renderReferenceInput(); renderBriefGuidance(); } }
+  else if (button.id === 'draw-sketch' && !draftController) { sketchProjectId=null;sketchPad.open(pendingReference?.sketch); }
+  else if (button.id === 'edit-project-sketch' && !draftController) { sketchProjectId=p.id;sketchPad.open(p.referenceImage?.sketch,p.id); }
+  else if (button.id === 'accept-draft' && pendingDraft) { if (addProject(pendingDraft)) { pendingDraft = null; $('#draft-dialog').close(); $('#brief-input').value = ''; briefAnswers = {}; updatePendingReference(null); renderBriefGuidance(); } }
   else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
-  else if (button.id === 'remove-reference' && !draftController) { pendingReference = null; renderReferenceInput(); }
+  else if (button.id === 'remove-reference' && !draftController) { updatePendingReference(null); }
   else if (button.id === 'remove-project-reference') { if (editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
   else if (button.id === 'rename-project') openEditor('title', 0);
   else if (button.id === 'history-project') { if (syncCurrentTrayDraft(p)) openHistory(); }
@@ -599,11 +623,14 @@ function handleClick(event) {
   else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
   else if (button.dataset.recoverProject) recoverDeletedProject(button.dataset.recoverProject);
   else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = false; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
+  else if (button.id === 'conflict-export' && conflictingWorkspace !== null) { download('hardware-studio-unsaved-workspace.json', conflictingWorkspace, 'application/json'); $('#conflict-reload').disabled=false; }
+  else if (button.id === 'conflict-reload' && !button.disabled) location.reload();
+  else if (button.id === 'conflict-close') $('#conflict-dialog').close();
   else if (button.id === 'start-clean' && unreadableSavedData !== null && !$('#start-clean').disabled) {
     if (!window.confirm('Replace the unreadable workspace only after keeping its downloaded backup?')) return;
     const fresh = makeProject(STARTERS[0]);
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ projects: [fresh], currentId: fresh.id })); }
-    catch { return showToast('Could not start a new workspace. Original saved data remains in place.'); }
+    try { expectedWorkspaceRaw = writeWorkspace(localStorage, STORAGE_KEY, unreadableSavedData, JSON.stringify({ projects: [fresh], currentId: fresh.id })); }
+    catch { return showToast('Saved data changed or could not be written. Reload to inspect it; no workspace was replaced.'); }
     unreadableSavedData = null; projects = [fresh]; currentId = fresh.id; activeTab = 'overview'; $('#recovery-dialog').close(); render(); showToast('New workspace started. Keep the downloaded original for recovery.');
   }
   else if (button.id === 'import-project') $('#import-file').click();
@@ -640,7 +667,7 @@ function handleChange(event) {
   const p = current(); const target = event.target;
   if (target.id === 'reference-file') {
     const file = target.files?.[0]; target.value = ''; if (!file || draftController) return;
-    prepareReferenceImage(file).then(reference => { pendingReference = reference; renderReferenceInput(); showToast('Visual reference ready and kept on this device.'); }).catch(error => showToast(error.message || 'Could not read that image.'));
+    prepareReferenceImage(file).then(reference => { const retained=updatePendingReference(reference); if(retained)showToast('Visual reference ready and kept in this tab.'); }).catch(error => showToast(error.message || 'Could not read that image.'));
     return;
   }
   if (target.dataset.railField) {
@@ -668,8 +695,16 @@ function handleChange(event) {
   }
 }
 function initialize() {
+  sketchPad=createSketchPad({onUse(reference){
+    const safe=safeReferenceImage(reference);
+    if(sketchProjectId){const p=projects.find(item=>item.id===sketchProjectId);if(!p)throw new Error('That project is no longer available. Close the sketch and choose a project.');if(!editProject(p,'Before editing sketch',()=>{p.referenceImage=safe;p.review={electrical:false,mechanical:false,sourcing:false};}))throw new Error('The sketch could not be saved. Export your project to free storage, then try again.');}
+    else{const retained=updatePendingReference(safe);if(!retained)return {keepDraft:true};}
+    showToast('Sketch attached with editable strokes.');return true;
+  }});
   let rawSavedData = null;
-  try { rawSavedData = localStorage.getItem(STORAGE_KEY); }
+  try{const pending=sessionStorage.getItem(PENDING_REFERENCE_KEY);if(pending&&pending.length<=500000)pendingReference=safeReferenceImage(JSON.parse(pending));}catch{ /* Keep unreadable bytes intact; choosing another reference replaces them. */ }
+  renderReferenceInput();
+  try { rawSavedData = localStorage.getItem(STORAGE_KEY); expectedWorkspaceRaw = rawSavedData; }
   catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep projects.'); }
   try {
     if (!storageUnavailable && rawSavedData !== null) {

@@ -1,0 +1,16 @@
+{
+  "status": "kernel-valid; physical fit untested",
+  "units": "mm",
+  "source_spec_sha256": "9a6fab317e0089062b1f83702e6db498923617de0a047efeeca5eaa82af1cbb8",
+  "outer_span_mm": [
+    120.0,
+    80.0,
+    25.0
+  ],
+  "volume_mm3": 54408.0,
+  "mount_count": 0,
+  "cutout_count": 0,
+  "solid_valid": true,
+  "vendor_models_included": false,
+  "lid": null
+}

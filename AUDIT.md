@@ -31,7 +31,7 @@ The scan did not find a source-backed XSS, CSV formula injection, ZIP traversal,
 
 ## Verification after fixes
 
-- Node app tests: **36 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
+- Node app tests: **43 passed**, including binary/ASCII STL parsing, malformed coordinates, real example dimensions and GLB conversion.
 - OpenCascade generator, fit and loopback-server tests: **12 passed**, including the new GET/HEAD Host and directory checks.
 - The app's source syntax, example structural checks, Markdown links, live Pages bytes and installed skill copy should be rechecked at each new publication; a successful local test is not a deployed revision.
 
@@ -45,3 +45,22 @@ The example power worksheet remains incomplete. Current draw, branch ratings, vo
 
 
 The direct workbench-to-viewer flow generated a custom 90 × 60 × 20 mm tray and 95 × 65 × 5.5 mm window cover in an isolated local browser. The viewer checked mesh hashes, triangle counts and dimensions against the fresh readback, survived reload using the frozen session snapshot, and downloaded a CAD ZIP. Independent inspection of that actual ZIP passed CRC and confirmed the same specification, spans and STL hashes. Snapshot expiry, changed specs, corrupted mesh bytes and mismatched readback dimensions have negative tests. A source reviewer caught an uncovered-tray null-lid error; it was fixed and covered in both client and endpoint tests. All four server tests passed after the fix. This workflow has not been included in a new security scan.
+
+
+## Editable sketch review
+
+The drawing pad was exercised with nine strokes and three text labels: clear and undo restored the drawing, closing and reopening retained an unfinished draft, saved editing survived reload, and an actual downloaded project ZIP passed CRC. Its 12-action `reference-sketch.json` matched the project source exactly; the 10,591-byte JPEG matched the decoded project reference and visually excluded the drawing grid. The desktop dialog and narrow-width layout were inspected; at a 390-pixel viewport the document and dialog stayed within the viewport. The in-app screenshot capture under mobile emulation was scaled inconsistently, so this is not evidence of physical-device touch testing.
+
+Independent source review found that attaching a sketch before creating a project could lose it on reload. Pending image and vector data now persist in the tab session, and a failed session write retains the unfinished source. Reload before project creation restored the editable pending reference in the browser; a controlled storage check confirmed save, remove and failure behavior. Saved project edits use the existing write rollback and reset review marks. The Node sketch checks cover history branching, deep-copy isolation, malformed and oversized source rejection, and project import. These new files have not undergone another security scan. Image understanding, arbitrary geometry and physical engineering checks remain separate open work.
+
+
+## Cross-tab and unreadable tray recovery
+
+A fresh source review found two preservation defects: a stale app tab could overwrite the complete workspace saved by another tab, and opening a tray workbench could overwrite an unreadable tray draft with fallback geometry. Both paths now compare saved bytes with the tab's startup/last-save baseline before writing. A mismatch blocks the write. The app offers an attempted-workspace JSON backup before explicit reload; the tray editor preserves original bytes, permits current-spec download, and requires an original-byte download before explicit replacement. Recovery of an unreadable main workspace also refuses to replace changed bytes.
+
+An isolated two-tab browser test created a project in one tab, blocked project creation from the stale second tab, then enabled reload only after a backup download and restored the newer two-project workspace. An unreadable tray fixture stayed protected on open; its actual downloaded backup matched the original `{broken-review-draft` bytes exactly, and explicit replacement persisted valid geometry after reload. Two Node tests cover stale creation/edit/deletion and write failure. All 41 Node tests and all 12 OpenCascade/fit/server tests passed in this review. The guard detects stale reads; localStorage has no cross-tab transaction, so this is not simultaneous collaborative editing. Final cross-tab and tray patches were checked directly after the independent reviewer identified the defects; that reviewer did not complete a final patch pass.
+
+
+## Local text-to-tray trial
+
+The real installed qwen3:4b model first returned unsupported fields, which were rejected while retaining dimensions. A schema-constrained request returned 120 × 80 × 25 mm with 3 mm wall/floor. The complete proposal was visible; a changed form blocked acceptance. After acceptance, its actual browser-downloaded spec matched those numbers. The original generator built it and a fresh process read back one solid, matching STEP/STL spans, 28 triangles and 54,408 mm³ volume. The model assumption contained a textual width typo while the numeric parameter was correct. See [trial evidence and limits](examples/text-edited-tray/README.md). This is one simple case, not general model-quality or arbitrary CAD verification. Node43/43 passed; unchanged CAD/server12/12 passed earlier in this review.

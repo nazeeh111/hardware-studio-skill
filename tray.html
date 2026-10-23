@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Tray workbench — Hardware Studio</title>
-  <link rel="stylesheet" href="./tray.css?v=5">
+  <link rel="stylesheet" href="./tray.css?v=6">
 </head>
 <body>
   <header class="bar"><a class="brand" href="./index.html"><span class="mark">H<span>+</span></span> HARDWARE <em>/ STUDIO</em></a><span class="edition">MECHANICAL WORKBENCH / 001</span><a class="back" href="./index.html">← Return to studio</a></header>
@@ -15,6 +15,7 @@
     <section class="workspace">
       <div class="editor">
         <div class="section-head"><span>01</span><div><h2>Envelope</h2><p>Outer dimensions and shell thickness in millimeters.</p></div></div>
+        <section class="intent-panel" aria-labelledby="intent-title"><div class="eyebrow">OPTIONAL / TEXT EDIT</div><h2 id="intent-title">Describe the change.</h2><p>Propose edits to the dimensions below with a local model. Supported tray features only; review the complete proposal before applying.</p><label for="intent-instruction">Requested changes<textarea id="intent-instruction" maxlength="2000" rows="3" placeholder="Make the tray 120 × 80 × 25 mm, with 3 mm walls and floor. Keep the other features."></textarea></label><div class="actions"><select id="intent-model" aria-label="Local text-edit model"></select><button id="intent-propose" type="button" disabled>Propose parameter edits ↗</button><button id="intent-cancel" type="button" hidden>Cancel</button></div><p id="intent-status" class="cad-status" role="status">Checking local models…</p><div id="intent-review" hidden><h3>Review proposed parameters</h3><p id="intent-assumptions"></p><pre id="intent-preview"></pre><div class="actions"><button id="intent-discard" type="button">Discard</button><button id="intent-apply" class="primary" type="button">Apply to dimension fields</button></div></div></section>
         <form id="tray-form" novalidate>
           <label class="wide">Study name<input id="title" name="title" maxlength="100" required></label>
           <div class="measure-grid">
@@ -49,6 +50,7 @@
       <aside class="output">
         <div class="output-head"><span class="eyebrow">LIVE / TOP VIEW</span><span id="status-chip">CHECKING</span></div>
         <div id="preview" class="preview" aria-live="polite"></div>
+        <section id="tray-storage-recovery" class="notice" hidden><strong>Saved draft preserved</strong><p>The saved draft is unreadable or changed in another tab. This form is not replacing it. Download the original bytes before choosing to replace them with the current valid form.</p><button id="backup-tray-draft" type="button">Download saved draft bytes</button><button id="replace-tray-draft" type="button" disabled>Replace saved draft with this form</button></section>
         <p id="status" class="status" role="status">Checking geometry…</p>
         <div class="drawing-key"><span><i class="swatch shell-color"></i> Shell</span><span><i class="swatch boss-color"></i> Boss / locator</span><span><i class="swatch opening-color"></i> Opening</span></div>
         <div class="actions"><button id="preview-cad" class="primary" type="button" disabled>Generate and inspect in 3D ↗</button><button id="generate-cad" class="primary" type="button" disabled>Generate STEP/STL package ↗</button><button id="download" type="button" disabled>Download CAD spec ↓</button><button id="load-example" type="button">Load Pico example</button><label class="file-button">Import spec<input id="import-spec" type="file" accept="application/json,.json" hidden></label></div>
@@ -67,6 +69,6 @@
     </section>
     <footer>HARDWARE / STUDIO <span>Modeled geometry is not physical fit or fabrication approval.</span></footer>
   </main>
-  <script type="module" src="./tray-workbench.js?v=13"></script>
+  <script type="module" src="./tray-workbench.js?v=16"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import { validateTraySpec } from './tray-spec.js';
+import { validateSketch } from './sketch-data.js?v=1';
 
 export const STORAGE_KEY = 'hardware-studio-projects-v1';
 export const REVISIONS_KEY = 'hardware-studio-revisions-v1';
@@ -31,7 +32,7 @@ export function safeReferenceImage(input) {
       !/^data:image\/jpeg;base64,\/9j\/(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input.dataUrl)) {
     throw new Error('The reference image must be a small JPEG saved by this app.');
   }
-  return { name: input.name, dataUrl: input.dataUrl };
+  return { name: input.name, dataUrl: input.dataUrl, ...(input.sketch == null ? {} : {sketch:validateSketch(input.sketch)}) };
 }
 
 export function projectContentChanged(before, after) {

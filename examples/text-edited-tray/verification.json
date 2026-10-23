@@ -1,0 +1,28 @@
+{
+  "status": "fresh-process same-kernel readback passed; physical fit untested",
+  "solid_count": 1,
+  "outer_span_mm": [
+    120.0,
+    80.0,
+    25.0
+  ],
+  "volume_mm3": 54408.0,
+  "stl_triangles": 28,
+  "stl_outer_span_mm": [
+    120.0,
+    80.0,
+    25.0
+  ],
+  "sha256": {
+    "spec.json": "5ac5020335931031ef33d7bbc619b0680ef5dda700e361ae383334ccbc6eb204",
+    "tray.step": "211873426d932ca1caecac65588529739563bf399cd0abad30f45167dc64ec92",
+    "tray.stl": "a3d0fe39df8288641df3f439db473447f6afba7f66da8a9ce8100c3c026b085d",
+    "layout.svg": "ba799f77a69e49e0b08b3902ad4170fea2f82307f0af276cbe31d9086f2acee3"
+  },
+  "lid": null,
+  "limits": [
+    "Same OpenCascade kernel wrote and read STEP.",
+    "No manufacturer models, printed sample, connector access or physical tolerances were checked.",
+    "The optional lift-off cover has no retention, seal, or proven cable access."
+  ]
+}

@@ -1,5 +1,7 @@
+import { installTrayIntent } from './tray-intent.js?v=2';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { STORAGE_KEY } from './core.js?v=29';
+import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
 import { PREVIEW_KEY, previewSnapshot } from './cad-preview.js?v=1';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -10,6 +12,7 @@ const idField = (label, key, value) => `<label class="wide-field">${label}<input
 const num = 'type="number" step="0.1"';
 let draft = null;
 let storageKey = '';
+let expectedTrayRaw = null, preservedTrayRaw = null, trayStorageBlocked = false;
 let cadAvailable = false;
 let previewAvailable = false;
 let cadBusy = false;
@@ -94,8 +97,15 @@ function show() {
     draft = spec;
     $('#preview').innerHTML = svg(spec);
     let persisted = false;
-    try { if (storageKey) { localStorage.setItem(storageKey, JSON.stringify(spec)); persisted = true; } } catch { /* The file download still works. */ }
-    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${spec.lid?.window ? `Opening ${spec.lid.window.length.toFixed(1)} × ${spec.lid.window.width.toFixed(1)} mm has no diffuser. ` : ''}${persisted ? 'Draft saved in this browser.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
+    try { if (storageKey && !trayStorageBlocked) { expectedTrayRaw = writeWorkspace(localStorage, storageKey, expectedTrayRaw, JSON.stringify(spec)); persisted = true; } }
+    catch (error) {
+      if (error instanceof WorkspaceConflictError) {
+        preservedTrayRaw = localStorage.getItem(storageKey); trayStorageBlocked = true;
+        $('#tray-storage-recovery').hidden = false; $('#replace-tray-draft').disabled = true;
+      }
+      // Keep the form and spec export available when storage cannot be written.
+    }
+    $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${spec.lid?.window ? `Opening ${spec.lid.window.length.toFixed(1)} × ${spec.lid.window.width.toFixed(1)} mm has no diffuser. ` : ''}${persisted ? 'Draft saved in this browser.' : trayStorageBlocked ? 'Saved draft preserved; this form has not replaced it. Download the current spec to keep these edits.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
     $('#status').classList.remove('error');
     $('#status-chip').textContent = 'SPEC READY'; $('#status-chip').classList.remove('invalid');
     updateCadButton();
@@ -212,7 +222,18 @@ function initialize() {
   const projectTitle = (url.searchParams.get('title') || 'Prototype').slice(0, 80);
   let initial = { schema, title: `${projectTitle} tray study`, units: 'mm', outer: { length: 80, width: 55, height: 18 }, wall: 2.5, floor: 2.5, mounts: [], cutouts: [] };
   let loaded = false;
-  try { const saved = localStorage.getItem(storageKey); if (saved) { initial = validateTraySpec(JSON.parse(saved)); loaded = true; } } catch { /* Try the project record next. */ }
+  try { expectedTrayRaw = localStorage.getItem(storageKey); if (expectedTrayRaw !== null) { initial = validateTraySpec(JSON.parse(expectedTrayRaw)); loaded = true; } }
+  catch { if (expectedTrayRaw !== null) { preservedTrayRaw = expectedTrayRaw; trayStorageBlocked = true; $('#tray-storage-recovery').hidden = false; } }
+  $('#backup-tray-draft').addEventListener('click', () => {
+    const raw = preservedTrayRaw ?? ''; const blob = new Blob([raw], {type:'application/json'}), url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a'); anchor.href=url; anchor.download='hardware-studio-original-tray-draft.json'; anchor.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+    $('#replace-tray-draft').disabled=false;
+  });
+  $('#replace-tray-draft').addEventListener('click', () => {
+    if (!draft || $('#replace-tray-draft').disabled) return;
+    try { expectedTrayRaw = writeWorkspace(localStorage,storageKey,preservedTrayRaw,JSON.stringify(draft)); trayStorageBlocked=false;preservedTrayRaw=null;$('#tray-storage-recovery').hidden=true;show(); }
+    catch { $('#replace-tray-draft').disabled=true;try { preservedTrayRaw=localStorage.getItem(storageKey); } catch {} $('#status').textContent='Saved draft changed again or could not be written. Back up the current saved bytes before replacing it.'; }
+  });
   if (!loaded && projectId) {
     try {
       const workspace = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -221,6 +242,7 @@ function initialize() {
     } catch { /* Keep the blank measured study. */ }
   }
   populate(initial);
+  installTrayIntent({readSpec:readForm,applySpec:populate});
   void detectCadService();
   $('#tray-form').addEventListener('submit', event => event.preventDefault());
   $('#tray-form').addEventListener('input', event => { if (event.target.id === 'lid-enabled' || event.target.id === 'lid-window-enabled') syncCoverInputs(); show(); });
