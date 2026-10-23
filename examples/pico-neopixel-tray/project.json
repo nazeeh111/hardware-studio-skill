@@ -1,7 +1,7 @@
 {
   "title": "Pico + NeoPixel prototype tray",
   "brief": "An open, dimensioned tray and a provisional 5 V electrical prototype for a Raspberry Pi Pico Rev3 and Adafruit NeoPixel Stick #1426.",
-  "summary": "Two-board tray checked against maker STEP models. The proposed 5 V / 2 A source now has separate conceptual +5 V, ground, data, enable and capacitor conductor rows. Junction terminals, branch ratings, remaining loads, auxiliary fit and measurements remain open.",
+  "summary": "Two-board tray checked against maker STEP models. Proposed 5 V power splits through two separate WAGO 221-415 connectors into Pico USB, Stick and an off-tray Perma-Proto shifter board. Port labels are assembly assignments; branch ratings, exact board holes, loads and measurements remain open.",
   "cadUrl": "https://github.com/nazeeh111/hardware-studio-skill/tree/main/examples/pico-neopixel-tray",
   "wiringUrl": "https://github.com/nazeeh111/hardware-studio-skill/blob/main/examples/pico-neopixel-tray/electrical-plan.md",
   "starterId": "imported",
@@ -160,15 +160,86 @@
       ]
     },
     {
-      "id": "branch-junction",
-      "name": "Insulated 5 V / GND distribution junction, exact hardware TBD",
+      "id": "junction-plus",
+      "name": "WAGO 221-415 five-conductor splice, +5 V (proposed)",
       "category": "Power interface",
       "qty": 1,
       "unitCost": 0,
-      "detail": "Connect one input pair from #368 to three protected and retained branch pairs: Pico USB, NeoPixel input, and AHCT supply. Choose an exact connector or fabricated board with documented contact, wire and insulation ratings before wiring. Not in tray CAD.",
+      "detail": "One +5 V common splice. Project-assigned ports 1–4: #368 feed, Pico USB, Stick, Perma-Proto. Port 5 unused. Port labels are assembly positions, not manufacturer-printed terminal numbers. WAGO lists five conductor positions and 24–12 AWG; do not infer a 22 AWG assembly current rating from a larger-wire connector rating. External to tray CAD.",
       "voltage": "5 V",
-      "sourceUrl": "",
-      "specUrl": "",
+      "sourceUrl": "https://www.wago.com/us/wire-splicing-connectors/compact-splicing-connector/p/221-415",
+      "specUrl": "https://www.wago.com/us/wire-splicing-connectors/compact-splicing-connector/p/221-415",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "ASSIGNED PORT 1",
+        "ASSIGNED PORT 2",
+        "ASSIGNED PORT 3",
+        "ASSIGNED PORT 4",
+        "ASSIGNED PORT 5"
+      ]
+    },
+    {
+      "id": "junction-ground",
+      "name": "WAGO 221-415 five-conductor splice, GND (proposed)",
+      "category": "Power interface",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Separate common ground splice. Project-assigned ports 1–4: #368 return, Pico USB, Stick, Perma-Proto. Port 5 unused. Port labels are assembly positions only. Keep the +5 V connector physically separate and unmistakably marked. External to tray CAD.",
+      "voltage": "0 V",
+      "sourceUrl": "https://www.wago.com/us/wire-splicing-connectors/compact-splicing-connector/p/221-415",
+      "specUrl": "https://www.wago.com/us/wire-splicing-connectors/compact-splicing-connector/p/221-415",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "ASSIGNED PORT 1",
+        "ASSIGNED PORT 2",
+        "ASSIGNED PORT 3",
+        "ASSIGNED PORT 4",
+        "ASSIGNED PORT 5"
+      ]
+    },
+    {
+      "id": "proto-1609",
+      "name": "Adafruit Perma-Proto half-size PCB #1609 (proposed)",
+      "category": "Electronics carrier",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "Off-tray 51 × 81 mm soldered carrier for SN74AHCT125N and its local 5 V/GND ties. Maker lists four marked power rails, not an assembled rail current rating. The project +/− bus labels are net names, not exact hole addresses; map and continuity-check individual holes before soldering. Do not route the LED or Pico USB branch through this board.",
+      "voltage": "5 V",
+      "sourceUrl": "https://www.adafruit.com/product/1609",
+      "specUrl": "https://www.adafruit.com/product/1609",
+      "checkedAt": "",
+      "verified": false,
+      "pins": [
+        "ASSIGNED +5V BUS",
+        "ASSIGNED GND BUS"
+      ]
+    },
+    {
+      "id": "wire-red-288",
+      "name": "Adafruit #288 red 22 AWG solid insulated wire (proposed)",
+      "category": "Wiring material",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "25 ft spool proposed for stationary +5 V branch conductors. WAGO 221-415 and #3972 gauge ranges include 22 AWG. Actual cut lengths, #368 clamp fit, 22 AWG branch ampacity, voltage drop, solder termination and strain relief still need review.",
+      "voltage": "5 V",
+      "sourceUrl": "https://www.adafruit.com/product/288",
+      "specUrl": "https://www.adafruit.com/product/288",
+      "checkedAt": "",
+      "verified": false,
+      "pins": []
+    },
+    {
+      "id": "wire-black-290",
+      "name": "Adafruit #290 black 22 AWG solid insulated wire (proposed)",
+      "category": "Wiring material",
+      "qty": 1,
+      "unitCost": 0,
+      "detail": "25 ft spool proposed for stationary ground branch conductors. Mark polarity, measure cut lengths, check retention/ampacity/voltage drop and add strain relief. Do not treat wire color as a substitute for a meter check.",
+      "voltage": "0 V",
+      "sourceUrl": "https://www.adafruit.com/product/290",
+      "specUrl": "https://www.adafruit.com/product/290",
       "checkedAt": "",
       "verified": false,
       "pins": []
@@ -213,38 +284,38 @@
     {
       "from": "barrel-368",
       "fromPin": "+",
-      "to": "branch-junction",
-      "toPin": "",
-      "signal": "+5 V feed to unselected junction",
+      "to": "junction-plus",
+      "toPin": "ASSIGNED PORT 1",
+      "signal": "+5 V source feed to WAGO splice",
       "voltage": "5 V",
-      "note": "Exact junction terminal, contact rating and wire retention remain open."
+      "note": "22 AWG solid conductor proposed; port number is assembly-assigned, not printed by WAGO. Verify #368 clamp, strip length and unpowered polarity."
     },
     {
       "from": "barrel-368",
       "fromPin": "-",
-      "to": "branch-junction",
-      "toPin": "",
-      "signal": "GND return to unselected junction",
+      "to": "junction-ground",
+      "toPin": "ASSIGNED PORT 1",
+      "signal": "GND source return to WAGO splice",
       "voltage": "0 V",
-      "note": "Exact junction terminal, contact rating and wire retention remain open."
+      "note": "22 AWG solid conductor proposed; port number is assembly-assigned, not printed by WAGO. Verify #368 clamp, strip length and unpowered polarity."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "junction-plus",
+      "fromPin": "ASSIGNED PORT 2",
       "to": "usb-plug-3972",
       "toPin": "A V+",
       "signal": "Pico USB branch +5 V",
       "voltage": "5 V",
-      "note": "#3972 terminal A is USB pin 1 V+; verify branch wire and contact rating."
+      "note": "#3972 terminal A is USB pin 1 V+; verify branch wire and contact rating. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "junction-ground",
+      "fromPin": "ASSIGNED PORT 2",
       "to": "usb-plug-3972",
       "toPin": "E GND",
       "signal": "Pico USB branch GND",
       "voltage": "0 V",
-      "note": "#3972 terminal E is USB pin 5 GND; leave B/C/D disconnected."
+      "note": "#3972 terminal E is USB pin 5 GND; leave B/C/D disconnected. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
     },
     {
       "from": "usb-plug-3972",
@@ -265,103 +336,121 @@
       "note": "Verify continuity to Pico board ground with power disconnected."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "junction-plus",
+      "fromPin": "ASSIGNED PORT 3",
       "to": "neopixel-1426",
       "toPin": "5VDC",
       "signal": "Stick input +5 V branch",
       "voltage": "5 V",
-      "note": "Use the DIN end and check pad label on the delivered Stick revision."
+      "note": "Use the DIN end and check pad label on the delivered Stick revision. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "junction-ground",
+      "fromPin": "ASSIGNED PORT 3",
       "to": "neopixel-1426",
       "toPin": "GND",
       "signal": "Stick input GND return",
       "voltage": "0 V",
-      "note": "Ground is shared with Pico and AHCT; check delivered pad label."
+      "note": "Ground is shared with Pico and AHCT; check delivered pad label. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "junction-plus",
+      "fromPin": "ASSIGNED PORT 4",
+      "to": "proto-1609",
+      "toPin": "ASSIGNED +5V BUS",
+      "signal": "Low-current shifter board +5 V feed",
+      "voltage": "5 V",
+      "note": "Place 0.1 µF bypass across VCC/GND close to IC. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
+    },
+    {
+      "from": "junction-ground",
+      "fromPin": "ASSIGNED PORT 4",
+      "to": "proto-1609",
+      "toPin": "ASSIGNED GND BUS",
+      "signal": "Low-current shifter board GND feed",
+      "voltage": "0 V",
+      "note": "Verify PDIP-14 orientation on the purchased part. WAGO port position is assembly-assigned, not printed; confirm wire retention and current for this branch."
+    },
+    {
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "VCC",
-      "signal": "AHCT VCC pin 14 branch",
+      "signal": "Local shifter VCC 14",
       "voltage": "5 V",
-      "note": "Place 0.1 µF bypass across VCC/GND close to IC."
+      "note": "Use a distinct soldered rail hole near the IC; verify rail continuity and bypass location."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED GND BUS",
       "to": "ahct",
       "toPin": "GND",
-      "signal": "AHCT GND pin 7 return",
+      "signal": "Local shifter GND 7",
       "voltage": "0 V",
-      "note": "Verify PDIP-14 orientation on the purchased part."
+      "note": "Use a distinct soldered rail hole; verify continuity to the ground WAGO and no short to +5 V."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED GND BUS",
       "to": "ahct",
       "toPin": "1OE",
       "signal": "Hold gate 1 output enable low",
       "voltage": "0 V",
-      "note": "Always-enabled proposal. TI recommends a VCC pull-up if high impedance during power-up is required; behavior remains an open review."
+      "note": "Always-enabled proposal. TI recommends a VCC pull-up if high impedance during power-up is required; behavior remains an open review. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "2OE",
       "signal": "Unused AHCT 2OE tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "2A",
       "signal": "Unused AHCT 2A tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "3OE",
       "signal": "Unused AHCT 3OE tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "3A",
       "signal": "Unused AHCT 3A tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "4OE",
       "signal": "Unused AHCT 4OE tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
-      "from": "branch-junction",
-      "fromPin": "",
+      "from": "proto-1609",
+      "fromPin": "ASSIGNED +5V BUS",
       "to": "ahct",
       "toPin": "4A",
       "signal": "Unused AHCT 4A tied high",
       "voltage": "5 V",
-      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior."
+      "note": "Per TI example layout: unused input tied to VCC; confirm purchased PDIP pinout and power-up behavior. Use a separate soldered hole on the assigned board rail; exact hole and continuity remain to be checked."
     },
     {
       "from": "pico-r3",
@@ -476,46 +565,55 @@
     {
       "phase": "Prepare",
       "title": "Verify the proposed source and rate every branch",
-      "detail": "Adafruit #276 lists 5 V / 2 A. Verify the purchased supply and center-positive output, then choose an exact rated insulated junction and branch wires. Check the #368 and #3972 contact limits. Add sourced/measured Pico and shifter peak currents to the 480 mA LED estimate before accepting a margin.",
+      "detail": "Adafruit #276 lists 5 V / 2 A. Confirm polarity and current capability on the purchased source, #368, both WAGO 221-415 splices, 22 AWG wire, #3972 and the soldered Perma-Proto rail. Check the assigned one-feed/three-branch port map; no two conductors share a WAGO clamp. Source or measure Pico and AHCT peak current before accepting margin.",
       "done": false,
       "partIds": [
         "supply",
         "barrel-368",
-        "branch-junction",
+        "junction-plus",
+        "junction-ground",
         "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
-        "ahct"
+        "ahct",
+        "proto-1609",
+        "wire-red-288",
+        "wire-black-290"
       ]
     },
     {
       "phase": "Wire",
       "title": "Assemble the off-tray data interface",
-      "detail": "With power disconnected, wire Pico GP2 to AHCT 1A, hold 1OE low, connect 1Y through 470 Ω to Stick DIN, tie unused 2/3/4 OE and A inputs to VCC, and add 0.1 µF bypass across VCC/GND. Verify purchased PDIP pin numbering and power-up behavior; unused outputs stay disconnected.",
+      "detail": "With power disconnected, place the SN74AHCT125N on the #1609 carrier. Feed one +5 V/GND pair to its assigned rails, then use distinct soldered holes for VCC/GND, 1OE low and six unused OE/A inputs high. Wire Pico GP2 to 1A, 1Y through 470 Ω to Stick DIN, and bypass VCC/GND. Map exact holes and check both rail continuity and purchased PDIP pin numbering before power.",
       "done": false,
       "partIds": [
         "pico-r3",
         "ahct",
         "res470",
         "neopixel-1426",
-        "bypass"
+        "bypass",
+        "proto-1609"
       ]
     },
     {
       "phase": "Wire",
       "title": "Connect power and common ground",
-      "detail": "With power disconnected, connect #276 barrel through #368 to a separately selected insulated junction. Route distinct +5 V and GND conductors to #3972 A/E and Pico micro-USB, Stick 5VDC/GND, and AHCT VCC/GND. Add bulk and bypass capacitors with correct lead assignment. Verify polarity, continuity, no shorts and no second USB source before energizing.",
+      "detail": "With power disconnected, connect #276 through #368 to two separate WAGO 221-415 splices. For each splice assign port 1 to the source, 2 to Pico #3972, 3 to Stick and 4 to the off-tray #1609 shifter board; leave port 5 empty. Use proposed red/black 22 AWG wire only after checking every clamp, branch rating and strain relief. Verify polarity, continuity, isolation and absence of a second USB source.",
       "done": false,
       "partIds": [
         "supply",
         "barrel-368",
-        "branch-junction",
+        "junction-plus",
+        "junction-ground",
         "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
         "ahct",
         "bulkcap",
-        "bypass"
+        "bypass",
+        "proto-1609",
+        "wire-red-288",
+        "wire-black-290"
       ]
     },
     {
@@ -526,7 +624,8 @@
       "partIds": [
         "supply",
         "barrel-368",
-        "branch-junction",
+        "junction-plus",
+        "junction-ground",
         "usb-plug-3972",
         "pico-r3",
         "neopixel-1426",
@@ -561,22 +660,26 @@
     {
       "phase": "Prepare",
       "title": "Package the auxiliary electronics",
-      "detail": "Measure #368, #3972, the selected junction, IC, capacitors, resistor, harness and USB plug. Place or retain them externally, provide insulation/strain relief, then revise and recheck CAD. The current tray fits only Pico and Stick.",
+      "detail": "Measure both WAGO 221-415 connectors, the 51 × 81 mm #1609 board, #368, #3972, IC, capacitors, resistor and cut harness. These parts remain off the verified tray; provide insulation and strain relief, then revise CAD if enclosing them.",
       "done": false,
       "partIds": [
         "tray",
         "supply",
         "barrel-368",
-        "branch-junction",
+        "junction-plus",
+        "junction-ground",
         "usb-plug-3972",
         "ahct",
         "res470",
         "bulkcap",
-        "bypass"
+        "bypass",
+        "proto-1609",
+        "wire-red-288",
+        "wire-black-290"
       ]
     }
   ],
-  "notes": "The 26 connection rows separate electrical conductors, including the 5 V and GND branches. Several source-to-part relationships are mated connector contacts rather than loose wires. Unselected junction terminals, Pico USB socket contacts, resistor and bypass leads remain unnamed; the table is a conceptual netlist, not an approved schematic. Mechanical STEP fit covers only Pico and Stick. Adafruit #276 lists 5 V / 2 A; 480 mA LED full-white estimate is not whole-device demand. Pico and AHCT dynamic current, branch ratings and physical assembly are unverified.",
+  "notes": "The per-conductor register uses two separate WAGO 221-415 five-position common splices, one +5 V and one GND. Port numbers 1–5 are project assignments, not manufacturer terminal markings. Each uses four positions: source, Pico USB, Stick, and an off-tray Perma-Proto #1609 shifter board; position 5 is unused. The board +/− labels represent selected rail nets, not mapped solder holes. Exact holes, conductor lengths, 22 AWG current/voltage-drop limits, clamp performance, #3972 assembly rating and physical fit remain open. Mated source/USB contact rows are electrical continuity paths, not loose wires. Pico USB socket contacts, resistor and bypass leads remain unnamed. CAD fit covers only Pico and Stick. Power worksheet remains incomplete pending Pico/AHCT load values and bench checks.",
   "review": {
     "electrical": false,
     "mechanical": false,
@@ -591,7 +694,8 @@
   "assumptions": [
     "The downloaded maker STEP revisions match the exact boards purchased; verify before fabrication.",
     "Adafruit #276, #368 and #3972 are proposed specific components; purchase, electrical ratings and fit must be confirmed on actual units.",
-    "An exact insulated distribution junction and branch wires remain unselected.",
-    "All fit and electrical work remains a prototype plan until physical and bench checks are recorded."
+    "All fit and electrical work remains a prototype plan until physical and bench checks are recorded.",
+    "Two WAGO 221-415 splices, an Adafruit #1609 carrier and #288/#290 22 AWG wire are proposed parts, not purchased or bench checked.",
+    "Project-assigned WAGO port numbers and carrier bus labels require physical marking, hole mapping and unpowered continuity checks."
   ]
 }
