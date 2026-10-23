@@ -40,6 +40,12 @@ test('connection register exposes unresolved endpoints and keeps spreadsheet for
   assert.match(csv, /"PIN ENDPOINT MISSING"/);
   assert.match(csv, /"'=HYPERLINK\(""https:\/\/example.invalid"", ""trap""\)"/);
   assert.match(bomCsv(p), /"'=HYPERLINK/);
+  p.parts[0].pins = ['+'];
+  p.wires[0].fromPin = '+';
+  assert.match(wiringCsv(p), /"\+"/);
+  assert.doesNotMatch(wiringCsv(p), /"'\+"/);
+  p.wires[0].note = '+SUM(1,1)';
+  assert.match(wiringCsv(p), /"'\+SUM\(1,1\)"/);
 });
 
 test('JSON import rejects malformed shape and removes untrusted source schemes', () => {

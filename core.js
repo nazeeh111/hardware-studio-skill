@@ -265,7 +265,9 @@ export function validate(project) {
 
 const csvCell = value => {
   const content = String(value ?? '');
-  const safe = /^[\s\uFEFF]*[=+\-@]/u.test(content) ? `'${content}` : content;
+  const leading = content.trimStart();
+  const formulaLike = /^[=@]/u.test(leading) || /^[+\-]./su.test(leading);
+  const safe = formulaLike ? `'${content}` : content;
   return `"${safe.replaceAll('"', '""')}"`;
 };
 export function bomCsv(project) {
