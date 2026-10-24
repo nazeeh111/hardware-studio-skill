@@ -1,0 +1,286 @@
+{
+  "id": "4a27335d-4318-490a-acfa-0096d5223bd6",
+  "title": "USB ambient light",
+  "brief": "A USB powered ambient desk light with a button and individually addressable LEDs.",
+  "summary": "An ESP32 controls a short 5 V LED strip through a level shifter. The wiring and power budget need checks against the exact strip, board and supply.",
+  "starterId": "light",
+  "createdAt": "2026-10-24T00:06:01.848Z",
+  "updatedAt": "2026-10-24T00:07:13.472Z",
+  "parts": [
+    {
+      "id": "esp32",
+      "name": "ESP32 DevKit board",
+      "category": "Control",
+      "qty": 1,
+      "unitCost": 11,
+      "detail": "Choose an exact board and verify its USB power path and output GPIO.",
+      "voltage": "3.3",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "led",
+      "name": "5 V addressable LED strip, 30 LEDs",
+      "category": "Lighting",
+      "qty": 1,
+      "unitCost": 14,
+      "detail": "Choose a strip with documented current per LED and a 5 V data interface.",
+      "voltage": "5",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "shift",
+      "name": "74AHCT125 level-shifter module",
+      "category": "Control",
+      "qty": 1,
+      "unitCost": 5,
+      "detail": "Translate 3.3 V data to 5 V. Confirm module pinout and common ground.",
+      "voltage": "5",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "res",
+      "name": "330 Ω resistor",
+      "category": "Electrical",
+      "qty": 1,
+      "unitCost": 1,
+      "detail": "Series data resistor near the LED input; verify against the strip maker guidance.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "cap",
+      "name": "1000 µF capacitor, at least 6.3 V",
+      "category": "Electrical",
+      "qty": 1,
+      "unitCost": 2,
+      "detail": "Place across LED supply at strip input; observe polarity.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "button",
+      "name": "Momentary pushbutton",
+      "category": "Input",
+      "qty": 1,
+      "unitCost": 2,
+      "detail": "Use a GPIO with an internal pull-up or add an external resistor.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "usb",
+      "name": "5 V USB power supply, 3 A rated",
+      "category": "Power",
+      "qty": 1,
+      "unitCost": 12,
+      "detail": "Verify the worst-case LED current and cable rating before use.",
+      "voltage": "5",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    },
+    {
+      "id": "case",
+      "name": "Diffuser and enclosure",
+      "category": "Mechanical",
+      "qty": 1,
+      "unitCost": 12,
+      "detail": "Dimension and material choice depend on the final strip and heat test.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [
+    {
+      "from": "esp32",
+      "to": "shift",
+      "signal": "Data / GPIO18",
+      "voltage": "3.3 V",
+      "note": "Check chosen level shifter input pin."
+    },
+    {
+      "from": "shift",
+      "to": "res",
+      "signal": "5 V data",
+      "voltage": "5 V",
+      "note": "Place resistor in series with the data line."
+    },
+    {
+      "from": "res",
+      "to": "led",
+      "signal": "DIN",
+      "voltage": "5 V",
+      "note": "Connect at the marked strip input end."
+    },
+    {
+      "from": "usb",
+      "to": "led",
+      "signal": "5 V + GND",
+      "voltage": "5 V",
+      "note": "Use a common ground with the controller."
+    },
+    {
+      "from": "usb",
+      "to": "esp32",
+      "signal": "USB power",
+      "voltage": "5 V",
+      "note": "Power via the ESP32 USB connector."
+    },
+    {
+      "from": "button",
+      "to": "esp32",
+      "signal": "GPIO27 to GND",
+      "voltage": "3.3 V logic",
+      "note": "Enable pull-up in firmware."
+    }
+  ],
+  "mechanicalConnections": [],
+  "steps": [
+    {
+      "phase": "Prepare",
+      "title": "Calculate power demand",
+      "detail": "Use the chosen strip datasheet to compute maximum current. Compare with supply, cable and connector ratings.",
+      "partIds": [
+        "led",
+        "usb",
+        "esp32"
+      ],
+      "id": "step-1",
+      "done": true
+    },
+    {
+      "phase": "Prepare",
+      "title": "Measure the fit",
+      "detail": "Measure strip width, bend radius, board size and connector clearance before making the enclosure.",
+      "partIds": [
+        "led",
+        "esp32",
+        "case"
+      ],
+      "id": "step-2",
+      "done": true
+    },
+    {
+      "phase": "Wire",
+      "title": "Build the data path",
+      "detail": "With power disconnected, wire GPIO to level shifter, series resistor and strip DIN. Tie grounds together.",
+      "partIds": [
+        "esp32",
+        "shift",
+        "res",
+        "led"
+      ],
+      "id": "step-3",
+      "done": false
+    },
+    {
+      "phase": "Wire",
+      "title": "Connect power",
+      "detail": "Wire the strip directly to a suitable 5 V supply and the controller through its USB connector. Add the polarized input capacitor.",
+      "partIds": [
+        "usb",
+        "led",
+        "esp32",
+        "cap"
+      ],
+      "id": "step-4",
+      "done": true
+    },
+    {
+      "phase": "Bring up",
+      "title": "Test at low brightness",
+      "detail": "Start with a few LEDs and a current limit. Confirm data direction and measure supply voltage at the far end.",
+      "partIds": [
+        "usb",
+        "led",
+        "esp32",
+        "shift"
+      ],
+      "id": "step-5",
+      "done": true
+    },
+    {
+      "phase": "Assemble",
+      "title": "Check heat and strain relief",
+      "detail": "Run at expected brightness, inspect temperature and secure the cable entry.",
+      "partIds": [
+        "led",
+        "case",
+        "usb"
+      ],
+      "id": "step-6",
+      "done": true
+    }
+  ],
+  "powerRails": [
+    {
+      "id": "rail-5v",
+      "name": "5 V shared input",
+      "voltageV": 5,
+      "supplyCurrentMa": 3000,
+      "marginPercent": 20,
+      "sourcePartId": "usb",
+      "loads": [
+        {
+          "partId": "led",
+          "currentMaEach": 100
+        },
+        {
+          "partId": "esp32",
+          "currentMaEach": 150
+        }
+      ]
+    }
+  ],
+  "tools": [
+    "Multimeter",
+    "Wire preparation tools",
+    "Calipers for the chosen strip and enclosure"
+  ],
+  "assumptions": [
+    "Exact LED strip, controller, level shifter and supply ratings need verification.",
+    "Maximum current and heat must be measured for the chosen operating brightness."
+  ],
+  "notes": "",
+  "cadUrl": "",
+  "wiringUrl": "",
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": null,
+  "assemblySpec": null,
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

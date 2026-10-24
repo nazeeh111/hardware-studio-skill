@@ -1,6 +1,6 @@
 import {validateAssemblySpec} from './assembly-spec.js?v=1';
 import { assemblyInventory, assemblySvg } from './assembly-inventory.js?v=2';
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=41';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=42';
 import { MODEL_PLAN_SCHEMA, coordinatedAiDraft } from './draft-plan.js?v=4';
 import { REQUEST_KEY, requestRecord, parseRequest, requestSignature, boundedModelJson } from './draft-intake.js?v=1';
 import { createProjectChangeController } from './project-change-ui.js?v=9';
@@ -8,6 +8,7 @@ import { validateTraySpec } from './tray-spec.js?v=4';
 import { validateSolidSpec } from './solid-spec.js?v=2';
 import {trayKey,solidKey,assemblyKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=3';
 import { createZip } from './zip.js?v=1';
+import {invalidateManualEdit,manualEditNotice} from './manual-edit-effects.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=3';
 import { createSketchPad } from './sketch-pad.js?v=1';
 import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
@@ -320,11 +321,16 @@ function saveWithRollback(project, before, reason, options) {
   Object.assign(project, before);
   return false;
 }
+function saveManualEdit(project,before,reason){
+  const effects=invalidateManualEdit(before,project);
+  return saveWithRollback(project,before,reason)?effects:false;
+}
 function editProject(project, reason, change) {
   const before = structuredClone(project);
   change();
-  const saved = saveWithRollback(project, before, reason);
+  const saved = saveManualEdit(project, before, reason);
   render();
+  if(saved&&manualEditNotice(saved))showToast(manualEditNotice(saved));
   return saved;
 }
 function download(name, contents, type) {
@@ -509,9 +515,10 @@ function renderPower(p) {
       const total = budget.loads[loadIndex]?.totalMa;
       return `<div class="power-load"><div><strong>${html(part?.name || 'Missing part')}</strong><small>QTY ${html(part?.qty ?? '?')}</small></div><label><span>PEAK mA / UNIT</span><input type="number" min="0" step="any" value="${html(current)}" data-load-rail="${railIndex}" data-load-index="${loadIndex}" aria-label="Peak current per ${html(part?.name || 'missing part')}"></label><b>${total == null ? 'UNKNOWN' : `${Number(total).toFixed(0)} mA`}</b><button class="text-link" type="button" data-remove-load="${railIndex}:${loadIndex}" aria-label="Remove ${html(part?.name || 'load')} from rail">Remove</button></div>`;
     }).join('');
-    const statusText = { incomplete: 'NEEDS INPUT', overload: 'OVER CAPACITY', 'below-margin': 'BELOW TARGET', 'within-margin': 'WITHIN TARGET' }[budget.status];
+    const supplyAssigned=p.parts.some(part=>part.id===rail.sourcePartId);
+    const statusText = !supplyAssigned?'ASSIGN SUPPLY':{ incomplete: 'NEEDS INPUT', overload: 'OVER CAPACITY', 'below-margin': 'BELOW TARGET', 'within-margin': 'WITHIN TARGET' }[budget.status];
     const headroom = budget.complete ? `${budget.headroomMa.toFixed(0)} mA / ${budget.headroomPercent.toFixed(1)}%` : 'UNKNOWN';
-    return `<section class="power-card"><div class="power-card-head"><div><div class="eyebrow">RAIL / ${String(railIndex + 1).padStart(2, '0')}</div><h4>${html(rail.name)}</h4></div><span class="power-status ${budget.status}">${statusText}</span></div><div class="power-fields"><label><span>RAIL NAME</span><input data-rail-index="${railIndex}" data-rail-field="name" value="${html(rail.name)}" aria-label="Rail name"></label><label><span>VOLTAGE / V</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="voltageV" value="${html(rail.voltageV)}" aria-label="Rail voltage"></label><label><span>SUPPLY RATING / mA</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="supplyCurrentMa" value="${html(rail.supplyCurrentMa ?? '')}" aria-label="Supply current rating"></label><label><span>HEADROOM TARGET / %</span><input type="number" min="0" max="99" step="any" data-rail-index="${railIndex}" data-rail-field="marginPercent" value="${html(rail.marginPercent)}" aria-label="Headroom target"></label><label class="wide"><span>SUPPLY PART</span>${sourceSelect}</label></div><div class="power-metrics"><div><span>KNOWN LOAD</span><strong>${budget.knownDemandMa.toFixed(0)} mA</strong></div><div><span>RATED SUPPLY</span><strong>${budget.supplyMa == null ? 'UNKNOWN' : `${budget.supplyMa.toFixed(0)} mA`}</strong></div><div><span>HEADROOM</span><strong>${headroom}</strong></div></div><div class="power-list-head">ASSIGNED LOADS <span>Part quantity is included in the total.</span></div>${loadRows || '<div class="power-empty">Add a part and record its documented peak current.</div>'}<div class="power-actions">${available.length ? `<select id="add-load-${railIndex}" aria-label="Part to add to ${html(rail.name)}">${available.map(part => `<option value="${html(part.id)}">${html(part.name)}</option>`).join('')}</select><button class="small-button" type="button" data-add-load="${railIndex}">＋ Add load</button>` : '<span>All available parts are assigned.</span>'}<button class="text-link" type="button" data-remove-rail="${railIndex}">Remove rail</button></div></section>`;
+    return `<section class="power-card"><div class="power-card-head"><div><div class="eyebrow">RAIL / ${String(railIndex + 1).padStart(2, '0')}</div><h4>${html(rail.name)}</h4></div><span class="power-status ${supplyAssigned?budget.status:'incomplete'}">${statusText}</span></div><div class="power-fields"><label><span>RAIL NAME</span><input data-rail-index="${railIndex}" data-rail-field="name" value="${html(rail.name)}" aria-label="Rail name"></label><label><span>VOLTAGE / V</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="voltageV" value="${html(rail.voltageV)}" aria-label="Rail voltage"></label><label><span>SUPPLY RATING / mA</span><input type="number" min="0.01" step="any" data-rail-index="${railIndex}" data-rail-field="supplyCurrentMa" value="${html(rail.supplyCurrentMa ?? '')}" aria-label="Supply current rating"></label><label><span>HEADROOM TARGET / %</span><input type="number" min="0" max="99" step="any" data-rail-index="${railIndex}" data-rail-field="marginPercent" value="${html(rail.marginPercent)}" aria-label="Headroom target"></label><label class="wide"><span>SUPPLY PART</span>${sourceSelect}</label></div><div class="power-metrics"><div><span>KNOWN LOAD</span><strong>${budget.knownDemandMa.toFixed(0)} mA</strong></div><div><span>RATED SUPPLY</span><strong>${budget.supplyMa == null ? 'UNKNOWN' : `${budget.supplyMa.toFixed(0)} mA`}</strong></div><div><span>HEADROOM</span><strong>${headroom}</strong></div></div><div class="power-list-head">ASSIGNED LOADS <span>Part quantity is included in the total.</span></div>${loadRows || '<div class="power-empty">Add a part and record its documented peak current.</div>'}<div class="power-actions">${available.length ? `<select id="add-load-${railIndex}" aria-label="Part to add to ${html(rail.name)}">${available.map(part => `<option value="${html(part.id)}">${html(part.name)}</option>`).join('')}</select><button class="small-button" type="button" data-add-load="${railIndex}">＋ Add load</button>` : '<span>All available parts are assigned.</span>'}<button class="text-link" type="button" data-remove-rail="${railIndex}">Remove rail</button></div></section>`;
   }).join('');
   return panelHead('ELECTRICAL / BUDGET', 'Power worksheet', 'Record one rail at a time. Use peak load current from exact component data and the rated supply output.', '<button id="add-rail" class="small-button" type="button">＋ Add rail</button>') + (cards || '<div class="empty"><strong>No power rail recorded</strong>Add a rail to compare rated supply current with assigned loads.</div>') + '<div class="notice">A result covers only the loads entered for that rail. It does not verify voltage compatibility, startup surges, cable or connector ratings, regulator heat, or unassigned parts.</div>';
 }
@@ -575,7 +582,7 @@ function saveEditor(event) {
     try { pins = safePinList(String(form.get('pins') || '').split(/\r?\n/).map(value => value.trim()).filter(Boolean)); }
     catch (error) { return editorError(error.message); }
     const newPart = { id: index < 0 ? `part-${crypto.randomUUID().slice(0, 8)}` : p.parts[index].id, name: String(form.get('name') || '').trim(), category: String(form.get('category') || 'Other').trim(), qty: Number(form.get('qty')), unitCost: Number(form.get('unitCost')), voltage: String(form.get('voltage') || '').trim(), pins, sourceUrl: String(form.get('sourceUrl') || '').trim(), specUrl: String(form.get('specUrl') || '').trim(), detail: String(form.get('detail') || '').trim(), verified: form.has('verified'), checkedAt: form.has('verified') ? new Date().toISOString() : '' };
-    if (!newPart.name || newPart.qty <= 0 || newPart.unitCost < 0 || !Number.isFinite(newPart.unitCost)) return editorError('Enter a name, positive quantity and valid cost.');
+    if (!newPart.name || !Number.isSafeInteger(newPart.qty) || newPart.qty <= 0 || newPart.unitCost < 0 || !Number.isFinite(newPart.unitCost)) return editorError('Enter a name, positive whole-number quantity and valid cost.');
     if (newPart.sourceUrl && !/^https?:\/\//i.test(newPart.sourceUrl)) return editorError('Supplier URL must start with https:// or http://.');
     if (newPart.specUrl && !/^https?:\/\//i.test(newPart.specUrl)) return editorError('Specification URL must start with https:// or http://.');
     if (newPart.verified && !newPart.specUrl) return editorError('Link the exact specification before marking this part checked.');
@@ -621,8 +628,9 @@ function saveEditor(event) {
     if (wiringUrl !== (p.wiringUrl || '')) p.review.electrical = false;
     p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; p.wiringUrl = wiringUrl;
   }
-  if (!saveWithRollback(p, before, `Before ${kind} edit`)) return editorError('This edit was not saved. Export the project or free browser storage, then try again.');
-  closeEditor(); render(); showToast('Saved locally.');
+  const effects=saveManualEdit(p,before,`Before ${kind} edit`);
+  if (!effects) return editorError('This edit was not saved. Export the project or free browser storage, then try again.');
+  closeEditor(); render(); showToast('Saved locally. '+manualEditNotice(effects));
 }
 function deleteEntry() {
   if (!editor || editor.index < 0) return;
@@ -633,8 +641,9 @@ function deleteEntry() {
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'mount') { p.mechanicalConnections.splice(index, 1); p.review.mechanical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
-  if (!saveWithRollback(p, before, `Before deleting ${kind}`)) return editorError('The entry was not deleted because the change could not be saved.');
-  closeEditor(); render(); showToast('Entry removed.');
+  const effects=saveManualEdit(p,before,`Before deleting ${kind}`);
+  if (!effects) return editorError('The entry was not deleted because the change could not be saved.');
+  closeEditor(); render(); showToast('Entry removed. '+manualEditNotice(effects));
 }
 function handleClick(event) {
   const button = event.target.closest('button'); if (!button) return;

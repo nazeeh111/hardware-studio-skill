@@ -277,7 +277,8 @@ export function validate(project) {
     if (!Number.isFinite(Number(rail.voltageV)) || Number(rail.voltageV) <= 0) issues.push({ kind: 'error', text: `${name} needs a positive rail voltage.` });
     if (rail.supplyCurrentMa != null && (!Number.isFinite(Number(rail.supplyCurrentMa)) || Number(rail.supplyCurrentMa) <= 0)) issues.push({ kind: 'error', text: `${name} has an invalid supply rating.` });
     if (!Number.isFinite(Number(rail.marginPercent)) || Number(rail.marginPercent) < 0 || Number(rail.marginPercent) >= 100) issues.push({ kind: 'error', text: `${name} needs a margin target from 0 to 99%.` });
-    if (rail.sourcePartId && !ids.has(rail.sourcePartId)) issues.push({ kind: 'error', text: `${name} refers to a missing supply part.` });
+    if (!rail.sourcePartId) issues.push({ kind: 'todo', text: `${name} has no supply part assigned. Link the exact source before relying on its recorded rating.` });
+    else if (!ids.has(rail.sourcePartId)) issues.push({ kind: 'error', text: `${name} refers to a missing supply part.` });
     const source = partsById.get(rail.sourcePartId);
     if (source && /\b(?:cable|wire|connector|splice)\b/i.test(source.name)) issues.push({ kind: 'todo', text: `${name} names ${source.name} as its source. Identify the upstream supply and rating; an interconnect does not establish either.` });
     const used = new Set();

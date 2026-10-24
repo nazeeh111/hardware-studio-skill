@@ -1,0 +1,25 @@
+{
+  "scope": "Actual browser exports; synthetic component labels and currents, no physical test",
+  "effects": {
+    "currentsCleared": 1,
+    "pinsCleared": 0,
+    "stepsCleared": 5
+  },
+  "beforeBudget": "within-margin",
+  "afterBudget": "incomplete",
+  "completedSteps": {
+    "before": 5,
+    "after": 0
+  },
+  "unchangedLoadCurrents": [
+    100,
+    150
+  ],
+  "unboundSupplyFinding": true,
+  "sha256": {
+    "before-project.json": "050c7d1f1cecfd1f2a6a27f960a0290a5602222eb26954eef368f07ceb8a4f65",
+    "after-project.json": "bf60798928f3c2fcffc3987329d1fbf09a0f6de094dfacd7d846403407811605",
+    "unbound-project.json": "30e54514a16ae0c0407506eeb726fb2f02ee24d9f79a2658942ec5e0181121d8",
+    "after-package.zip": "6eb42a55098bd44ef90ea130876ecbbbc7fa2f77496e87b69bb00ef9294b9240"
+  }
+}
