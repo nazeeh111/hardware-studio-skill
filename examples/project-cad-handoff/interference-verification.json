@@ -1,0 +1,2515 @@
+{
+  "status": "interference",
+  "readback": "fresh-process same-kernel source and placement readback passed",
+  "instances": [
+    {
+      "id": "tab-1",
+      "partId": "curved-tab",
+      "name": "instance-001.stl",
+      "min_mm": [
+        0.0,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        40.0,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885118,
+      "stl_min_mm": [
+        0.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        40.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.882520015897,
+        "step_volume_mm3": 4093.542869885118,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.6603498692206813,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006836254135767954,
+        "maximum_center_triangle": 3516,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.2928932188134894,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411207617
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.07612046748872281,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005244134027418349
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.6173165676349814,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005243415735190826
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.70710678118651,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909629593
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005239661658970252
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.38268343236502,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985068839
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997390909629593,
+        "seconds": 0.3992893340764567,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "sha256": {
+        "step": "0062ea30e50476fb9bce39c0165802b35bef229af2da0a37c68a83824c622e97",
+        "stl": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "final_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "exact_byte_replay": true
+      }
+    },
+    {
+      "id": "tab-2",
+      "partId": "curved-tab",
+      "name": "instance-002.stl",
+      "min_mm": [
+        0.0,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        40.0,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885118,
+      "stl_min_mm": [
+        0.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        40.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.882520015897,
+        "step_volume_mm3": 4093.542869885118,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.6603498692206813,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006836254135767954,
+        "maximum_center_triangle": 3516,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.2928932188134894,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411207617
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.07612046748872281,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005244134027418349
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.6173165676349814,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005243415735190826
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.70710678118651,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909629593
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005239661658970252
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.38268343236502,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985068839
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997390909629593,
+        "seconds": 0.3652981669874862,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "sha256": {
+        "step": "df41a3c2bc65736f77b3228ad95084008789ee5f13f8eba63c51d63c0e17ae0d",
+        "stl": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "final_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "exact_byte_replay": true
+      }
+    },
+    {
+      "id": "tab-3",
+      "partId": "curved-tab",
+      "name": "instance-003.stl",
+      "min_mm": [
+        100.0,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        140.0,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885117,
+      "stl_min_mm": [
+        100.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        140.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.8824316580385,
+        "step_volume_mm3": 4093.542869885117,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.66043822707843,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006838427631054026,
+        "maximum_center_triangle": 3305,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              115.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              125.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              140.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              140.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              140.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.29289321881349,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006970417048170306
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.07612046748872,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005265886913694374
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              100.61731656763499,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              139.7071067811865,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997391258385671
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              139.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005213437462631775
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              139.382683432365,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              107.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              107.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              107.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              120.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              125.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              115.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997391258385671,
+        "seconds": 0.3546683330787346,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "sha256": {
+        "step": "e7790bc38e98f6830f88590e68abcd8e61ba32cfc6bcae54f383d17fefadffd5",
+        "stl": "e81ca530233bbe8ad2a9f6860a6f2c0ec1d9e6042cd7e64e099dd628d2772e07"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "e81ca530233bbe8ad2a9f6860a6f2c0ec1d9e6042cd7e64e099dd628d2772e07",
+        "final_sha256": "e81ca530233bbe8ad2a9f6860a6f2c0ec1d9e6042cd7e64e099dd628d2772e07",
+        "exact_byte_replay": true
+      }
+    },
+    {
+      "id": "tab-4",
+      "partId": "curved-tab",
+      "name": "instance-004.stl",
+      "min_mm": [
+        149.9999999,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        190.0,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885118,
+      "stl_min_mm": [
+        150.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        190.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.8821735424817,
+        "step_volume_mm3": 4093.542869885118,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.660696342636129,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006838427631054026,
+        "maximum_center_triangle": 1037,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              165.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              175.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              190.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              190.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              190.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.2928932188135,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997391258385671
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.07612046748872,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005213437462631775
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              150.617316567635,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              189.7071067811865,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997391258385671
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              189.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005213437462631775
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              189.382683432365,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              157.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              157.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              157.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              170.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              175.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              165.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997391258385671,
+        "seconds": 0.44230308302212507,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "sha256": {
+        "step": "65be03349b290f82b51fe9fe0a8a1638a1bb61dd101bd26a59e8ecc4d506b355",
+        "stl": "8b82710debeff7b62d474337e5cd00068da5f8655ebe7a94cc092c60dd336438"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "8b82710debeff7b62d474337e5cd00068da5f8655ebe7a94cc092c60dd336438",
+        "final_sha256": "8b82710debeff7b62d474337e5cd00068da5f8655ebe7a94cc092c60dd336438",
+        "exact_byte_replay": true
+      }
+    },
+    {
+      "id": "tab-5",
+      "partId": "curved-tab",
+      "name": "instance-005.stl",
+      "min_mm": [
+        199.9999999,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        240.0,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885118,
+      "stl_min_mm": [
+        200.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        240.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.8821735424817,
+        "step_volume_mm3": 4093.542869885118,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.660696342636129,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006838427631054026,
+        "maximum_center_triangle": 1037,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              215.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              225.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              240.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              240.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              240.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.859970538381033e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.2928932188135,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997391258385671
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.07612046748872,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005213437462631775
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              200.617316567635,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              239.7071067811865,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997391258385671
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              239.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005213437462631775
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              239.382683432365,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985016003
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              207.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              207.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              207.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3190449433560053e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              220.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              225.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              215.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997391258385671,
+        "seconds": 0.37984641699586064,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "sha256": {
+        "step": "c1ad0cdf2705f36ca69042e24634a6baaae2ff7510dc0c50eb35da78dba3c98c",
+        "stl": "dae42407f8bbe09a3c4d437052ad4b831a0853543e22236d7ad71cf5f0f25178"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "dae42407f8bbe09a3c4d437052ad4b831a0853543e22236d7ad71cf5f0f25178",
+        "final_sha256": "dae42407f8bbe09a3c4d437052ad4b831a0853543e22236d7ad71cf5f0f25178",
+        "exact_byte_replay": true
+      }
+    }
+  ],
+  "assets": [
+    {
+      "partId": "curved-tab",
+      "directory": "assets/part-001",
+      "min_mm": [
+        -1e-07,
+        -2.22044604925e-16,
+        0.0
+      ],
+      "max_mm": [
+        40.0000001,
+        20.0,
+        6.0
+      ],
+      "volume_mm3": 4093.542869885118,
+      "stl_min_mm": [
+        0.0,
+        -2.220446049250313e-16,
+        0.0
+      ],
+      "stl_max_mm": [
+        40.0,
+        20.0,
+        6.0
+      ],
+      "stl_triangles": 4292,
+      "stl_check": {
+        "passed": true,
+        "stl_triangles": 4292,
+        "boundary_components": 1,
+        "step_boundary_shells": 1,
+        "closed_oriented_topology": true,
+        "vertex_weld_tolerance_mm": 0.0002,
+        "signed_volume_mm3": 4091.882520015897,
+        "step_volume_mm3": 4093.542869885118,
+        "step_boundary_area_mm2": 2057.277681412166,
+        "volume_difference_mm3": 1.6603498692206813,
+        "volume_tolerance_mm3": 83.31974609719273,
+        "volume_allowance_basis": "STEP boundary area multiplied by the fixed center-distance tolerance; tessellation allowance, not exact analytic equality.",
+        "checked_triangle_centers": 4292,
+        "maximum_center_distance_mm": 0.006836254135767954,
+        "maximum_center_triangle": 3516,
+        "center_tolerance_mm": 0.0405,
+        "step_faces_checked": 11,
+        "step_surface_witnesses": [
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              2.5
+            ],
+            "distance_mm": 1.1102230246251565e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              3.75
+            ],
+            "distance_mm": 1.6653345369377348e-16
+          },
+          {
+            "face": 0,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.0,
+              1.25
+            ],
+            "distance_mm": 5.551115123125783e-17
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              2.5
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              3.75
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 1,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.0,
+              9.999999999998968,
+              1.25
+            ],
+            "distance_mm": 3.8588585000614136e-14
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 2,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              0.29289321881348906,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411208802
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 3,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              15.0,
+              0.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              2.5
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              3.75
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 4,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              40.0,
+              10.000000000001032,
+              1.25
+            ],
+            "distance_mm": 3.858858557562557e-14
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              2.5
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              3.75
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 5,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              20.0,
+              1.25
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.2928932188134894,
+              9.999999999998996,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006992649411207617
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.07612046748872281,
+              9.999999999998973,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005244134027418349
+          },
+          {
+            "face": 6,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              0.6173165676349814,
+              9.99999999999903,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005243415735190826
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              10.0,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              5.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 7,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              14.5,
+              6.0
+            ],
+            "distance_mm": 0.0
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.70710678118651,
+              10.000000000001004,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909629593
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.92387953251128,
+              10.000000000001027,
+              5.382683432365114
+            ],
+            "distance_mm": 0.0005239661658970252
+          },
+          {
+            "face": 8,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              39.38268343236502,
+              10.00000000000097,
+              5.923879532511316
+            ],
+            "distance_mm": 0.0005242938985068839
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              3.0
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              1.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 9,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              7.0,
+              9.99999999999938,
+              4.5
+            ],
+            "distance_mm": 2.3180154444000502e-14
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              20.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              25.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          },
+          {
+            "face": 10,
+            "kind": "trimmed-face interior parameter sample",
+            "point_mm": [
+              15.0,
+              19.70710678118651,
+              5.707106781186584
+            ],
+            "distance_mm": 0.0006997390909613433
+          }
+        ],
+        "maximum_face_witness_distance_mm": 0.0006997390909629593,
+        "seconds": 0.3881542910821736,
+        "limits": [
+          "All triangle centers were compared to trimmed STEP boundary faces; bounded witnesses from every STEP face were compared back to exact STL triangles. Surface regions between samples are not exhaustively covered.",
+          "These are sampled checks in both directions, not a two-way Hausdorff-distance proof or self-intersection proof.",
+          "Topology uses a fixed numerical vertex weld tolerance; physical fit, fabrication quality and strength remain untested."
+        ]
+      },
+      "probes": [],
+      "sha256": {
+        "spec.json": "d5256abfacbd97a2d50a7a60e81e24451eb61720a8b9a5ec3182db54b50d9ccb",
+        "solid.step": "3ab1e07be7ce40bfb55bf573daac3d530334ca8894668c849ba68931819574c9",
+        "solid.stl": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0"
+      },
+      "stl_export": {
+        "passed": true,
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "replayed_zero_area_removals": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "raw_file": null,
+        "raw_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "final_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "exact_byte_replay": true
+      }
+    }
+  ],
+  "pairs": [
+    {
+      "firstId": "tab-1",
+      "secondId": "tab-2",
+      "overlap_mm3": 4093.542869885118,
+      "minimum_distance_mm": 0.0,
+      "interference": true
+    },
+    {
+      "firstId": "tab-1",
+      "secondId": "tab-3",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 60.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-1",
+      "secondId": "tab-4",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 110.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-1",
+      "secondId": "tab-5",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 160.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-2",
+      "secondId": "tab-3",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 60.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-2",
+      "secondId": "tab-4",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 110.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-2",
+      "secondId": "tab-5",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 160.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-3",
+      "secondId": "tab-4",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 10.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-3",
+      "secondId": "tab-5",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 60.0,
+      "interference": false
+    },
+    {
+      "firstId": "tab-4",
+      "secondId": "tab-5",
+      "overlap_mm3": 0.0,
+      "minimum_distance_mm": 10.0,
+      "interference": false
+    }
+  ],
+  "assembly": {
+    "min_mm": [
+      0.0,
+      -2.22044604925e-16,
+      0.0
+    ],
+    "max_mm": [
+      240.0,
+      20.0,
+      6.0
+    ],
+    "volume_mm3": 20467.71434942558,
+    "solid_count": 5,
+    "sha256": "23b73ce35a4b8eba53e82393b3ad2c1c9498acc8c2fd19a61a680e262965e2d5"
+  },
+  "overlap_limit_mm3": 0.01,
+  "sha256": {
+    "spec.json": "7b9225823871d7eba6cd8c6e7fbba9c4c1a279ba14c65695e5bf9279b65f0878",
+    "build-report.json": "f678fa2fc09d536129ff0e258c92dfe0df76784962deaa24093247a3112df93a"
+  },
+  "limits": [
+    "Explicit nominal placements only; no mating constraints, joint solver or motion analysis.",
+    "Euler degrees apply around the source origin in X, Y, Z order, then XYZ translation (T*Rz*Ry*Rx).",
+    "Pairwise interference means overlap greater than 0.01 cubic mm; touching is allowed. Smaller intersections remain in the report.",
+    "Fresh-process readback and source reconstruction use the same OpenCascade kernel; this is not independent-kernel verification.",
+    "No manufacturing tolerances, load, strength, fastener fit, supplier geometry or physical fit were validated.",
+    "Unplaced assets are exported but are excluded from the assembly and pair checks."
+  ]
+}

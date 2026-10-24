@@ -1,0 +1,2282 @@
+{
+  "status": "passed",
+  "archives": [
+    {
+      "archive": "actual-browser-bundle.zip",
+      "sha256": "1eb30da64767ac2719f7d278c4d16530b04eaa7af33fb9ac1fa37483991c2a07",
+      "file_count": 46,
+      "all_zip_crcs_passed": true,
+      "manifest_covered_files": 45,
+      "captured_source_sha256": "72c7c89c538224f95db87eddccc8e4e0b5fb922bebdf588a135911ec9767fb8c",
+      "exact_source_entries": 13,
+      "project_sha256": "e9ee1dfad58a2de8f99f8f4f2ca988d7876355db484eb303d0918781b36e6ae0",
+      "branches": [
+        "tray",
+        "shared-solid",
+        "assembly"
+      ],
+      "assembly_instances": 5,
+      "import_only_changes": [
+        "createdAt",
+        "id",
+        "starterId",
+        "updatedAt"
+      ],
+      "later_edit_changes": [
+        "notes",
+        "updatedAt"
+      ]
+    },
+    {
+      "archive": "retained-captured-bundle.zip",
+      "sha256": "f6aa40c3f2dd6b8fb4c667bc7883bef0dbd461d6e9249e0976c2e9ac258253f5",
+      "file_count": 46,
+      "all_zip_crcs_passed": true,
+      "manifest_covered_files": 45,
+      "captured_source_sha256": "3dd28c80128bf88d464aeeda6315f01d76f42445f1f84176915895198ab7ff32",
+      "exact_source_entries": 13,
+      "project_sha256": "e9ee1dfad58a2de8f99f8f4f2ca988d7876355db484eb303d0918781b36e6ae0",
+      "branches": [
+        "tray",
+        "shared-solid",
+        "assembly"
+      ],
+      "assembly_instances": 5,
+      "import_only_changes": [
+        "createdAt",
+        "id",
+        "starterId",
+        "updatedAt"
+      ],
+      "later_edit_changes": [
+        "notes",
+        "updatedAt"
+      ]
+    }
+  ],
+  "step_files_per_run": 10,
+  "byte_identical_step_files_across_runs": 0,
+  "interference": {
+    "archive": "interference-bundle.zip",
+    "sha256": "14316f24c4f0cf2e1613344bd5ee9342256086bedf711b1023dd5d96311af7a7",
+    "status": "interference",
+    "file_count": 46,
+    "manifest_covered_files": 45,
+    "exact_source_entries": 13,
+    "overlapping_pair": {
+      "firstId": "tab-1",
+      "secondId": "tab-2",
+      "overlap_mm3": 4093.542869885118,
+      "minimum_distance_mm": 0.0,
+      "interference": true
+    },
+    "failure_retention_receipt": {
+      "successful_download": "hardware-studio-project-handoff-five-curved-tabs-checked-cad (3).zip",
+      "download_after_failed_rebuild": "hardware-studio-project-handoff-five-curved-tabs-checked-cad (4).zip",
+      "byte_identical": true,
+      "sha256": "73e534a0e549814b75a5a062d7bcf88ae534d9bf81ba4b96f08d5af3502b1f5d",
+      "failed_project": "Rejected source handoff",
+      "failure": "Feature miss must change volume by more than 0.001 cubic mm.",
+      "partial_package_downloaded": false,
+      "browser_notes": "Actual UI showed failure and retained last completed title; Download last produced byte-identical prior package. Screenshot failed-build.jpg predates branch-label message improvement."
+    },
+    "failure_receipt_limit": "This script verifies the retained receipt bytes; it does not replay browser failure or retain duplicate prior-download bytes."
+  },
+  "geometry": [
+    {
+      "same_kernel_independent_inspection": true,
+      "builder_imported": false,
+      "curved_source_shapes": {
+        "shared-solid": {
+          "passed": true,
+          "bounds_mm": [
+            [
+              -1e-07,
+              -2.22044604925e-16,
+              0.0
+            ],
+            [
+              40.0000001,
+              20.0,
+              6.0
+            ]
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_expected_volume_mm3": 4093.5428698850146,
+          "top_round_removed_volume_mm3": 21.766718975012832,
+          "analytic_faces": [
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  0.0
+                ],
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                0.0,
+                -1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  5.0
+                ],
+                [
+                  30.0,
+                  1.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                1.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 685.8849314766711,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  0.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                0.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      0.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      20.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      20.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                -0.0,
+                -1.0
+              ],
+              "location_mm": [
+                30.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  20.0,
+                  0.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                -1.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                20.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  -1e-07,
+                  0.0,
+                  5.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                10.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 586.1946710584651,
+              "bounds_mm": [
+                [
+                  1.0,
+                  1.0,
+                  6.0
+                ],
+                [
+                  39.0,
+                  19.0,
+                  6.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                6.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      1.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      1.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      19.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      19.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ],
+                [
+                  40.0000001,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                30.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 113.09733552923998,
+              "bounds_mm": [
+                [
+                  7.0,
+                  7.0,
+                  0.0
+                ],
+                [
+                  13.0,
+                  13.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 3.0,
+              "axis": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  19.0,
+                  5.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                19.0,
+                5.0
+              ]
+            }
+          ],
+          "independent_regions": [
+            {
+              "name": "through_bore",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "unrounded_top_bore_wall",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "bottom_straight_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_bottom_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "right_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "back_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "core_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            }
+          ]
+        },
+        "assembly/assets/part-001": {
+          "passed": true,
+          "bounds_mm": [
+            [
+              -1e-07,
+              -2.22044604925e-16,
+              0.0
+            ],
+            [
+              40.0000001,
+              20.0,
+              6.0
+            ]
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_expected_volume_mm3": 4093.5428698850146,
+          "top_round_removed_volume_mm3": 21.766718975012832,
+          "analytic_faces": [
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  0.0
+                ],
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                0.0,
+                -1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  5.0
+                ],
+                [
+                  30.0,
+                  1.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                1.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 685.8849314766711,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  0.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                0.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      0.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      20.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      20.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                -0.0,
+                -1.0
+              ],
+              "location_mm": [
+                30.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  20.0,
+                  0.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                -1.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                20.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  -1e-07,
+                  0.0,
+                  5.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                10.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 586.1946710584651,
+              "bounds_mm": [
+                [
+                  1.0,
+                  1.0,
+                  6.0
+                ],
+                [
+                  39.0,
+                  19.0,
+                  6.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                6.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      1.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      1.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      19.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      19.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ],
+                [
+                  40.0000001,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                30.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 113.09733552923998,
+              "bounds_mm": [
+                [
+                  7.0,
+                  7.0,
+                  0.0
+                ],
+                [
+                  13.0,
+                  13.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 3.0,
+              "axis": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  19.0,
+                  5.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                19.0,
+                5.0
+              ]
+            }
+          ],
+          "independent_regions": [
+            {
+              "name": "through_bore",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "unrounded_top_bore_wall",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "bottom_straight_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_bottom_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "right_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "back_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "core_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            }
+          ]
+        }
+      },
+      "placed_steps": [
+        {
+          "instance": "tab-1",
+          "translation_mm": [
+            0,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-2",
+          "translation_mm": [
+            50,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-3",
+          "translation_mm": [
+            100,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-4",
+          "translation_mm": [
+            150,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-5",
+          "translation_mm": [
+            200,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        }
+      ],
+      "compound": {
+        "solid_count": 5,
+        "bounds_mm": [
+          [
+            0.0,
+            -2.22044604925e-16,
+            0.0
+          ],
+          [
+            240.0,
+            20.0,
+            6.0
+          ]
+        ],
+        "volume_mm3": 20467.714349425587
+      },
+      "tray": {
+        "bounds_mm": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            66.0,
+            45.0,
+            14.0
+          ]
+        ],
+        "volume_mm3": 13556.36447515953,
+        "analytic_volume_mm3": 13556.364475159602
+      },
+      "cover": {
+        "bounds_mm": [
+          [
+            -2.5,
+            -2.5,
+            11.0
+          ],
+          [
+            68.5,
+            47.5,
+            16.5
+          ]
+        ],
+        "volume_mm3": 8293.0,
+        "analytic_volume_mm3": 8293.0
+      },
+      "interference_pair_common_volume_mm3": 4093.542869885118
+    },
+    {
+      "same_kernel_independent_inspection": true,
+      "builder_imported": false,
+      "curved_source_shapes": {
+        "shared-solid": {
+          "passed": true,
+          "bounds_mm": [
+            [
+              -1e-07,
+              -2.22044604925e-16,
+              0.0
+            ],
+            [
+              40.0000001,
+              20.0,
+              6.0
+            ]
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_expected_volume_mm3": 4093.5428698850146,
+          "top_round_removed_volume_mm3": 21.766718975012832,
+          "analytic_faces": [
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  0.0
+                ],
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                0.0,
+                -1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  5.0
+                ],
+                [
+                  30.0,
+                  1.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                1.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 685.8849314766711,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  0.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                0.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      0.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      20.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      20.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                -0.0,
+                -1.0
+              ],
+              "location_mm": [
+                30.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  20.0,
+                  0.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                -1.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                20.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  -1e-07,
+                  0.0,
+                  5.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                10.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 586.1946710584651,
+              "bounds_mm": [
+                [
+                  1.0,
+                  1.0,
+                  6.0
+                ],
+                [
+                  39.0,
+                  19.0,
+                  6.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                6.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      1.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      1.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      19.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      19.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ],
+                [
+                  40.0000001,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                30.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 113.09733552923998,
+              "bounds_mm": [
+                [
+                  7.0,
+                  7.0,
+                  0.0
+                ],
+                [
+                  13.0,
+                  13.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 3.0,
+              "axis": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  19.0,
+                  5.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                19.0,
+                5.0
+              ]
+            }
+          ],
+          "independent_regions": [
+            {
+              "name": "through_bore",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "unrounded_top_bore_wall",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "bottom_straight_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_bottom_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "right_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "back_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "core_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            }
+          ]
+        },
+        "assembly/assets/part-001": {
+          "passed": true,
+          "bounds_mm": [
+            [
+              -1e-07,
+              -2.22044604925e-16,
+              0.0
+            ],
+            [
+              40.0000001,
+              20.0,
+              6.0
+            ]
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_expected_volume_mm3": 4093.5428698850146,
+          "top_round_removed_volume_mm3": 21.766718975012832,
+          "analytic_faces": [
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  0.0
+                ],
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                1.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                0.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                0.0,
+                -1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  -2.22044604925e-16,
+                  5.0
+                ],
+                [
+                  30.0,
+                  1.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                10.0,
+                1.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 685.8849314766711,
+              "bounds_mm": [
+                [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  0.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                0.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      0.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      0.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      20.0,
+                      0.0
+                    ],
+                    [
+                      30.0,
+                      20.0,
+                      0.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 10.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    0.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 157.0796326795,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  0.0
+                ],
+                [
+                  40.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 10.0,
+              "axis": [
+                -0.0,
+                -0.0,
+                -1.0
+              ],
+              "location_mm": [
+                30.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 99.99999999999999,
+              "bounds_mm": [
+                [
+                  10.0,
+                  20.0,
+                  0.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  5.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                -1.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                20.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  -1e-07,
+                  0.0,
+                  5.0
+                ],
+                [
+                  10.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                10.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 586.1946710584651,
+              "bounds_mm": [
+                [
+                  1.0,
+                  1.0,
+                  6.0
+                ],
+                [
+                  39.0,
+                  19.0,
+                  6.0
+                ]
+              ],
+              "kind": "plane",
+              "normal": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                20.0,
+                10.0,
+                6.0
+              ],
+              "edges": [
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      1.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      1.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    30.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "line",
+                  "endpoints_mm": [
+                    [
+                      10.0,
+                      19.0,
+                      6.0
+                    ],
+                    [
+                      30.0,
+                      19.0,
+                      6.0
+                    ]
+                  ]
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 9.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 3.141592653589793
+                },
+                {
+                  "kind": "circle",
+                  "radius_mm": 3.0,
+                  "center_mm": [
+                    10.0,
+                    10.0,
+                    6.0
+                  ],
+                  "sweep_rad": 6.283185307179586
+                }
+              ]
+            },
+            {
+              "area_mm2": 47.55481245849504,
+              "bounds_mm": [
+                [
+                  30.0,
+                  0.0,
+                  5.0
+                ],
+                [
+                  40.0000001,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "torus",
+              "major_radius_mm": 9.0,
+              "minor_radius_mm": 1.0,
+              "location_mm": [
+                30.0,
+                10.0,
+                5.0
+              ]
+            },
+            {
+              "area_mm2": 113.09733552923998,
+              "bounds_mm": [
+                [
+                  7.0,
+                  7.0,
+                  0.0
+                ],
+                [
+                  13.0,
+                  13.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 3.0,
+              "axis": [
+                0.0,
+                0.0,
+                1.0
+              ],
+              "location_mm": [
+                10.0,
+                10.0,
+                0.0
+              ]
+            },
+            {
+              "area_mm2": 31.415926535899985,
+              "bounds_mm": [
+                [
+                  10.0,
+                  19.0,
+                  5.0
+                ],
+                [
+                  30.0,
+                  20.0,
+                  6.0
+                ]
+              ],
+              "kind": "cylinder",
+              "radius_mm": 1.0,
+              "axis": [
+                -1.0,
+                0.0,
+                0.0
+              ],
+              "location_mm": [
+                30.0,
+                19.0,
+                5.0
+              ]
+            }
+          ],
+          "independent_regions": [
+            {
+              "name": "through_bore",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "unrounded_top_bore_wall",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "bottom_straight_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "top_straight_round_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_bottom_perimeter_intact",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            },
+            {
+              "name": "left_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "right_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "back_top_round_removed",
+              "expect": "void",
+              "material_fraction": 0.0,
+              "passed": true
+            },
+            {
+              "name": "core_retained",
+              "expect": "material",
+              "material_fraction": 1.0,
+              "passed": true
+            }
+          ]
+        }
+      },
+      "placed_steps": [
+        {
+          "instance": "tab-1",
+          "translation_mm": [
+            0,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-2",
+          "translation_mm": [
+            50,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-3",
+          "translation_mm": [
+            100,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-4",
+          "translation_mm": [
+            150,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        },
+        {
+          "instance": "tab-5",
+          "translation_mm": [
+            200,
+            0,
+            0
+          ],
+          "volume_mm3": 4093.542869885118,
+          "analytic_faces": 11,
+          "independent_regions": 10
+        }
+      ],
+      "compound": {
+        "solid_count": 5,
+        "bounds_mm": [
+          [
+            0.0,
+            -2.22044604925e-16,
+            0.0
+          ],
+          [
+            240.0,
+            20.0,
+            6.0
+          ]
+        ],
+        "volume_mm3": 20467.714349425587
+      },
+      "tray": {
+        "bounds_mm": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            66.0,
+            45.0,
+            14.0
+          ]
+        ],
+        "volume_mm3": 13556.36447515953,
+        "analytic_volume_mm3": 13556.364475159602
+      },
+      "cover": {
+        "bounds_mm": [
+          [
+            -2.5,
+            -2.5,
+            11.0
+          ],
+          [
+            68.5,
+            47.5,
+            16.5
+          ]
+        ],
+        "volume_mm3": 8293.0,
+        "analytic_volume_mm3": 8293.0
+      },
+      "interference_pair_common_volume_mm3": 4093.542869885118
+    }
+  ],
+  "limits": [
+    "Hashes bind these retained bytes, not general application correctness.",
+    "Retained server reports are checked for consistency; sampled mesh/STEP checks are not independently rerun here.",
+    "Independent analytic STEP inspection uses the same OpenCascade kernel family as generation.",
+    "Tray and shared solid are distinct unbound branches, not a fitted assembly of the five tabs.",
+    "No physical fit, manufacturing tolerance, material, strength, electrical or hardware behavior is validated."
+  ]
+}

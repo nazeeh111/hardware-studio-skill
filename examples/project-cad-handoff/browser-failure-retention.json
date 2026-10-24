@@ -1,0 +1,10 @@
+{
+  "successful_download": "hardware-studio-project-handoff-five-curved-tabs-checked-cad (3).zip",
+  "download_after_failed_rebuild": "hardware-studio-project-handoff-five-curved-tabs-checked-cad (4).zip",
+  "byte_identical": true,
+  "sha256": "73e534a0e549814b75a5a062d7bcf88ae534d9bf81ba4b96f08d5af3502b1f5d",
+  "failed_project": "Rejected source handoff",
+  "failure": "Feature miss must change volume by more than 0.001 cubic mm.",
+  "partial_package_downloaded": false,
+  "browser_notes": "Actual UI showed failure and retained last completed title; Download last produced byte-identical prior package. Screenshot failed-build.jpg predates branch-label message improvement."
+}

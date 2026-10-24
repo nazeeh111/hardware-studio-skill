@@ -8,6 +8,7 @@ import argparse
 import base64
 import binascii
 import io
+import hashlib
 import json
 import os
 import signal
@@ -34,8 +35,10 @@ GENERATOR = Path(__file__).with_name('generate.py')
 FIT = Path(__file__).with_name('fit.py')
 SOLID_GENERATOR = Path(__file__).resolve().parents[1] / 'solid-generator' / 'solid.py'
 ASSEMBLY_GENERATOR = Path(__file__).resolve().parents[1] / 'assembly-generator' / 'assembly.py'
+PROJECT_GENERATOR = Path(__file__).resolve().parents[1] / 'project-generator' / 'project.py'
 MAX_REQUEST_BYTES = 65_536
 MAX_ASSEMBLY_REQUEST_BYTES = 262_144
+MAX_PROJECT_REQUEST_BYTES = 17 * 1024 * 1024
 MAX_FIT_REQUEST_BYTES = 24_000_000
 MAX_STEP_BYTES = 8_000_000
 PACKAGE_FILES = ('spec.json', 'tray.step', 'tray.stl', 'layout.svg', 'build-report.json', 'verification.json')
@@ -113,18 +116,51 @@ def run_assembly_process(command, timeout=180):
                                text=True, start_new_session=True)
     try:
         stdout, stderr = process.communicate(timeout=timeout)
-    except BaseException:
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    finally:
         # Killing only the direct child leaves its fresh-process verifier alive,
         # possibly writing files after temporary cleanup and lock release. The
-        # group remains addressable even if the generator exited first while a
-        # verifier still holds its output pipes open.
+        # group remains addressable even if the generator exited first. Also
+        # stop descendants on normal/nonzero exit when their pipes are closed.
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
         process.communicate()
-        raise
-    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
+def generate_project_package(raw):
+    request = json.loads(raw)
+    if set(request) != {'schema', 'sourceZipBase64'} or not isinstance(request['sourceZipBase64'], str):
+        raise ValueError('Send only the project package schema and captured source ZIP.')
+    try:
+        source_bytes = base64.b64decode(request['sourceZipBase64'], validate=True)
+    except (ValueError, binascii.Error):
+        raise ValueError('The captured source ZIP is not valid base64.') from None
+    if not 0 < len(source_bytes) <= 12 * 1024 * 1024:
+        raise ValueError('The captured source ZIP exceeds 12 MiB.')
+    source_hash = hashlib.sha256(source_bytes).hexdigest()
+    with tempfile.TemporaryDirectory(prefix='hardware-studio-project-cad-') as temporary:
+        root = Path(temporary)
+        source, output = root/'source.zip', root/'project-cad.zip'
+        source.write_bytes(source_bytes)
+        result = run_assembly_process([sys.executable, str(PROJECT_GENERATOR), '--worker', '--source-zip', str(source), '--out', str(output)], timeout=480)
+        if result.returncode:
+            message = 'The captured project could not be packaged. Every included CAD branch must build and pass its readback; no partial package was returned.'
+            try:
+                error = json.loads(result.stderr.strip().splitlines()[-1]).get('error')
+                if isinstance(error, str) and error:
+                    message = error[:1000]
+            except (ValueError, AttributeError, IndexError):
+                pass
+            raise ValueError(message)
+        if not output.is_file() or not 0 < output.stat().st_size <= 64 * 1024 * 1024:
+            raise ValueError('The project CAD package is missing or exceeds 64 MiB.')
+        with zipfile.ZipFile(output) as archive:
+            manifest = json.loads(archive.read('cad-package-manifest.json'))
+        if manifest.get('source_archive_sha256') != source_hash or manifest.get('status') not in ('passed', 'interference'):
+            raise ValueError('The project CAD manifest does not match the captured source ZIP.')
+        return output.read_bytes(), source_hash, manifest['status']
 
 
 def generate_assembly_package(raw, preview=False):
@@ -234,7 +270,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1', 'placed-assembly-v1', 'sampled-mesh-readback-v1'] + (['curved-solid-v1'] if CURVED_RUNTIME else [])})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1', 'placed-assembly-v1', 'sampled-mesh-readback-v1', 'project-cad-package-v1'] + (['curved-solid-v1'] if CURVED_RUNTIME else [])})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()
@@ -250,7 +286,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path = urlsplit(self.path).path
-        if path not in ('/api/tray', '/api/tray-preview', '/api/fit', '/api/solid', '/api/solid-preview', '/api/assembly', '/api/assembly-preview'):
+        if path not in ('/api/tray', '/api/tray-preview', '/api/fit', '/api/solid', '/api/solid-preview', '/api/assembly', '/api/assembly-preview', '/api/project-cad'):
             return self._json(404, {'error': 'Unknown API route.'})
         if not self._local_origin():
             return self._json(403, {'error': 'Local origin required.'})
@@ -260,7 +296,7 @@ class Handler(SimpleHTTPRequestHandler):
             length = int(self.headers.get('Content-Length', '0'))
         except ValueError:
             return self._json(400, {'error': 'Invalid request length.'})
-        limit = MAX_FIT_REQUEST_BYTES if path == '/api/fit' else MAX_ASSEMBLY_REQUEST_BYTES if path.startswith('/api/assembly') else MAX_REQUEST_BYTES
+        limit = MAX_PROJECT_REQUEST_BYTES if path == '/api/project-cad' else MAX_FIT_REQUEST_BYTES if path == '/api/fit' else MAX_ASSEMBLY_REQUEST_BYTES if path.startswith('/api/assembly') else MAX_REQUEST_BYTES
         if not 0 < length <= limit:
             return self._json(413, {'error': 'The request is too large.'})
         raw = self.rfile.read(length)
@@ -268,7 +304,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(400, {'error': 'Incomplete request.'})
         try:
             spec = json.loads(raw)
-            expected = 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-assembly-v1' if path.startswith('/api/assembly') else 'hardware-studio-solid-v1' if path.startswith('/api/solid') else 'hardware-studio-tray-v1'
+            expected = 'hardware-studio-project-cad-v1' if path == '/api/project-cad' else 'hardware-studio-browser-fit-v1' if path == '/api/fit' else 'hardware-studio-assembly-v1' if path.startswith('/api/assembly') else 'hardware-studio-solid-v1' if path.startswith('/api/solid') else 'hardware-studio-tray-v1'
             if not isinstance(spec, dict) or spec.get('schema') != expected:
                 return self._json(400, {'error': f'Expected a {expected} request.'})
         except (UnicodeDecodeError, ValueError, RecursionError):
@@ -277,9 +313,13 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(409, {'error': 'Another CAD build is running. Try again after it finishes.'})
         try:
             try:
-                output = check_fit_request(raw) if path == '/api/fit' else generate_assembly_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/assembly') else generate_solid_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/solid') else generate_package(raw, preview=path == '/api/tray-preview')
+                package_hash, package_status = None, None
+                if path == '/api/project-cad':
+                    output, package_hash, package_status = generate_project_package(raw)
+                else:
+                    output = check_fit_request(raw) if path == '/api/fit' else generate_assembly_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/assembly') else generate_solid_package(raw, preview=path.endswith('-preview')) if path.startswith('/api/solid') else generate_package(raw, preview=path == '/api/tray-preview')
             except subprocess.TimeoutExpired:
-                return self._json(504, {'error': 'Assembly generation exceeded three minutes.' if path.startswith('/api/assembly') else 'CAD generation exceeded two minutes.'})
+                return self._json(504, {'error': 'Project CAD packaging exceeded eight minutes; no package was returned.' if path == '/api/project-cad' else 'Assembly generation exceeded three minutes.' if path.startswith('/api/assembly') else 'CAD generation exceeded two minutes.'})
             except ValueError as error:
                 return self._json(422, {'error': str(error)})
             except Exception:
@@ -287,12 +327,15 @@ class Handler(SimpleHTTPRequestHandler):
         finally:
             build_lock.release()
         try:
-            is_archive = path in ('/api/tray', '/api/solid', '/api/assembly')
+            is_archive = path in ('/api/tray', '/api/solid', '/api/assembly', '/api/project-cad')
             body = output if is_archive else json.dumps(output).encode('utf-8')
             self.send_response(200)
             self.send_header('Content-Type', 'application/zip' if is_archive else 'application/json; charset=utf-8')
             if is_archive:
                 self.send_header('Content-Disposition', 'attachment; filename="hardware-studio-cad.zip"')
+            if path == '/api/project-cad':
+                self.send_header('X-Hardware-Studio-Source-SHA256', package_hash)
+                self.send_header('X-Hardware-Studio-CAD-Status', package_status)
             self.send_header('Content-Length', str(len(body)))
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Content-Type-Options', 'nosniff')

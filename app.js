@@ -7,7 +7,8 @@ import { createProjectChangeController } from './project-change-ui.js?v=10';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { validateSolidSpec } from './solid-spec.js?v=3';
 import {trayKey,solidKey,assemblyKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=4';
-import { createZip } from './zip.js?v=1';
+import {projectSourceArchive} from './project-package.js?v=1';
+import {createProjectCadController} from './project-cad-package.js?v=1';
 import {invalidateManualEdit,manualEditNotice} from './manual-edit-effects.js?v=1';
 import { briefQuestions, composeBrief } from './brief.js?v=3';
 import { createSketchPad } from './sketch-pad.js?v=1';
@@ -27,6 +28,7 @@ let draftController = null;
 let pendingDraft = null;
 let pendingDraftContext = null;
 let projectChange;
+let projectCad;
 let expectedRequestRaw = null, requestRecovery = null, requestBackedUp = false;
 let pendingReference = null;
 const PENDING_REFERENCE_KEY='hardware-studio-pending-reference-v1';
@@ -356,39 +358,30 @@ function geometryFailure(error) {
 function rollbackGeometry(transaction) {
   try { transaction.rollback(); } catch (error) { geometryFailure(error); }
 }
-function exportPackage(p) {
-  p = projectWithCurrentGeometry(p);
-  const generatedAt = new Date().toISOString();
-  const issues = validate(p);
-  const report = `Hardware Studio review record\nGenerated: ${generatedAt}\n\nThese checks are planning prompts, not a safety, sourcing or engineering certification.\n\n${issues.length ? issues.map(issue => `[${issue.kind.toUpperCase()}] ${issue.text}`).join('\n') : 'No tracked open items in this editor. Independent verification is still required.'}\n`;
-  const title = String(p.title).replace(/[\r\n]+/g, ' ');
-  const reference = safeReferenceImage(p.referenceImage);
-  const traySpec = p.traySpec;
-  const solidSpec = p.solidSpec;
-  const assemblySpec = p.assemblySpec;
-  const partNames = new Map(p.parts.map(part => [part.id, part.name]));
-  const buildPlan = `${title}\nBuild plan exported ${generatedAt}\n\nTOOLS AND CONSUMABLES\n${(p.tools || []).length ? p.tools.map(tool => `- ${tool}`).join('\n') : '(not recorded)'}\n\nASSUMPTIONS AND PREREQUISITES\n${(p.assumptions || []).length ? p.assumptions.map(item => `- ${item}`).join('\n') : '(not recorded)'}\n\nSTEPS\n${p.steps.map((step, index) => `${index + 1}. [${step.phase}] ${step.title}${step.done ? ' (checked in this browser)' : ''}\n   ${step.detail}\n   Parts: ${(step.partIds || []).map(id => partNames.get(id) || `Missing: ${id}`).join(', ') || '(not linked)'}`).join('\n\n')}\n\nThis is a planning record, not a verified build procedure.\n`;
-  const readme = `# ${title}\n\nExported from Hardware Studio on ${generatedAt}.\n\n- [Project data](project.json): edit or re-import this JSON. Imported verification marks reset.\n- [Parts list](bill-of-materials.csv): planning estimates; blank costs mean unknown.\n- [Build plan](build-plan.txt): tools, assumptions and part-linked checklist; verify each operation.\n- [Mounting notes](mounting.csv): proposed mechanical relationships, not verified fit.\n- [Connection register](connections.csv): each recorded relationship and its pin-name review state; rows may still combine conductors.\n- [Wiring map](wiring.svg): conceptual relationships, not a verified schematic.\n- [Assembly index](assembly.svg): conceptual part inventory, not dimensioned CAD.\n- [Open checks](review.txt): current editor findings.${traySpec ? '\n- [Tray CAD input](tray-spec.json): editable millimeter spec for the local generator; physical fit unverified.' : ''}${solidSpec ? '\n- [Feature CAD input](solid-spec.json): ordered editable shared source; generate checked STEP/STL separately in the solid modeler.' : ''}${assemblySpec ? '\n- [Placed CAD input](assembly-spec.json): per-part sources and explicit instances, also exported in cad-sources/part-001.json order. Generate a checked assembly STEP/STL ZIP separately; this source export contains no physical verification.' : ''}${reference ? '\n- [Visual reference](reference.jpg): resized local sketch or photo; visual interpretation is unverified.' : ''}${reference?.sketch ? '\n- [Editable sketch](reference-sketch.json): original bounded strokes and labels, also retained in project.json; annotations are not measured specifications.' : ''}\n\nExternal evidence links remain URLs in project.json; their contents are not copied into this package.${safeUrl(p.wiringUrl) ? `\nElectrical plan: ${p.wiringUrl}` : ''}${safeUrl(p.cadUrl) ? `\nCAD package: ${p.cadUrl}` : ''}\n\nCheck exact parts, pinouts, power, fit and supplier listings before buying or building.\n`;
-  const standaloneSvg = markup => markup.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
-  const archive = createZip([
-    { name: 'README.md', data: readme },
-    { name: 'project.json', data: JSON.stringify(p, null, 2) + '\n' },
-    { name: 'bill-of-materials.csv', data: bomCsv(p) },
-    { name: 'connections.csv', data: wiringCsv(p) },
-    { name: 'build-plan.txt', data: buildPlan },
-    { name: 'mounting.csv', data: mountingCsv(p) },
-    { name: 'wiring.svg', data: standaloneSvg(wiringSvg(p)) },
-    { name: 'assembly.svg', data: standaloneSvg(assemblySvg(p)) },
-    { name: 'review.txt', data: report },
-    ...(traySpec ? [{ name: 'tray-spec.json', data: JSON.stringify(traySpec, null, 2) + '\n' }] : []),
-    ...(solidSpec ? [{ name: 'solid-spec.json', data: JSON.stringify(solidSpec, null, 2) + '\n' }] : []),
-    ...(assemblySpec ? [{name:'assembly-spec.json',data:JSON.stringify(assemblySpec,null,2)+'\n'},...assemblySpec.assets.map((asset,index)=>({name:'cad-sources/part-'+String(index+1).padStart(3,'0')+'.json',data:JSON.stringify(asset.source,null,2)+'\n'}))] : []),
-    ...(reference ? [{ name: 'reference.jpg', data: Uint8Array.from(atob(reference.dataUrl.split(',')[1]), char => char.charCodeAt(0)) }] : []),
-    ...(reference?.sketch ? [{ name: 'reference-sketch.json', data: JSON.stringify(reference.sketch,null,2) }] : [])
-  ]);
-  download(`${filename(p)}-package.zip`, archive, 'application/zip');
-  showToast('Project package downloaded. Diagrams are conceptual and checks remain open.');
+function sourceProjectArchive(p) {
+  return projectSourceArchive(p, {wiringMarkup:wiringSvg(p), assemblyMarkup:assemblySvg(p)});
 }
+function exportPackage(p) {
+  const captured = projectWithCurrentGeometry(p);
+  download(`${filename(captured)}-package.zip`, sourceProjectArchive(captured), 'application/zip');
+  showToast('Project source ZIP downloaded. Generated geometry is available through the checked project export in Build.');
+}
+function projectPackageCard() {
+  const local = ['127.0.0.1','localhost','[::1]','::1'].includes(location.hostname);
+  return `<section class="project-handoff" aria-labelledby="project-handoff-title"><div class="handoff-heading"><div><span class="eyebrow accent">PROJECT / TO HANDOFF</span><h4 id="project-handoff-title">Keep the build together.</h4><p>Carry the captured parts, wiring and instructions with generated STEP/STL and their readback reports in one ZIP.</p></div><span class="handoff-stamp">SOURCE<br>+ GEOMETRY</span></div><div class="handoff-contents"><span>01 / Project + parts</span><span>02 / CAD + placements</span><span>03 / Checks + source hashes</span></div><div class="handoff-actions"><button id="project-cad-build" class="button button-dark" type="button" disabled>Build project + CAD ZIP ↗</button><button id="handoff-source" class="button button-outline" type="button">Source ZIP only ↓</button><button id="project-cad-cancel" class="text-link" type="button" hidden>Cancel waiting</button><button id="project-cad-last" class="text-link" type="button" hidden>Download last package ↓</button>${local?'<button id="project-cad-check" class="text-link" type="button">Check runtime</button>':''}</div><p id="project-cad-status" class="handoff-status" role="status" aria-live="polite"></p><p id="project-cad-context" class="handoff-context"></p><p id="project-cad-last-info" class="handoff-context" hidden></p><details class="handoff-limits"><summary>What this package checks</summary><p>Each included CAD branch must build and pass its geometry readback. The manifest links generated files to the captured source. Nominal interference stays visible in the assembly report. Shared tray and solid sources remain unbound unless separately attached to part assets.</p><p>Wiring diagrams and build steps remain planning records. External evidence links are kept as URLs. No physical fit, fabrication, electrical operation or firmware is verified.</p>${local?'':'<p>Generate on your computer: run <code>sh tools/tray-generator/run-local.sh --port 4174</code> from a local checkout. Curved sources also need the optional project CAD runtime.</p>'}</details></section>`;
+}
+function refreshProjectPackageUi(info=projectCad?.state()) {
+  if(!info)return;
+  const button=$('#project-cad-build');if(!button)return;
+  button.disabled=!info.canBuild;button.textContent=info.busy?'Building captured project…':'Build project + CAD ZIP ↗';
+  const status=$('#project-cad-status');status.textContent=info.message;status.classList.toggle('interference',info.phase==='complete'&&info.last?.cadStatus==='interference');status.classList.toggle('error',['error','timeout'].includes(info.phase));
+  $('#project-cad-context').textContent=info.projectError||(!info.runtime.checked?'Checking the current local runtime…':!info.runtime.ready?'Source export works here. Checked CAD requires the current local studio server.':info.hasCad&& !info.canBuild&&!info.busy?'This source needs the curved CAD runtime. Install it and restart the local server.':'The export uses a frozen project snapshot. Later edits do not change that package.');
+  $('#project-cad-cancel').hidden=!info.busy;
+  $('#project-cad-last').hidden=!info.last;
+  const last=$('#project-cad-last-info');last.hidden=!info.last;if(info.last)last.textContent=`Last completed: “${info.last.title}” · ${(info.last.size/1024/1024).toFixed(2)} MiB${info.last.cadStatus==='interference'?' · INTERFERENCE recorded':''}. Download before reloading; completed packages stay in this tab’s memory.`;
+  const check=$('#project-cad-check');if(check)check.disabled=info.busy;
+}
+
 function openHistory() {
   const p = current(); let allEntries;
   try { allEntries = readRevisions(); }
@@ -471,6 +464,7 @@ function render() {
   $('#panel').innerHTML = panels[activeTab](p);
   renderReview(p);
   projectChange?.refresh();
+  refreshProjectPackageUi();
 }
 
 function panelHead(kicker, title, description, actions = '') { return `<div class="panel-head"><div><div class="eyebrow accent">${kicker}</div><h3>${title}</h3><p>${description}</p></div>${actions}</div>`; }
@@ -528,7 +522,7 @@ function renderAssembly(p) {
   const source = p.solidSpec;
   const assembly = p.assemblySpec;
   const placed = `<section class="assembly-source" aria-label="Part CAD and placements"><div class="assembly-source-head"><span>PART CAD / ${assembly?.assets.length ? 'BOUND TO PROJECT PARTS' : 'READY TO DEFINE'}</span><span>RIGID PLACEMENTS / mm</span></div><div class="assembly-source-body"><div><h4>${assembly ? html(assembly.title) : 'Put the actual parts together.'}</h4><p>${assembly ? `${assembly.assets.length} part sources · ${assembly.instances.length} placed instances. Sources stay editable; build to inspect the transformed geometry and nominal interference.` : 'Give each part an editable source. Position repeated units separately, then inspect their generated geometry together.' + (source ? ' Your earlier shared source is preserved in Shared source and tray tools.' : '')}</p><a class="cad-source-action" href="./assembly.html?project=${encodeURIComponent(p.id)}" target="_blank" rel="noopener noreferrer">${assembly?.assets.length ? 'Edit part CAD and placements' : 'Define part CAD and placements'} <span aria-hidden="true">↗</span></a></div><div class="assembly-source-aside"><span>EXPLICIT / EDITABLE</span><p>Translation in millimeters; X, Y, Z rotation in degrees. Generation checks exported positions, pair overlap and minimum distance.</p><p>No joint solver, motion or physical-fit verification.</p></div></div></section>`;
-  const geometry = `<section class="assembly-source" aria-label="CAD source"><div class="assembly-source-head"><span>CAD SOURCE / ${source || p.traySpec ? 'SAVED WITH PROJECT' : 'READY TO CREATE'}</span><span>mm / STEP + STL</span></div><div class="assembly-source-body"><div><h4>${source ? html(source.title) : 'Give the concept dimensions.'}</h4><p>${source ? `${source.features.length} features · ${source.probes.length} selected region checks. Generate CAD in the modeler to check this source.` : 'Create connected parts from boxes, cylinders and polygon extrusions. The modeler keeps editable source with this project.'}</p><a class="cad-source-action" href="${solidWorkbench}" target="_blank" rel="noopener noreferrer">${source ? 'Edit saved part' : 'Create a dimensioned part'} <span aria-hidden="true">↗</span></a></div><div class="assembly-source-aside"><span>TRAY + COVER</span><p>${p.traySpec ? `${html(p.traySpec.outer.length)} × ${html(p.traySpec.outer.width)} × ${html(p.traySpec.outer.height)} mm · ${html(p.traySpec.mounts.length)} bosses · ${html(p.traySpec.cutouts.length)} openings. Source saved.` : 'Set an enclosure size, mounting bosses and openings; compare supplied STEP parts.'}</p><a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">${p.traySpec ? 'Edit saved tray' : 'Open tray workbench'} ↗</a></div></div><div class="assembly-source-footer"><span>Source is retained in project JSON and ZIP. Checked STEP/STL downloads stay in the workbench.</span><a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">Inspect STL / export GLB ↗</a></div></section>`;
+  const geometry = `<section class="assembly-source" aria-label="CAD source"><div class="assembly-source-head"><span>CAD SOURCE / ${source || p.traySpec ? 'SAVED WITH PROJECT' : 'READY TO CREATE'}</span><span>mm / STEP + STL</span></div><div class="assembly-source-body"><div><h4>${source ? html(source.title) : 'Give the concept dimensions.'}</h4><p>${source ? `${source.features.length} features · ${source.probes.length} selected region checks. Generate CAD in the modeler to check this source.` : 'Create connected parts from boxes, cylinders and polygon extrusions. The modeler keeps editable source with this project.'}</p><a class="cad-source-action" href="${solidWorkbench}" target="_blank" rel="noopener noreferrer">${source ? 'Edit saved part' : 'Create a dimensioned part'} <span aria-hidden="true">↗</span></a></div><div class="assembly-source-aside"><span>TRAY + COVER</span><p>${p.traySpec ? `${html(p.traySpec.outer.length)} × ${html(p.traySpec.outer.width)} × ${html(p.traySpec.outer.height)} mm · ${html(p.traySpec.mounts.length)} bosses · ${html(p.traySpec.cutouts.length)} openings. Source saved.` : 'Set an enclosure size, mounting bosses and openings; compare supplied STEP parts.'}</p><a href="${trayWorkbench}" target="_blank" rel="noopener noreferrer">${p.traySpec ? 'Edit saved tray' : 'Open tray workbench'} ↗</a></div></div><div class="assembly-source-footer"><span>Source stays in project JSON and ZIP. Download checked STEP/STL here or together with the project from Build.</span><a href="./cad-viewer.html" target="_blank" rel="noopener noreferrer">Inspect STL / export GLB ↗</a></div></section>`;
   const evidence = safeUrl(p.cadUrl) ? `<div class="assembly-evidence"><span>LINKED CAD / EVIDENCE</span><a href="${html(safeUrl(p.cadUrl))}" target="_blank" rel="noopener noreferrer">Open CAD source and checks ↗</a><p>Review the linked scope; it does not automatically verify this project.</p></div>` : '';
   const labels = Object.fromEntries(p.parts.map(part => [part.id, part.name]));
   const mounts = (p.mechanicalConnections || []).map((link, index) => `<div class="mount-row"><div><strong>${html(labels[link.from] || 'Missing part')} → ${html(labels[link.to] || 'Missing part')}</strong><span>${html(link.label)}</span>${link.note ? `<small>${html(link.note)}</small>` : ''}</div><button class="text-link" data-edit-mount="${index}" type="button">Edit</button></div>`).join('');
@@ -538,7 +532,7 @@ function renderBuild(p) {
   const names = new Map(p.parts.map(part => [part.id, part.name]));
   const rows = p.steps.map((step, i) => `<div class="step-card ${step.done ? 'done' : ''}"><input data-done-step="${i}" type="checkbox" ${step.done ? 'checked' : ''} aria-label="Mark ${html(step.title)} complete"><div><small>${html(step.phase.toUpperCase())} / ${String(i + 1).padStart(2, '0')}</small><strong>${html(step.title)}</strong><p>${html(step.detail)}</p>${step.partIds?.length ? `<div class="step-parts">${step.partIds.map(id => `<span class="${names.has(id) ? '' : 'missing'}">${html(names.get(id) || `Missing: ${id}`)}</span>`).join('')}</div>` : ''}</div><button class="text-link" data-edit-step="${i}" type="button">Edit</button></div>`).join('');
   const prep = `<div class="build-prep"><div><span>TOOLS / MATERIALS</span>${(p.tools || []).length ? `<ul>${p.tools.map(item => `<li>${html(item)}</li>`).join('')}</ul>` : '<p>List the tools and consumables needed for this build.</p>'}</div><div><span>ASSUMPTIONS / PREREQUISITES</span>${(p.assumptions || []).length ? `<ul>${p.assumptions.map(item => `<li>${html(item)}</li>`).join('')}</ul>` : '<p>Record required skills, setup and unresolved starting conditions.</p>'}</div></div>`;
-  return panelHead('SEQUENCE / TEST', 'Build plan', 'Use the steps as a checklist after validating each operation against the exact parts and tools.', '<div><button id="edit-prep" class="small-button" type="button">Edit preparation</button> <button id="add-step" class="small-button" type="button">＋ Add step</button></div>') + prep + (rows ? `<div class="step-list">${rows}</div>` : `<div class="empty"><strong>No build steps yet</strong>Add preparation, wiring, bring-up and assembly steps.</div>`);
+  return panelHead('SEQUENCE / TEST', 'Build plan', 'Use the steps as a checklist after validating each operation against the exact parts and tools.', '<div><button id="edit-prep" class="small-button" type="button">Edit preparation</button> <button id="add-step" class="small-button" type="button">＋ Add step</button></div>') + projectPackageCard() + prep + (rows ? `<div class="step-list">${rows}</div>` : `<div class="empty"><strong>No build steps yet</strong>Add preparation, wiring, bring-up and assembly steps.</div>`);
 }
 function renderReview(p) {
   const issues = validate(p); const errors = issues.filter(i => i.kind === 'error').length;
@@ -710,7 +704,11 @@ function handleClick(event) {
     render(); showToast('Project moved to Recently deleted. Open History to recover it.');
   }
   else if (button.id === 'export-project') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p), null, 2), 'application/json'); showToast('Project JSON downloaded, including saved tray and feature CAD source.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
-  else if (button.id === 'export-package') { try { exportPackage(p); } catch { showToast('Package export failed. Export JSON to preserve the project.'); } }
+  else if (button.id === 'export-package' || button.id === 'handoff-source') { try { exportPackage(p); } catch { showToast('Package export failed. Export JSON to preserve the project.'); } }
+  else if (button.id === 'project-cad-build') void projectCad.build();
+  else if (button.id === 'project-cad-cancel') projectCad.cancel();
+  else if (button.id === 'project-cad-last') void projectCad.downloadLast();
+  else if (button.id === 'project-cad-check') void projectCad.refreshRuntime();
   else if (button.id === 'export-bom') { download(`${filename(p)}-bom.csv`, bomCsv(p), 'text/csv'); showToast('Parts list downloaded.'); }
   else if (button.id === 'export-connections') { download(`${filename(p)}-connections.csv`, wiringCsv(p), 'text/csv'); showToast('Connection register downloaded. Pin names still need independent review.'); }
   else if (button.id === 'export-diagram') { const svg = activeTab === 'assembly' ? assemblySvg(p).replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"') : $('#panel svg') ? new XMLSerializer().serializeToString($('#panel svg')) : ''; if (svg) { download(`${filename(p)}-${activeTab}.svg`, svg, 'image/svg+xml'); showToast('Diagram downloaded.'); } }
@@ -758,6 +756,7 @@ function handleChange(event) {
   }
 }
 function initialize() {
+  projectCad=createProjectCadController({getProject:()=>projectWithCurrentGeometry(current()),makeSourceArchive:sourceProjectArchive,download,onChange:refreshProjectPackageUi});
   projectChange = createProjectChangeController({
     capture:captureProjectChange, assertCurrent:assertProjectChangeCurrent, apply:applyProjectChange,
     getModels:() => [...$('#local-model').options].filter(option => option.value).map(option => ({value:option.value,label:option.textContent})),
@@ -817,6 +816,7 @@ function initialize() {
   renderBriefGuidance();
   if (unreadableSavedData !== null) showRecovery();
   void detectLocalModels();
+  void projectCad.refreshRuntime();
 }
 function safeProjectForStorage(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('Invalid stored project');

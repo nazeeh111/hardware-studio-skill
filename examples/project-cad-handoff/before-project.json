@@ -1,0 +1,430 @@
+{
+  "id": "placed-assembly-study",
+  "title": "Project handoff: five curved tabs",
+  "brief": "Combined source and geometry handoff check. Five exact curved tab instances plus a separate unbound tray and shared source; these sources are not one fitted build.",
+  "summary": "Five explicit rigid placements of the checked curved tab source.",
+  "starterId": "blank",
+  "createdAt": "2026-10-23T23:34:42.248Z",
+  "updatedAt": "2026-10-23T23:34:42.249Z",
+  "parts": [
+    {
+      "id": "curved-tab",
+      "name": "Curved pull tab",
+      "category": "Mechanical",
+      "qty": 5,
+      "unitCost": 0,
+      "detail": "40 × 20 × 6 mm capsule, D6 bore centered (10,10), top outer R1 fillet; material unspecified.",
+      "voltage": "",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [],
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "Test",
+      "title": "Review the actual captured geometry",
+      "detail": "Inspect each readback report and check nominal features before physical fabrication. This step has not been performed on hardware.",
+      "partIds": [
+        "curved-tab"
+      ],
+      "done": false
+    }
+  ],
+  "tools": [],
+  "assumptions": [
+    "Nominal geometry demonstration; no material, fabrication tolerance or physical fit validation."
+  ],
+  "notes": "Three distinct CAD branches retained together for archive verification. Tray and shared source are not bound to parts; assembly asset curved-tab is bound. No physical fit or electrical validation.",
+  "cadUrl": "",
+  "wiringUrl": "",
+  "referenceImage": null,
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  },
+  "assemblySpec": {
+    "schema": "hardware-studio-assembly-v1",
+    "title": "Five curved tabs",
+    "units": "mm",
+    "assets": [
+      {
+        "partId": "curved-tab",
+        "source": {
+          "schema": "hardware-studio-solid-v1",
+          "title": "Capsule Pull Tab",
+          "units": "mm",
+          "features": [
+            {
+              "id": "f1",
+              "operation": "add",
+              "shape": "curve",
+              "origin": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "axis": "z",
+              "height": 6.0,
+              "start": [
+                10,
+                0
+              ],
+              "segments": [
+                {
+                  "kind": "line",
+                  "end": [
+                    30,
+                    0
+                  ]
+                },
+                {
+                  "kind": "arc",
+                  "via": [
+                    40,
+                    10
+                  ],
+                  "end": [
+                    30,
+                    20
+                  ]
+                },
+                {
+                  "kind": "line",
+                  "end": [
+                    10,
+                    20
+                  ]
+                },
+                {
+                  "kind": "arc",
+                  "via": [
+                    0,
+                    10
+                  ],
+                  "end": [
+                    10,
+                    0
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "f2",
+              "operation": "cut",
+              "shape": "cylinder",
+              "origin": [
+                10.0,
+                10.0,
+                0.0
+              ],
+              "axis": "z",
+              "radius": 3.0,
+              "height": 6.0
+            },
+            {
+              "id": "f3",
+              "operation": "fillet",
+              "radius": 1.0,
+              "edges": [
+                [
+                  20.0,
+                  0.0,
+                  6.0
+                ],
+                [
+                  40.0,
+                  10.0,
+                  6.0
+                ],
+                [
+                  20.0,
+                  20.0,
+                  6.0
+                ],
+                [
+                  0.0,
+                  10.0,
+                  6.0
+                ]
+              ],
+              "tolerance": 0.01
+            }
+          ],
+          "probes": []
+        }
+      }
+    ],
+    "instances": [
+      {
+        "id": "tab-1",
+        "partId": "curved-tab",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "tab-2",
+        "partId": "curved-tab",
+        "position": [
+          50,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "tab-3",
+        "partId": "curved-tab",
+        "position": [
+          100,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "tab-4",
+        "partId": "curved-tab",
+        "position": [
+          150,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "tab-5",
+        "partId": "curved-tab",
+        "position": [
+          200,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "powerRails": [],
+  "solidSpec": {
+    "schema": "hardware-studio-solid-v1",
+    "title": "Capsule Pull Tab",
+    "units": "mm",
+    "features": [
+      {
+        "id": "f1",
+        "operation": "add",
+        "shape": "curve",
+        "origin": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "axis": "z",
+        "height": 6.0,
+        "start": [
+          10,
+          0
+        ],
+        "segments": [
+          {
+            "kind": "line",
+            "end": [
+              30,
+              0
+            ]
+          },
+          {
+            "kind": "arc",
+            "via": [
+              40,
+              10
+            ],
+            "end": [
+              30,
+              20
+            ]
+          },
+          {
+            "kind": "line",
+            "end": [
+              10,
+              20
+            ]
+          },
+          {
+            "kind": "arc",
+            "via": [
+              0,
+              10
+            ],
+            "end": [
+              10,
+              0
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f2",
+        "operation": "cut",
+        "shape": "cylinder",
+        "origin": [
+          10.0,
+          10.0,
+          0.0
+        ],
+        "axis": "z",
+        "radius": 3.0,
+        "height": 6.0
+      },
+      {
+        "id": "f3",
+        "operation": "fillet",
+        "radius": 1.0,
+        "edges": [
+          [
+            20.0,
+            0.0,
+            6.0
+          ],
+          [
+            40.0,
+            10.0,
+            6.0
+          ],
+          [
+            20.0,
+            20.0,
+            6.0
+          ],
+          [
+            0.0,
+            10.0,
+            6.0
+          ]
+        ],
+        "tolerance": 0.01
+      }
+    ],
+    "probes": []
+  },
+  "traySpec": {
+    "schema": "hardware-studio-tray-v1",
+    "title": "Pico + NeoPixel open-window cover study",
+    "units": "mm",
+    "outer": {
+      "length": 66,
+      "width": 45,
+      "height": 14
+    },
+    "wall": 2.5,
+    "floor": 2.5,
+    "cutouts": [
+      {
+        "edge": "left",
+        "start": 7,
+        "end": 22,
+        "bottom": 3,
+        "top": 14
+      }
+    ],
+    "mounts": [
+      {
+        "id": "pico-a",
+        "x": 11,
+        "y": 8.8,
+        "bossRadius": 2.2,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      },
+      {
+        "id": "pico-b",
+        "x": 11,
+        "y": 20.2,
+        "bossRadius": 2.2,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      },
+      {
+        "id": "pico-c",
+        "x": 58,
+        "y": 8.8,
+        "bossRadius": 2.2,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      },
+      {
+        "id": "pico-d",
+        "x": 58,
+        "y": 20.2,
+        "bossRadius": 2.2,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      },
+      {
+        "id": "stick-a",
+        "x": 20.3,
+        "y": 36.628,
+        "bossRadius": 1.7,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      },
+      {
+        "id": "stick-b",
+        "x": 45.7,
+        "y": 36.628,
+        "bossRadius": 1.7,
+        "bossTopZ": 8,
+        "locatorRadius": 0.8,
+        "locatorHeight": 1.2
+      }
+    ],
+    "lid": {
+      "thickness": 2.5,
+      "skirtDepth": 3,
+      "skirtWall": 2,
+      "clearance": 0.5,
+      "window": {
+        "x": 6,
+        "y": 27,
+        "length": 54,
+        "width": 14
+      }
+    }
+  }
+}

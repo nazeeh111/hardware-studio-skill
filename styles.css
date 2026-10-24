@@ -243,6 +243,22 @@ a { color: inherit; }
 .step-card strong { display: block; margin: 5px 0; font-size: 12px; }
 .step-card p { color: #6a796e; font-size: 11px; line-height: 1.5; margin: 0; }
 .build-prep { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.project-handoff { margin: 0 0 25px; padding: 24px; border: 1px solid #aab79b; border-top: 4px solid #365445; background: #f7f8ef; }
+.project-handoff .eyebrow.accent { color: #526b43; }
+.handoff-heading { display: flex; justify-content: space-between; gap: 20px; }
+.handoff-heading h4 { margin: 9px 0; font: 600 26px/1.12 var(--display); letter-spacing: -.04em; color: #14211f; }
+.handoff-heading p { max-width: 560px; font-size: 12px; line-height: 1.65; color: #52644f; margin: 0; }
+.handoff-stamp { align-self: start; padding: 9px 10px; border: 1px solid #7b8e67; color: #48613e; font: 600 9px/1.5 var(--mono); letter-spacing: .04em; }
+.handoff-contents { display: flex; flex-wrap: wrap; gap: 9px 24px; margin: 20px 0; padding: 12px 0; border-block: 1px solid #d6ddcb; color: #536b47; font: 500 9px/1.5 var(--mono); }
+.handoff-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.handoff-actions .button { min-height: 42px; }
+.handoff-status { margin: 18px 0 6px; font-size: 12px; line-height: 1.6; font-weight: 600; color: #2e4f3b; overflow-wrap: anywhere; }
+.handoff-status.interference, .handoff-status.error { color: #9b3e27; }
+.handoff-context, .handoff-limits p { color: #65745c; font-size: 11px; line-height: 1.65; overflow-wrap: anywhere; }
+.handoff-limits { margin-top: 17px; border-top: 1px solid #d6ddcb; padding-top: 12px; }
+.handoff-limits summary { font: 500 10px/1.5 var(--mono); color: #4c653d; cursor: pointer; }
+.handoff-limits code { font-size: 10px; overflow-wrap: anywhere; }
+@media (max-width: 530px) { .project-handoff { padding: 17px; } .handoff-stamp { display: none; } .handoff-actions .button { flex: 1 1 100%; } .handoff-contents { flex-direction: column; gap: 5px; } }
 .build-prep > div { border-top: 2px solid #365445; background: #eef3e9; padding: 15px; min-width: 0; }
 .build-prep span { color: #577044; font: 600 9px var(--mono); letter-spacing: .06em; }
 .build-prep ul { padding-left: 17px; margin: 10px 0 0; color: #334d3e; font-size: 11px; line-height: 1.55; }
