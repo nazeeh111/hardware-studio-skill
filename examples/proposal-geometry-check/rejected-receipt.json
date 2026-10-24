@@ -1,0 +1,25 @@
+{
+  "schema": "hardware-studio-solid-proposal-check-v1",
+  "status": "rejected",
+  "code": "rejected",
+  "title": "Rejected missed-cut proposal",
+  "sourceSha256": "70cbb864edecd95de0c98efd675be2ec6b5ad15b23ade80c225e23bd75623e78",
+  "sourceBytes": 279,
+  "startedAt": "2026-10-24T01:49:05.022Z",
+  "completedAt": "2026-10-24T01:49:08.067Z",
+  "endpoint": "./api/solid-preview",
+  "httpStatus": 422,
+  "responseSha256": null,
+  "stlSha256": null,
+  "stlBytes": 0,
+  "error": "Feature miss must change volume by more than 0.001 cubic mm.",
+  "checks": null,
+  "limits": {
+    "stepAvailable": false,
+    "stlAvailable": false,
+    "rawMeshAvailable": false,
+    "physicalValidation": false,
+    "semanticIntentValidation": false,
+    "browserCheck": "Source equality, declared CAD checks and STL hash/dimensions/triangle readback. Native topology and sampled STEP checks are verifier reports, not recomputed in the browser."
+  }
+}

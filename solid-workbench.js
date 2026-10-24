@@ -1,5 +1,5 @@
 import {validateSolidSpec,needsCurvedRuntime} from './solid-spec.js?v=3';
-import {installSolidIntent} from './solid-intent-ui.js?v=5';
+import {installSolidIntent} from './solid-intent-ui.js?v=7';
 import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=5';
 import {createSolidEditor} from './solid-editor.js?v=4';
 import {writeWorkspace,WorkspaceConflictError} from './workspace-store.js?v=1';

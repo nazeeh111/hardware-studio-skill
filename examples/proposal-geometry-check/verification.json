@@ -1,0 +1,312 @@
+{
+  "status": "passed",
+  "first_browser_versions": {
+    "solid_ui": 16,
+    "proposal_checker": 1
+  },
+  "final_browser_versions": {
+    "solid_ui": 17,
+    "proposal_checker": 2
+  },
+  "archives": [
+    {
+      "file": "first-checked-proposal.zip",
+      "sha256": "11f604253e159e96d646e264f2f41197e420ef9fda79a252039f214bcc5d485f",
+      "crc": "passed",
+      "entry_sha256": {
+        "proposal.json": "9d1b70c6c6c937c5571ac934f1020dbf0659e9f5d2670252c272d5d334008f59",
+        "README.txt": "f9b33a1f57928ab1e3bfe346de30bb909671932d09d1118636af05d3d06f2dfd",
+        "geometry-checks/attempt-1/proposal-binding.json": "20f033a186aac8f8defa48a1e5686457aa79c35735c797a402b86e6c2374a493",
+        "geometry-checks/attempt-1/source.json": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+        "geometry-checks/attempt-1/check.json": "5335962e0cacf3b2de5a51db1fd0eec1c9b5e27062d8a3951b077d58029ee89e",
+        "geometry-checks/attempt-1/response.json": "08f6379af157877b020a4cb83fdd3d54a98416e6abac30348ed08e1e91a2400e",
+        "geometry-checks/attempt-1/solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "geometry-checks/attempt-1/README.txt": "5a453eb1f8b7d9975afc4779ffcc1ee7465baec79007cc66eba856691c3f8a66",
+        "before-source.json": "be0172c245d8b56439165b08c0a2be913f8975b9fd6b911af155fe01aaa573e9",
+        "proposed-source.json": "12b6d2cff01dd37bf0213627a96e638f08759ef991a51b4e636cade1895a08de"
+      }
+    },
+    {
+      "file": "final-checked-proposal.zip",
+      "sha256": "b46b3ff59ec7d628a2eb68a8938b999a8c1fa34d3f6246d3d1b8c2d3cc5049ab",
+      "crc": "passed",
+      "entry_sha256": {
+        "proposal.json": "d9df0cee0de51233fa8857f2f3c090e2418fff4d51c452724ee8cd647fa81b97",
+        "README.txt": "f9b33a1f57928ab1e3bfe346de30bb909671932d09d1118636af05d3d06f2dfd",
+        "geometry-checks/attempt-1/proposal-binding.json": "b3c139cda9117c4ffa0314be9239c9a9e9abe299fcdfa87852e706919c7ddef5",
+        "geometry-checks/attempt-1/source.json": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+        "geometry-checks/attempt-1/check.json": "fb0dc23b8cb0a785a6479b199e2425a128b6a7abfe84e86aea44796f43316382",
+        "geometry-checks/attempt-1/response.json": "f50cdff4a14de67c1095fce05d6123104dacd3f3963918ca36dc07321db8023a",
+        "geometry-checks/attempt-1/solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "geometry-checks/attempt-1/README.txt": "caec3293d92264f0357d3bb72e689593a4bdcabb41fe2999b1a26d0c61cae292",
+        "before-source.json": "be0172c245d8b56439165b08c0a2be913f8975b9fd6b911af155fe01aaa573e9",
+        "proposed-source.json": "12b6d2cff01dd37bf0213627a96e638f08759ef991a51b4e636cade1895a08de"
+      }
+    },
+    {
+      "file": "first-stale-proposal.zip",
+      "sha256": "b372197f93c9c60b7e4e43bf3375d4b21ed3fffe9daa6b2e59294821de291d0d",
+      "crc": "passed",
+      "entry_sha256": {
+        "proposal.json": "9d1b70c6c6c937c5571ac934f1020dbf0659e9f5d2670252c272d5d334008f59",
+        "README.txt": "f9b33a1f57928ab1e3bfe346de30bb909671932d09d1118636af05d3d06f2dfd",
+        "geometry-checks/attempt-1/proposal-binding.json": "20f033a186aac8f8defa48a1e5686457aa79c35735c797a402b86e6c2374a493",
+        "geometry-checks/attempt-1/source.json": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+        "geometry-checks/attempt-1/check.json": "5335962e0cacf3b2de5a51db1fd0eec1c9b5e27062d8a3951b077d58029ee89e",
+        "geometry-checks/attempt-1/response.json": "08f6379af157877b020a4cb83fdd3d54a98416e6abac30348ed08e1e91a2400e",
+        "geometry-checks/attempt-1/solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "geometry-checks/attempt-1/README.txt": "5a453eb1f8b7d9975afc4779ffcc1ee7465baec79007cc66eba856691c3f8a66",
+        "before-source.json": "be0172c245d8b56439165b08c0a2be913f8975b9fd6b911af155fe01aaa573e9",
+        "proposed-source.json": "12b6d2cff01dd37bf0213627a96e638f08759ef991a51b4e636cade1895a08de"
+      }
+    },
+    {
+      "file": "rejected-check.zip",
+      "sha256": "91408f1163a1dd7620556863d0a1c194c406a00cf5b38caefb1a099a5be9ec93",
+      "crc": "passed",
+      "entry_sha256": {
+        "source.json": "70cbb864edecd95de0c98efd675be2ec6b5ad15b23ade80c225e23bd75623e78",
+        "check.json": "6c28404dc2c6e0d6d6677f7a5688b5fa057ee822ae88d98a3f077b6b1e2cdae1",
+        "README.txt": "5a453eb1f8b7d9975afc4779ffcc1ee7465baec79007cc66eba856691c3f8a66"
+      }
+    },
+    {
+      "file": "first-proposed-cad.zip",
+      "sha256": "f7907e479d8ffd8eea4d16b8011032cc5e28a170dfa10e655d59e963ddd07b8c",
+      "crc": "passed",
+      "entry_sha256": {
+        "spec.json": "1ad55d5e973274f6184ce6689af17af02563ba7ae7911b5c7321387dd69a49e0",
+        "solid.step": "0e802d3232d5de46664ff9d9ce196634ef89fe6e283f770dc9f7e178a33ec186",
+        "solid.stl": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+        "build-report.json": "547eb29117c268cfaa2c0be1a0ba81f80b61b811a1eb675d0eb5654eca417619",
+        "verification.json": "9ece46ae65471c16a3e3a3c906240fdfae88d54d260f801aaf7c6915dc1a07db"
+      }
+    }
+  ],
+  "first_proposal": {
+    "source_sha256": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+    "raw_http_response_sha256": "08f6379af157877b020a4cb83fdd3d54a98416e6abac30348ed08e1e91a2400e",
+    "stl_sha256": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+    "stl_bytes": 34684,
+    "mesh_readback": {
+      "triangles": 692,
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ]
+    },
+    "model": {
+      "name": "qwen3.8:27b",
+      "digest": "aaee06c39dcf2437cde036998d960e1fc1494b8191be7cc9657d01e509097813",
+      "identityCheckedBeforeAndAfter": true
+    },
+    "instruction": "Create one rectangular plate, 48 mm in X, 32 mm in Y and 3 mm in Z. Lower-left-bottom corner is (0,0,0). Cut two 4 mm diameter through-holes on +Z, centered at (8,16) and (40,16) mm. No other features. This is a nominal geometry study; material, tolerances and use are unspecified.",
+    "three_features_zero_generated_probes": true,
+    "receipt_bound_to_request_and_model": true
+  },
+  "final_proposal": {
+    "source_sha256": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+    "raw_http_response_sha256": "f50cdff4a14de67c1095fce05d6123104dacd3f3963918ca36dc07321db8023a",
+    "stl_sha256": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+    "stl_bytes": 34684,
+    "mesh_readback": {
+      "triangles": 692,
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ]
+    },
+    "model": {
+      "name": "qwen3.8:27b",
+      "digest": "aaee06c39dcf2437cde036998d960e1fc1494b8191be7cc9657d01e509097813",
+      "identityCheckedBeforeAndAfter": true
+    },
+    "instruction": "Create one rectangular plate, 48 mm in X, 32 mm in Y and 3 mm in Z. Lower-left-bottom corner is (0,0,0). Cut two 4 mm diameter through-holes on +Z, centered at (8,16) and (40,16) mm. No other features. This is a nominal geometry study; material, tolerances and use are unspecified.",
+    "three_features_zero_generated_probes": true,
+    "receipt_bound_to_request_and_model": true
+  },
+  "final_browser_observations": {
+    "candidate_ui": 17,
+    "checker_import": 2,
+    "model_name": "qwen3.8:27b",
+    "source_applied": false,
+    "working_source_before_after_byte_identical": true,
+    "working_source_sha256": "68acd0eec169a1f6e59622c495c89715fee704dc180fa0778f8964314dcae41c",
+    "receipt": {
+      "schema": "hardware-studio-solid-proposal-check-v1",
+      "status": "passed",
+      "code": "passed",
+      "title": "Rectangular Plate with Two Through-Holes",
+      "sourceSha256": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+      "sourceBytes": 421,
+      "startedAt": "2026-10-24T02:00:04.078Z",
+      "completedAt": "2026-10-24T02:00:09.649Z",
+      "endpoint": "./api/solid-preview",
+      "httpStatus": 200,
+      "responseSha256": "f50cdff4a14de67c1095fce05d6123104dacd3f3963918ca36dc07321db8023a",
+      "stlSha256": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+      "stlBytes": 34684,
+      "error": null,
+      "checks": {
+        "triangles": 692,
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          48,
+          32,
+          3
+        ],
+        "volumeMm3": 4532.6017763138425,
+        "probes": 0
+      },
+      "limits": {
+        "stepAvailable": false,
+        "stlAvailable": true,
+        "rawMeshAvailable": false,
+        "physicalValidation": false,
+        "semanticIntentValidation": false,
+        "browserCheck": "Source equality, declared CAD checks and STL hash/dimensions/triangle readback. Native topology and sampled STEP checks are verifier reports, not recomputed in the browser."
+      }
+    }
+  },
+  "final_working_source_byte_identical": true,
+  "working_source_byte_identical": true,
+  "working_source_sha256": "68acd0eec169a1f6e59622c495c89715fee704dc180fa0778f8964314dcae41c",
+  "later_stale_download_entry_bytes_identical": true,
+  "browser_observations": {
+    "working_source_byte_identical_before_after_check": true,
+    "working_source_sha256": "68acd0eec169a1f6e59622c495c89715fee704dc180fa0778f8964314dcae41c",
+    "working_source_title": "Three-hole mounting bracket",
+    "all_captured_zip_entries_identical_after_later_instruction": true,
+    "current_source_applied": false,
+    "browser_stale_check_and_apply_disabled": true
+  },
+  "rejected_case": {
+    "status": "rejected",
+    "error": "Feature miss must change volume by more than 0.001 cubic mm.",
+    "source_sha256": "70cbb864edecd95de0c98efd675be2ec6b5ad15b23ade80c225e23bd75623e78",
+    "verified_mesh_present": false
+  },
+  "separate_full_cad": {
+    "same_prepared_source": true,
+    "stl_byte_identical": true,
+    "first_and_final_prepared_source_byte_identical": true,
+    "final_stl_byte_identical": true,
+    "step_sha256": "0e802d3232d5de46664ff9d9ce196634ef89fe6e283f770dc9f7e178a33ec186",
+    "transport": "Existing HTTP /api/solid from first captured source; no apply"
+  },
+  "production_replay": {
+    "first": {
+      "normalized_intent_replayed": true,
+      "production_mesh_validator_replayed": true,
+      "triangles": 692
+    },
+    "final": {
+      "normalized_intent_replayed": true,
+      "production_mesh_validator_replayed": true,
+      "triangles": 692
+    }
+  },
+  "independent_step": {
+    "status": "passed",
+    "step_sha256": "0e802d3232d5de46664ff9d9ce196634ef89fe6e283f770dc9f7e178a33ec186",
+    "first_and_final_prepared_source_and_stl_match_this_cad": true,
+    "measurements": {
+      "solid_count": 1,
+      "min_mm": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max_mm": [
+        48.0,
+        32.0,
+        3.0
+      ],
+      "span_mm": [
+        48.0,
+        32.0,
+        3.0
+      ],
+      "volume_mm3": 4532.6017763138425,
+      "expected_volume_mm3": 4532.601776313845,
+      "volume_absolute_error_mm3": 2.7284841053187847e-12,
+      "cylinder_faces": [
+        {
+          "radius_mm": 2.0,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "center_xy_mm": [
+            8.0,
+            16.0
+          ],
+          "z_range_mm": [
+            0.0,
+            3.0
+          ]
+        },
+        {
+          "radius_mm": 2.0,
+          "axis": [
+            0.0,
+            0.0,
+            1.0
+          ],
+          "center_xy_mm": [
+            40.0,
+            16.0
+          ],
+          "z_range_mm": [
+            0.0,
+            3.0
+          ]
+        }
+      ],
+      "planar_faces": 6,
+      "independent_regions": [
+        {
+          "center_xy_mm": [
+            8.0,
+            16.0
+          ],
+          "through_core_overlap_mm3": 0.0,
+          "surrounding_annulus_material_mm3": 17.341591447815652,
+          "expected_annulus_mm3": 17.341591447815656
+        },
+        {
+          "center_xy_mm": [
+            40.0,
+            16.0
+          ],
+          "through_core_overlap_mm3": 0.0,
+          "surrounding_annulus_material_mm3": 17.341591447815638,
+          "expected_annulus_mm3": 17.341591447815656
+        }
+      ]
+    }
+  },
+  "limits": [
+    "Browser observations are preserved observations, not reconstructed from archive bytes.",
+    "Preview evidence has no STEP or raw pre-normalization STL; native verifier reports are not browser topology recomputation.",
+    "Optional native inspection uses the same OpenCascade kernel, not a different CAD system.",
+    "Two successful trials of the same plate instruction are not a general model accuracy benchmark or physical validation."
+  ]
+}

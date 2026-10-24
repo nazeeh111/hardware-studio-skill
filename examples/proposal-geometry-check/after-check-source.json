@@ -1,0 +1,119 @@
+{
+  "schema": "hardware-studio-solid-v1",
+  "title": "Three-hole mounting bracket",
+  "units": "mm",
+  "features": [
+    {
+      "id": "base",
+      "operation": "add",
+      "shape": "box",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        60,
+        30,
+        4
+      ]
+    },
+    {
+      "id": "upright",
+      "operation": "add",
+      "shape": "box",
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        4,
+        30,
+        40
+      ]
+    },
+    {
+      "id": "base-hole-a",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        15,
+        15,
+        -1
+      ],
+      "axis": "z",
+      "radius": 2.5,
+      "height": 6
+    },
+    {
+      "id": "base-hole-b",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        45,
+        15,
+        -1
+      ],
+      "axis": "z",
+      "radius": 2.5,
+      "height": 6
+    },
+    {
+      "id": "upright-hole",
+      "operation": "cut",
+      "shape": "cylinder",
+      "origin": [
+        -1,
+        15,
+        25
+      ],
+      "axis": "x",
+      "radius": 2.5,
+      "height": 6
+    }
+  ],
+  "probes": [
+    {
+      "id": "base-hole-is-open",
+      "expect": "void",
+      "shape": "cylinder",
+      "origin": [
+        15,
+        15,
+        0
+      ],
+      "axis": "z",
+      "radius": 2,
+      "height": 4
+    },
+    {
+      "id": "upright-hole-is-open",
+      "expect": "void",
+      "shape": "cylinder",
+      "origin": [
+        0,
+        15,
+        25
+      ],
+      "axis": "x",
+      "radius": 2,
+      "height": 4
+    },
+    {
+      "id": "base-remains",
+      "expect": "material",
+      "shape": "box",
+      "origin": [
+        10,
+        2,
+        0
+      ],
+      "size": [
+        5,
+        5,
+        4
+      ]
+    }
+  ]
+}

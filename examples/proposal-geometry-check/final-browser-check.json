@@ -1,0 +1,47 @@
+{
+  "candidate_ui": 17,
+  "checker_import": 2,
+  "model_name": "qwen3.8:27b",
+  "source_applied": false,
+  "working_source_before_after_byte_identical": true,
+  "working_source_sha256": "68acd0eec169a1f6e59622c495c89715fee704dc180fa0778f8964314dcae41c",
+  "receipt": {
+    "schema": "hardware-studio-solid-proposal-check-v1",
+    "status": "passed",
+    "code": "passed",
+    "title": "Rectangular Plate with Two Through-Holes",
+    "sourceSha256": "acf12227862ec6d3340ff463ff740a72c7136674cc8d899e94b0b10c7e3ba796",
+    "sourceBytes": 421,
+    "startedAt": "2026-10-24T02:00:04.078Z",
+    "completedAt": "2026-10-24T02:00:09.649Z",
+    "endpoint": "./api/solid-preview",
+    "httpStatus": 200,
+    "responseSha256": "f50cdff4a14de67c1095fce05d6123104dacd3f3963918ca36dc07321db8023a",
+    "stlSha256": "eb4414280973445819f612361ee163f2fcfd27e351af324b0c6179fcddbc4cef",
+    "stlBytes": 34684,
+    "error": null,
+    "checks": {
+      "triangles": 692,
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "max": [
+        48,
+        32,
+        3
+      ],
+      "volumeMm3": 4532.6017763138425,
+      "probes": 0
+    },
+    "limits": {
+      "stepAvailable": false,
+      "stlAvailable": true,
+      "rawMeshAvailable": false,
+      "physicalValidation": false,
+      "semanticIntentValidation": false,
+      "browserCheck": "Source equality, declared CAD checks and STL hash/dimensions/triangle readback. Native topology and sampled STEP checks are verifier reports, not recomputed in the browser."
+    }
+  }
+}
