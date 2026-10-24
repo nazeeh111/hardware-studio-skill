@@ -1,3 +1,4 @@
+import {needsCurvedRuntime} from '../solid-spec.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -36,7 +37,7 @@ function setup({malformed=false,sidecar=true}={}){
  get('#solid-replace').disabled=true; // Matches solid.html's recovery control.
  const storage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value),removeItem:key=>data.delete(key)};
  let intent;
- const sandbox={validateSolidSpec,solidContext,validateAssemblySpec,emptyAssembly,setAssemblyPartSource,parseSavedWorkspace,STORAGE_KEY,writeWorkspace,WorkspaceConflictError,
+ const sandbox={needsCurvedRuntime,validateSolidSpec,solidContext,validateAssemblySpec,emptyAssembly,setAssemblyPartSource,parseSavedWorkspace,STORAGE_KEY,writeWorkspace,WorkspaceConflictError,
   installSolidIntent:api=>{intent=api;return {refresh(){}};},createSolidEditor:()=>({setSource(){return true;}}),
   SOLID_PREVIEW_KEY:'preview',solidSnapshot(){throw new Error('Preview unused in this harness');},
   location:{search:'?project=project-1&part=plate',href:''},localStorage:storage,sessionStorage:{getItem:key=>session.get(key)??null,setItem:(key,value)=>session.set(key,value),removeItem:key=>session.delete(key)},

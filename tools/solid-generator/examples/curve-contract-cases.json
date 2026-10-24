@@ -1,0 +1,974 @@
+[
+  {
+    "name": "two-semicircle-circle",
+    "start": [
+      5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          5
+        ],
+        "end": [
+          -5,
+          0
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          -5
+        ],
+        "end": [
+          5,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "D-profile",
+    "start": [
+      0,
+      -5
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          0
+        ],
+        "end": [
+          0,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          -5
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "capsule",
+    "start": [
+      0,
+      -3
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          -3
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          13,
+          0
+        ],
+        "end": [
+          10,
+          3
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          3
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          -3,
+          0
+        ],
+        "end": [
+          0,
+          -3
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "concave-semicircle",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          10,
+          10
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          5
+        ],
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "major-arc",
+    "start": [
+      5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          -5,
+          0
+        ],
+        "end": [
+          0,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "line-only",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "snapped-close",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          5e-8
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "tangent-adjacent-arcs",
+    "start": [
+      -5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          -5
+        ],
+        "end": [
+          5,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          4
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          9
+        ],
+        "end": [
+          -5,
+          4
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          -5,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "two-semicircle-circle-reverse",
+    "start": [
+      5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          -5
+        ],
+        "end": [
+          -5,
+          0
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          5
+        ],
+        "end": [
+          5,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "D-profile-reverse",
+    "start": [
+      0,
+      -5
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          0,
+          5
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          0
+        ],
+        "end": [
+          0,
+          -5
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "capsule-reverse",
+    "start": [
+      0,
+      -3
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          -3,
+          0
+        ],
+        "end": [
+          0,
+          3
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          10,
+          3
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          13,
+          0
+        ],
+        "end": [
+          10,
+          -3
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          -3
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "concave-semicircle-reverse",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          5
+        ],
+        "end": [
+          10,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "major-arc-reverse",
+    "start": [
+      5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          0,
+          5
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          -5,
+          0
+        ],
+        "end": [
+          5,
+          0
+        ]
+      }
+    ],
+    "valid": true
+  },
+  {
+    "name": "bow-tie",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "coincident-arcs",
+    "start": [
+      5,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          5
+        ],
+        "end": [
+          -5,
+          0
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          5
+        ],
+        "end": [
+          5,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "nonadjacent-line-arc-tangent",
+    "start": [
+      0,
+      -5
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          0
+        ],
+        "end": [
+          0,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          -5,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          -5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          -5
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "nonadjacent-arc-arc-tangent",
+    "start": [
+      0,
+      -2
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          2,
+          0
+        ],
+        "end": [
+          0,
+          2
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          4,
+          2
+        ]
+      },
+      {
+        "kind": "arc",
+        "via": [
+          2,
+          0
+        ],
+        "end": [
+          4,
+          -2
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          -2
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "adjacent-line-overlap",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          5
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "nonadjacent-endpoint-touch",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          10,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          5,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "collinear-arc",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "repeated-arc-via",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          0,
+          0
+        ],
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "small-chord",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          0.001,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "open",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0.001
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "oversized-derived-radius",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "arc",
+        "via": [
+          5,
+          0.001
+        ],
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "bad-coordinate",
+    "start": [
+      0,
+      "0"
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "coordinate-limit",
+    "start": [
+      501,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          501,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "extra-field",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ],
+        "height": 1
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          10
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  },
+  {
+    "name": "zero-area-retrace",
+    "start": [
+      0,
+      0
+    ],
+    "segments": [
+      {
+        "kind": "line",
+        "end": [
+          10,
+          0
+        ]
+      },
+      {
+        "kind": "line",
+        "end": [
+          0,
+          0
+        ]
+      }
+    ],
+    "valid": false
+  }
+]

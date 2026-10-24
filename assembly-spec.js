@@ -1,4 +1,4 @@
-import {validateSolidSpec} from './solid-spec.js?v=2';
+import {validateSolidSpec} from './solid-spec.js?v=3';
 
 export const ASSEMBLY_SCHEMA = 'hardware-studio-assembly-v1';
 export const ASSEMBLY_MAX_BYTES = 262144;

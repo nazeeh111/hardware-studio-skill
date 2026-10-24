@@ -1,10 +1,10 @@
-import {ASSEMBLY_PREVIEW_KEY,readAssemblySnapshot,assemblyMeshes,assemblyReadbackText} from './assembly-preview.js?v=1';
+import {ASSEMBLY_PREVIEW_KEY,readAssemblySnapshot,assemblyMeshes,assemblyReadbackText} from './assembly-preview.js?v=2';
 import { installVisionPanel } from './vision-panel.js?v=3';
 import { INSPECTION_VIEWS, inspectionScene, inspectionManifest } from './inspection-sheet.js?v=2';
 import { createZip } from './zip.js?v=1';
 import { parseStl, meshesToGlb, MAX_STL_BYTES } from './stl.js?v=1';
 import { PREVIEW_KEY, readPreviewSnapshot, previewMeshes } from './cad-preview.js?v=1';
-import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=4';
+import { SOLID_PREVIEW_KEY, readSolidSnapshot, solidMeshes } from './solid-preview.js?v=5';
 const $ = selector => document.querySelector(selector), canvas = $('#viewport');
 const gl = canvas.getContext('webgl', { antialias:true, alpha:true });
 let meshes=[], yaw=-.65, pitch=.72, zoom=1, sequence=0, geometryRevision=0, pointers=new Map();
@@ -46,7 +46,14 @@ function controls(){
   for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible=check.checked;$('#export-glb').disabled=!meshes.some(m=>m.visible);$('#export-sheet').disabled=sheetBusy||!meshes.some(m=>m.visible);geometryRevision++;visionPanel?.geometryChanged();draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
   $('#empty-view').hidden=meshes.length>0;$('#export-glb').disabled=!meshes.length;$('#export-sheet').disabled=sheetBusy||!meshes.length;$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').closest('label').hidden=!meshes.some(m=>m.cover);$('#explode').checked=false;$('#glb-note').textContent='GLB uses meters and a Y-up scene. It preserves original mesh positions. '+(meshes.some(m=>m.cover)?'The lifted display offset is excluded. ':'')+'Mesh dimensions do not establish fit or manufacturing quality.';reset();
 }
-function replaceMeshes(next){for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=next.map((mesh,i)=>{const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);return {...mesh,buffer,color:palette[i],visible:true};});geometryRevision++;controls();visionPanel?.geometryChanged();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);}
+function replaceMeshes(next){
+ const prepared=[];
+ try{for(const [i,mesh] of next.entries()){
+  const buffer=gl.createBuffer();if(!buffer)throw new Error('The graphics buffer could not be allocated. Earlier geometry is retained.');
+  prepared.push({...mesh,buffer,color:palette[i%palette.length],visible:true});gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,mesh.data,gl.STATIC_DRAW);
+ }}catch(error){for(const mesh of prepared)gl.deleteBuffer(mesh.buffer);throw error;}
+ for(const mesh of meshes)gl.deleteBuffer(mesh.buffer);meshes=prepared;geometryRevision++;controls();visionPanel?.geometryChanged();status(`${meshes.length} ${meshes.length===1?'mesh':'meshes'} · ${meshes.reduce((n,m)=>n+m.triangles,0).toLocaleString()} triangles. Original positions retained.`);
+}
 async function loadExample(){
   leaveGeneratedMode();
   const token=++sequence;if(!gl||!program)return;status('Loading the worked tray and cover…');
@@ -143,7 +150,7 @@ async function generatePreview(){
     const payload=await response.json();const next=await (record.schema===ASSEMBLY_PREVIEW_KEY?assemblyMeshes:record.schema===SOLID_PREVIEW_KEY?solidMeshes:previewMeshes)(payload,record.spec);
     if(token!==sequence||previewRecord!==record)return;
     replaceMeshes(next);
-    if(record.schema===ASSEMBLY_PREVIEW_KEY){const text=assemblyReadbackText(payload.verification);$('#generated-status').textContent=text.split('\n')[0]+' Joints, motion, tolerances and physical fit remain untested.';$('#generated-status').classList.toggle('interference',payload.verification.status==='interference');$('#assembly-readback').hidden=false;$('#assembly-pairs-summary').textContent='Nominal pair checks / '+payload.verification.pairs.length;$('#assembly-pairs').textContent=text;}else{$('#generated-status').textContent='Readback matched: STL hash, triangle count and dimensions. Physical fit remains untested.';$('#assembly-readback').hidden=true;$('#generated-status').classList.remove('interference');}
+    if(record.schema===ASSEMBLY_PREVIEW_KEY){const text=assemblyReadbackText(payload.verification);$('#generated-status').textContent=text.split('\n')[0]+' Joints, motion, tolerances and physical fit remain untested.';$('#generated-status').classList.toggle('interference',payload.verification.status==='interference');$('#assembly-readback').hidden=false;$('#assembly-pairs-summary').textContent='Nominal pair checks / '+payload.verification.pairs.length;$('#assembly-pairs').textContent=text;}else{$('#generated-status').textContent=record.schema===SOLID_PREVIEW_KEY?'Readback matched: STL hash, topology, volume and sampled STEP boundary checks. Physical fit remains untested.':'Readback matched: STL hash, triangle count and dimensions. Physical fit remains untested.';$('#assembly-readback').hidden=true;$('#generated-status').classList.remove('interference');}
   }catch(error){if(token===sequence&&previewRecord===record){status(error.name==='TimeoutError'?'Preview timed out. Check the local server before retrying.':error.message,true);$('#generated-status').textContent='Preview unavailable. Return to the workbench or retry with the same frozen dimensions.';}}
   finally{generatedBusy=false;generatedButtons();}
 }

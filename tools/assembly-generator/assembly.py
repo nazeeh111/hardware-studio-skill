@@ -15,6 +15,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS / 'solid-generator'))
 sys.path.insert(0, str(TOOLS / 'tray-generator'))
 import solid
+from mesh_check import check_mesh, normalize_export_mesh, verify_export_mesh_record
 from generate import export
 from verify import read_step, volume, solid_count, overlap_volume
 from OCP.BRep import BRep_Builder
@@ -175,7 +176,11 @@ def verify_package(root):
         saved = read_step(folder/'solid.step'); check_one(saved)
         if not matches(saved, original): raise ValueError('Local asset STEP differs from its reconstructed source.')
         reconstructed[asset['partId']] = original
-        assets.append({'partId': asset['partId'], 'directory': f'assets/part-{i:03d}', **bbox(saved), 'volume_mm3': volume(saved), **stl_info(folder/'solid.stl', bbox(saved)), 'probes': probes, 'sha256': {name: sha(folder/name) for name in ('spec.json', 'solid.step', 'solid.stl')}})
+        assets.append({'partId': asset['partId'], 'directory': f'assets/part-{i:03d}', **bbox(saved), 'volume_mm3': volume(saved), **stl_info(folder/'solid.stl', bbox(saved)), 'stl_check': check_mesh(folder/'solid.stl', saved), 'probes': probes, 'sha256': {name: sha(folder/name) for name in ('spec.json', 'solid.step', 'solid.stl')}})
+        if 'stl_export' in built['assets'][i-1]:
+            assets[-1]['stl_export'] = verify_export_mesh_record(folder/'solid.stl', built['assets'][i-1]['stl_export'])
+        elif (folder/'solid.raw.stl').exists() or (folder/'solid.raw.stl').is_symlink():
+            raise ValueError('Raw asset STL exists without its export normalization receipt.')
     shapes, instances, total_bytes, total_triangles = [], [], 0, 0
     for i, item in enumerate(spec['instances'], 1):
         name = f'instance-{i:03d}'
@@ -184,10 +189,16 @@ def verify_package(root):
         expected = reconstruct_placement(reconstructed[item['partId']], item)
         if not matches(shape, expected): raise ValueError('Instance STEP differs from independently reconstructed placement.')
         bb = bbox(shape)
-        mesh = stl_info(path.with_suffix('.stl'), bb)
+        mesh = {**stl_info(path.with_suffix('.stl'), bb), 'stl_check': check_mesh(path.with_suffix('.stl'), shape)}
         total_bytes += path.with_suffix('.stl').stat().st_size; total_triangles += mesh['stl_triangles']
         shapes.append(shape)
         instances.append({'id': item['id'], 'partId': item['partId'], 'name': name+'.stl', **bb, 'volume_mm3': volume(shape), **mesh, 'sha256': {ext: sha(path.with_suffix('.'+ext)) for ext in ('step', 'stl')}})
+        if 'instance_exports' in built:
+            exported = built['instance_exports'][i-1]
+            if exported['id'] != item['id']: raise ValueError('Instance export record differs from its source ID.')
+            instances[-1]['stl_export'] = verify_export_mesh_record(path.with_suffix('.stl'), exported['stl_export'])
+        elif path.with_suffix('.raw.stl').exists() or path.with_suffix('.raw.stl').is_symlink():
+            raise ValueError('Raw instance STL exists without its export normalization receipt.')
     if total_bytes > 16000000 or total_triangles > 400000: raise ValueError('Combined instance meshes exceed 16 MB or 400,000 triangles.')
     assembly = read_step(root/'assembly.step')
     if solid_count(assembly) != len(shapes): raise ValueError('Assembly STEP must retain one unfused solid per instance.')
@@ -227,15 +238,19 @@ def generate(spec_path, destination):
             dump(folder/'spec.json', asset['source'])
             shape, history, probes = solid.build(asset['source'])
             export(shape, folder, 'solid'); parts[asset['partId']] = shape
-            reports.append({'partId': asset['partId'], 'feature_history': history, 'probes': probes})
+            normalization = normalize_export_mesh(folder/'solid.stl', folder/'solid.raw.stl')
+            reports.append({'partId': asset['partId'], 'feature_history': history, 'probes': probes, 'stl_export': normalization})
         compound, builder = TopoDS_Compound(), BRep_Builder()
         builder.MakeCompound(compound)
+        instance_exports = []
         for i, instance in enumerate(spec['instances'], 1):
             shape = place(parts[instance['partId']], instance)
             export(shape, staging/'instances', f'instance-{i:03d}')
+            normalization = normalize_export_mesh(staging/'instances'/f'instance-{i:03d}.stl', staging/'instances'/f'instance-{i:03d}.raw.stl')
+            instance_exports.append({'id': instance['id'], 'stl_export': normalization})
             builder.Add(compound, shape)
         write_step(compound, staging/'assembly.step')
-        dump(staging/'build-report.json', {'volume_mm3': volume(compound), **bbox(compound), 'assets': reports, 'placement_convention': 'T*Rz*Ry*Rx; degrees around source origin; mm translation'})
+        dump(staging/'build-report.json', {'volume_mm3': volume(compound), **bbox(compound), 'assets': reports, 'instance_exports': instance_exports, 'placement_convention': 'T*Rz*Ry*Rx; degrees around source origin; mm translation'})
         subprocess.run([sys.executable, str(Path(__file__).resolve()), '--verify', str(staging)], capture_output=True, text=True, check=True, timeout=170)
         staging.rename(destination)
     except Exception:

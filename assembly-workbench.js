@@ -1,13 +1,14 @@
-import {editableAssembly,normalizeAssemblyDraft} from './assembly-editor.js?v=1';
-import {validateAssemblySpec,emptyAssembly,setAssemblyPartSource,assemblyIssues,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=1';
-import {assemblyKey} from './project-geometry.js?v=3';
-import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=41';
+import {needsCurvedRuntime} from './solid-spec.js?v=3';
+import {editableAssembly,normalizeAssemblyDraft} from './assembly-editor.js?v=2';
+import {validateAssemblySpec,emptyAssembly,setAssemblyPartSource,assemblyIssues,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=2';
+import {assemblyKey} from './project-geometry.js?v=4';
+import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=43';
 import {writeWorkspace,WorkspaceConflictError} from './workspace-store.js?v=1';
-import {assemblySnapshot,ASSEMBLY_PREVIEW_KEY} from './assembly-preview.js?v=1';
+import {assemblySnapshot,ASSEMBLY_PREVIEW_KEY} from './assembly-preview.js?v=2';
 const $=id=>document.getElementById('assembly-'+id),query=new URLSearchParams(location.search),projectId=query.get('project');
 const validProjectId=typeof projectId==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(projectId);
 const KEY=validProjectId?assemblyKey(projectId):null,DRAFT=KEY+'-draft-v1';
-let project=null,projectSignature=null,embeddedBaseline=null,applied=null,working=null,expectedRaw=null,preservedRaw=null,blocked=false,backedUp=false,jsonDirty=false,ready=false,busy=false,history=[],cursor=-1;
+let project=null,projectSignature=null,embeddedBaseline=null,applied=null,working=null,expectedRaw=null,preservedRaw=null,blocked=false,backedUp=false,jsonDirty=false,ready=false,advancedReady=false,busy=false,history=[],cursor=-1;
 const element=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
 const note=text=>{$('status').textContent=text;};
 const raw=()=>JSON.stringify(working,null,2);
@@ -19,10 +20,12 @@ const partName=id=>project.parts.find(p=>p.id===id)?.name||id;
 function download(name,data,type='application/json') {const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 function retain(){try{sessionStorage.setItem(DRAFT,JSON.stringify({schema:'hardware-studio-assembly-editor-v1',kind:jsonDirty?'json':'controls',data:jsonDirty?$('source').value:working}));}catch{$('retention').textContent='Tab storage could not be written. Unapplied changes stay in memory only; export the working source before leaving.';}}
 function isCurrent(){try{return localStorage.getItem(KEY)===expectedRaw&&matchesProject(selectedProject());}catch{return false;}}
+function supportedRuntime(){return ready&&(advancedReady||!applied?.assets.some(asset=>needsCurvedRuntime(asset.source)));}
 function buttons(){
  let buildable=false;try{validateAssemblySpec(applied,{requirePlaced:true});buildable=true;}catch{}
  const usable=!!project&&!dirty()&&!blocked&&isCurrent();
- $('preview').disabled=!usable||!buildable||!ready||busy;$('package').disabled=!usable||!buildable||!ready||busy;
+ $('runtime').textContent=!ready?'Assembly runtime unavailable. Run the current local server to build; source and placement editing work here.':!supportedRuntime()?'This assembly needs the curved CAD runtime. Run sh tools/cad-runtime/setup.sh, then restart the local server. Source and placements are retained.':'Local placed-assembly runtime ready. CAD generation stays on this computer.';
+ $('preview').disabled=!usable||!buildable||!supportedRuntime()||busy;$('package').disabled=!usable||!buildable||!supportedRuntime()||busy;
  $('apply').disabled=!project||busy||blocked||!isCurrent();$('revert').disabled=!dirty()||busy;
  $('undo').disabled=dirty()||cursor<=0||busy||blocked||!isCurrent();$('redo').disabled=dirty()||cursor>=history.length-1||busy||blocked||!isCurrent();
  $('add').disabled=!working?.assets.length||!working.assets.some(a=>a.partId===$('place-part').value)||working.instances.length>=16||busy||jsonDirty;
@@ -106,8 +109,8 @@ $('import').addEventListener('click',()=>$('file').click());$('file').addEventLi
 $('backup').addEventListener('click',()=>{download('hardware-studio-original-assembly-bytes.json',preservedRaw??'');backedUp=true;buttons();});
 $('replace').addEventListener('click',()=>{if(!backedUp)return;try{commit(normalized(),true,true);}catch(error){note(error.message);}});
 $('reload').addEventListener('click',()=>{if(dirty())return note('Export or discard unapplied changes before reloading saved CAD.');try{load();}catch(error){note(error.message);}});
-$('preview').addEventListener('click',()=>{if(dirty()||busy||blocked||!isCurrent()||!ready)return;try{sessionStorage.setItem(ASSEMBLY_PREVIEW_KEY,JSON.stringify(assemblySnapshot(applied,projectId)));location.href='./cad-viewer.html?generated=assembly';}catch(error){note(error.message);}});
-$('package').addEventListener('click',async()=>{if(dirty()||busy||blocked||!isCurrent()||!ready)return;const frozen=validateAssemblySpec(applied,{requirePlaced:true});busy=true;buttons();note('Building local parts and transformed instances, then reopening STEP and checking nominal interference…');try{const response=await fetch('./api/assembly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(frozen),signal:AbortSignal.timeout(190000)});if(!response.ok){let message='Assembly build failed.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('The runtime did not return a CAD ZIP.');download('hardware-studio-assembly-cad.zip',await response.blob(),'application/zip');note('Assembly CAD ZIP downloaded for “'+frozen.title+'”. Inspect verification.json for overlap and distance results; geometry checks do not establish physical fit.');}catch(error){note(error.name==='TimeoutError'?'Assembly build timed out. Current source retained.':error.message);}finally{busy=false;buttons();}});
+$('preview').addEventListener('click',()=>{if(dirty()||busy||blocked||!isCurrent()||!supportedRuntime())return;try{sessionStorage.setItem(ASSEMBLY_PREVIEW_KEY,JSON.stringify(assemblySnapshot(applied,projectId)));location.href='./cad-viewer.html?generated=assembly';}catch(error){note(error.message);}});
+$('package').addEventListener('click',async()=>{if(dirty()||busy||blocked||!isCurrent()||!supportedRuntime())return;const frozen=validateAssemblySpec(applied,{requirePlaced:true});busy=true;buttons();note('Building local parts and transformed instances, then reopening STEP and checking nominal interference…');try{const response=await fetch('./api/assembly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(frozen),signal:AbortSignal.timeout(190000)});if(!response.ok){let message='Assembly build failed.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('The runtime did not return a CAD ZIP.');download('hardware-studio-assembly-cad.zip',await response.blob(),'application/zip');note('Assembly CAD ZIP downloaded for “'+frozen.title+'”. Inspect verification.json for overlap and distance results; geometry checks do not establish physical fit.');}catch(error){note(error.name==='TimeoutError'?'Assembly build timed out. Current source retained.':error.message);}finally{busy=false;buttons();}});
 addEventListener('storage',event=>{if(event.key===KEY||event.key===STORAGE_KEY){buttons();if(!isCurrent())note('Saved source or project changed in another tab. Export any working edits, then reload the saved assembly.');}});
 try{load();}catch(error){note(error.message);for(const control of document.querySelectorAll('.workspace button,.workspace input,.workspace textarea,.workspace select'))control.disabled=true;}
-void(async()=>{try{const response=await fetch('./api/health',{cache:'no-store',signal:AbortSignal.timeout(4000)}),info=await response.json();ready=response.ok&&info.ok===true&&info.features?.includes('placed-assembly-v1');}catch{}$('runtime').textContent=ready?'Local placed-assembly runtime ready. CAD generation stays on this computer.':'Assembly runtime unavailable. Run the current local server to build; source and placement editing work here.';if(project)buttons();})();
+void(async()=>{try{const response=await fetch('./api/health',{cache:'no-store',signal:AbortSignal.timeout(4000)}),info=await response.json();ready=response.ok&&info.ok===true&&info.features?.includes('placed-assembly-v1')&&info.features.includes('sampled-mesh-readback-v1');advancedReady=ready&&info.features.includes('curved-solid-v1');}catch{}$('runtime').textContent=ready?'Local placed-assembly runtime ready. CAD generation stays on this computer.':'Assembly runtime unavailable. Run the current local server to build; source and placement editing work here.';if(project)buttons();})();

@@ -23,6 +23,11 @@ from urllib.parse import urlsplit
 sys.dont_write_bytecode = True
 
 import OCP  # Fail at startup if the CAD runtime is unavailable.
+try:
+    import build123d
+    CURVED_RUNTIME = True
+except ImportError:
+    CURVED_RUNTIME = False
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATOR = Path(__file__).with_name('generate.py')
@@ -75,10 +80,19 @@ def generate_solid_package(raw, preview=False):
         source = root / 'input.json'
         source.write_bytes(raw)
         package = root / 'package'
-        result = subprocess.run([sys.executable, str(SOLID_GENERATOR), '--spec', str(source), '--out', str(package)], capture_output=True, text=True, timeout=120)
+        result = run_assembly_process([sys.executable, str(SOLID_GENERATOR), '--spec', str(source), '--out', str(package)], timeout=120)
         if result.returncode:
-            raise ValueError('Solid generation rejected the input or a geometry check. Each feature must affect one connected solid and all material/void probes must pass.')
+            message = 'Solid generation rejected the input or a geometry check. Each feature must affect one connected solid and all material/void probes must pass.'
+            try:
+                domain_error = json.loads(result.stderr.strip().splitlines()[-1]).get('error')
+                if isinstance(domain_error, str) and domain_error:
+                    message = domain_error[:1000]
+            except (ValueError, IndexError, AttributeError):
+                pass
+            raise ValueError(message)
         files = ('spec.json', 'solid.step', 'solid.stl', 'build-report.json', 'verification.json')
+        if (package / 'solid.raw.stl').is_file():
+            files += ('solid.raw.stl',)
         if preview:
             report = json.loads((package / 'verification.json').read_text())
             mesh = (package / 'solid.stl').read_bytes()
@@ -220,7 +234,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(403, {'error': 'Local origin required.'})
         path = urlsplit(self.path).path
         if path == '/api/health':
-            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1', 'placed-assembly-v1']})
+            return self._json(200, {'ok': True, 'cad': 'OpenCascade', 'units': 'mm', 'schema': 'hardware-studio-tray-v1', 'features': ['tray-preview-v1', 'feature-solid-v1', 'profile-solid-v1', 'placed-assembly-v1', 'sampled-mesh-readback-v1'] + (['curved-solid-v1'] if CURVED_RUNTIME else [])})
         if path.startswith('/api/'):
             return self._json(404, {'error': 'Unknown API route.'})
         return super().do_GET()

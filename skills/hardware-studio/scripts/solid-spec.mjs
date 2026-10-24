@@ -1,3 +1,4 @@
+import {validateCurveProfile} from './curve-profile.mjs';
 export const SOLID_SCHEMA='hardware-studio-solid-v1';
 const allowed=(value,keys,label)=>{if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!keys.includes(k)))throw new Error(`${label} has unsupported fields.`);};
 const number=(n,label,positive=false)=>{if(typeof n!=='number'||!Number.isFinite(n)||Math.abs(n)>500||(positive&&n<.01))throw new Error(`${label} must be a finite number ${positive?'at least 0.01 mm and ':''}within 500 mm.`);return n;};
@@ -29,20 +30,23 @@ function profilePoints(raw,label){
  return area2<0?[points[0],...points.slice(1).reverse()]:points;
 }
 function primitive(raw,label,metadata=[]){
- allowed(raw,['shape','origin','size','axis','radius','height','points',...metadata],label);
+ allowed(raw,['shape','origin','size','axis','radius','height','points','start','segments',...metadata],label);
  if(!Array.isArray(raw.origin)||raw.origin.length!==3)throw new Error(`${label} needs three origin coordinates.`);
  const value={shape:raw.shape,origin:raw.origin.map(n=>number(n,`${label}.origin`))};
  if(raw.shape==='box'){
-  if(['axis','radius','height','points'].some(k=>k in raw)||!Array.isArray(raw.size)||raw.size.length!==3)throw new Error(`${label} box needs size only.`);
+  if(['axis','radius','height','points','start','segments'].some(k=>k in raw)||!Array.isArray(raw.size)||raw.size.length!==3)throw new Error(`${label} box needs size only.`);
   value.size=raw.size.map(n=>number(n,`${label}.size`,true));
  }else if(raw.shape==='cylinder'){
-  if('size'in raw||'points'in raw||!['x','y','z'].includes(raw.axis))throw new Error(`${label} cylinder needs an x, y or z axis.`);
+  if(['size','points','start','segments'].some(k=>k in raw)||!['x','y','z'].includes(raw.axis))throw new Error(`${label} cylinder needs an x, y or z axis.`);
   Object.assign(value,{axis:raw.axis,radius:number(raw.radius,`${label}.radius`,true),height:number(raw.height,`${label}.height`,true)});
  }else if(raw.shape==='profile'){
-  if('size'in raw||'radius'in raw||!['x','y','z'].includes(raw.axis))throw new Error(`${label} profile needs points and an x, y or z axis.`);
+  if(['size','radius','start','segments'].some(k=>k in raw)||!['x','y','z'].includes(raw.axis))throw new Error(`${label} profile needs points and an x, y or z axis.`);
   // Right-handed local axes: x => U=Y,V=Z; y => U=Z,V=X; z => U=X,V=Y.
   Object.assign(value,{axis:raw.axis,height:number(raw.height,`${label}.height`,true),points:profilePoints(raw.points,label)});
- }else throw new Error(`${label} supports box, cylinder or profile only.`);
+ }else if(raw.shape==='curve'){
+  if(['size','radius','points'].some(k=>k in raw)||!['x','y','z'].includes(raw.axis))throw new Error(`${label} curved profile needs start, segments and an x, y or z axis.`);
+  Object.assign(value,{axis:raw.axis,height:number(raw.height,`${label}.height`,true),...validateCurveProfile(raw.start,raw.segments)});
+ }else throw new Error(`${label} supports box, cylinder, polygon or curved profile only.`);
  return value;
 }
 export function validateSolidSpec(raw){
@@ -52,6 +56,16 @@ export function validateSolidSpec(raw){
  if(!Array.isArray(raw.features)||raw.features.length<1||raw.features.length>32)throw new Error('Use 1–32 ordered features.');
  const ids=new Set(),id=(value)=>{if(typeof value!=='string'||!value.trim()||value.length>60||ids.has(value))throw new Error('Feature and probe IDs must be unique short text.');ids.add(value);return value;};
  const features=raw.features.map((f,i)=>{
+  if(f?.operation==='fillet'){
+   allowed(f,['id','operation','radius','edges','tolerance'],`Feature ${i+1}`);
+   if(i===0)throw new Error('A fillet needs an existing solid; the first feature must add material.');
+   if(!Array.isArray(f.edges)||f.edges.length<1||f.edges.length>16)throw new Error('A fillet needs 1–16 edge interior points.');
+   const edges=f.edges.map(p=>{if(!Array.isArray(p)||p.length!==3)throw new Error('Each fillet edge point needs X, Y, Z coordinates.');return p.map(n=>number(n,'Fillet edge point'));});
+   if(new Set(edges.map(p=>JSON.stringify(p))).size!==edges.length)throw new Error('Fillet edge points must be distinct.');
+   const tolerance=f.tolerance===undefined ? .01 : f.tolerance;
+   if(typeof tolerance!=='number'||!Number.isFinite(tolerance)||tolerance<.000001||tolerance>.1)throw new Error('Fillet edge tolerance must be 0.000001–0.1 mm.');
+   return {id:id(f.id),operation:'fillet',radius:number(f.radius,'Fillet radius',true),edges,tolerance};
+  }
   const value=primitive(f,`Feature ${i+1}`,['id','operation']);
   if(!['add','cut'].includes(f.operation)||(i===0&&f.operation!=='add'))throw new Error('The first feature must add material; later operations add or cut.');
   return {id:id(f.id),operation:f.operation,...value};
@@ -60,6 +74,7 @@ export function validateSolidSpec(raw){
  const probes=source.map((p,i)=>{const value=primitive(p,`Probe ${i+1}`,['id','expect']);if(!['void','material'].includes(p.expect))throw new Error('Probes need material or void expectations.');return {id:id(p.id),expect:p.expect,...value};});
  return {schema:SOLID_SCHEMA,title:raw.title.trim(),units:'mm',features,probes};
 }
+export function needsCurvedRuntime(spec){return [...(spec?.features||[]),...(spec?.probes||[])].some(item=>item.operation==='fillet'||item.shape==='curve');}
 export function solidProposal(base,raw){
  allowed(raw,['spec','assumptions','missing'],'Model proposal');
  for(const key of ['assumptions','missing'])if(!Array.isArray(raw[key])||raw[key].length>12||raw[key].some(s=>typeof s!=='string'||!s.trim()||s.length>240))throw new Error('The proposal needs short assumptions and missing-information lists.');

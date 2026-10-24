@@ -1,6 +1,6 @@
 import { validateTraySpec } from './tray-spec.js';
-import { validateSolidSpec } from './solid-spec.js?v=2';
-import { validateAssemblySpec, assemblyIssues } from './assembly-spec.js?v=1';
+import { validateSolidSpec } from './solid-spec.js?v=3';
+import { validateAssemblySpec, assemblyIssues } from './assembly-spec.js?v=2';
 import { validateSketch } from './sketch-data.js?v=1';
 
 export const STORAGE_KEY = 'hardware-studio-projects-v1';

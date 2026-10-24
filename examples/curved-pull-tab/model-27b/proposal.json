@@ -1,0 +1,134 @@
+{
+  "schema": "hardware-studio-solid-intent-v1",
+  "request": {
+    "mode": "create",
+    "instruction": "Create a capsule pull tab using one exact line/arc outer profile extrusion, not polygonal approximations. Units mm, origin [0,0,0], +Z extrusion from z=0 to z=6. Outer bounds x=0..40, y=0..20. The straight sides run from [10,0] to [30,0] and [30,20] to [10,20]. Right semicircle is centered [30,10] radius10, through [40,10]; left semicircle centered [10,10] radius10, through [0,10]. Cut one diameter6 through-bore at x=10,y=10 along Z. Then round the complete top OUTER perimeter at z=6 with a constant R1 fillet. Use seed points [20,0,6], [40,10,6], [20,20,6], [0,10,6] with picking tolerance0.01. Do not round the bore or bottom perimeter. Keep all dimensions and these feature locations exactly.",
+    "context": null,
+    "base": null
+  },
+  "model": {
+    "name": "qwen3.8:27b",
+    "digest": "aaee06c39dcf2437cde036998d960e1fc1494b8191be7cc9657d01e509097813",
+    "identityCheckedBeforeAndAfter": true
+  },
+  "capturedAt": "2026-10-24T00:43:38.984Z",
+  "output": {
+    "status": "ready",
+    "spec": {
+      "schema": "hardware-studio-solid-v1",
+      "title": "Capsule Pull Tab",
+      "units": "mm",
+      "features": [
+        {
+          "id": "f1",
+          "operation": "add",
+          "shape": "curve",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "axis": "z",
+          "height": 6,
+          "start": [
+            10,
+            0
+          ],
+          "segments": [
+            {
+              "kind": "line",
+              "end": [
+                30,
+                0
+              ]
+            },
+            {
+              "kind": "arc",
+              "via": [
+                40,
+                10
+              ],
+              "end": [
+                30,
+                20
+              ]
+            },
+            {
+              "kind": "line",
+              "end": [
+                10,
+                20
+              ]
+            },
+            {
+              "kind": "arc",
+              "via": [
+                0,
+                10
+              ],
+              "end": [
+                10,
+                0
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "operation": "cut",
+          "shape": "cylinder",
+          "origin": [
+            10,
+            10,
+            0
+          ],
+          "axis": "z",
+          "radius": 3,
+          "height": 6
+        },
+        {
+          "id": "f3",
+          "operation": "fillet",
+          "radius": 1,
+          "edges": [
+            [
+              20,
+              0,
+              6
+            ],
+            [
+              40,
+              10,
+              6
+            ],
+            [
+              20,
+              20,
+              6
+            ],
+            [
+              0,
+              10,
+              6
+            ]
+          ],
+          "tolerance": 0.01
+        }
+      ],
+      "probes": []
+    },
+    "assumptions": [],
+    "missing": [],
+    "base": null
+  },
+  "rawResponse": {
+    "model": "qwen3.8:27b",
+    "done": true,
+    "done_reason": "stop",
+    "response": "{\n  \"status\": \"ready\",\n  \"spec\": {\n    \"schema\": \"hardware-studio-solid-v1\",\n    \"title\": \"Capsule Pull Tab\",\n    \"units\": \"mm\",\n    \"features\": [\n      {\n        \"id\": \"f1\",\n        \"operation\": \"add\",\n        \"shape\": \"curve\",\n        \"origin\": [\n          0,\n          0,\n          0\n        ],\n        \"axis\": \"z\",\n        \"height\": 6,\n        \"start\": [\n          10,\n          0\n        ],\n        \"segments\": [\n          {\n            \"kind\": \"line\",\n            \"end\": [\n              30,\n              0\n            ]\n          },\n          {\n            \"kind\": \"arc\",\n            \"via\": [\n              40,\n              10\n            ],\n            \"end\": [\n              30,\n              20\n            ]\n          },\n          {\n            \"kind\": \"line\",\n            \"end\": [\n              10,\n              20\n            ]\n          },\n          {\n            \"kind\": \"arc\",\n            \"via\": [\n              0,\n              10\n            ],\n            \"end\": [\n              10,\n              0\n            ]\n          }\n        ]\n      },\n      {\n        \"id\": \"f2\",\n        \"operation\": \"cut\",\n        \"shape\": \"cylinder\",\n        \"origin\": [\n          10,\n          10,\n          0\n        ],\n        \"axis\": \"z\",\n        \"radius\": 3,\n        \"height\": 6\n      },\n      {\n        \"id\": \"f3\",\n        \"operation\": \"fillet\",\n        \"radius\": 1,\n        \"edges\": [\n          [\n            20,\n            0,\n            6\n          ],\n          [\n            40,\n            10,\n            6\n          ],\n          [\n            20,\n            20,\n            6\n          ],\n          [\n            0,\n            10,\n            6\n          ]\n        ],\n        \"tolerance\": 0.01\n      }\n    ],\n    \"probes\": []\n  },\n  \"assumptions\": [],\n  \"missing\": []\n}",
+    "total_duration": 176887575833,
+    "eval_count": 576
+  },
+  "error": null,
+  "completedAt": "2026-10-24T00:46:36.525Z"
+}

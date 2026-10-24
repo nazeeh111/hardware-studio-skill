@@ -1,0 +1,48 @@
+{
+  "schema": "hardware-studio-curved-trial-v1",
+  "date": "2026-10-23",
+  "observed": {
+    "first4bResponseRejected": true,
+    "separate27bSourceAccepted": true,
+    "acceptedSourceHasModelAuthoredProbes": false,
+    "independentIntentReport": "intent-verification.json",
+    "finalCadZip": "final-cad.zip",
+    "unfinishedArcRestoredAfterReload": true,
+    "incompleteApplyRejected": true,
+    "discardRetainedValidSource": true,
+    "narrow390IframeVisuallyInspected": true,
+    "actualFiveInstancePreview": true,
+    "triangles": 21460,
+    "exportCheck": "export-verification.json",
+    "canonicalThreeProjectsPreserved": true,
+    "canonicalRuntimeCurvesAndMeshChecksReady": true
+  },
+  "checks": {
+    "node": 254,
+    "solidCurveMesh": 35,
+    "assembly": 9,
+    "serverAndProcess": 14,
+    "relativeMarkdownLinks": 260
+  },
+  "sourceSha256": {
+    "solid-spec.js": "e605c6af935af717f7d809515b0dda4a648b25ed99d74011db3d6cbbb57e0617",
+    "curve-profile.js": "4844875db8040c42c43cf84079436459c5ebc74ef318c97ba0d6ee4c6d662421",
+    "solid-editor.js": "8be828c8e0b562389c86b4f40ddf0cb3b3549fbd6f94f6d015abc9e9ffd2b599",
+    "solid-preview.js": "5fdc97feccb9caab8c5d677821a7afd25a0ae01c849c07b6f96901e22c6b1299",
+    "mesh-readback.js": "e46a27c6a99c07fd28799f7434afc7d6841d98810d910edc6690188434d2d80e",
+    "solid-intent.js": "c7e4441e9a851fe70192c6ce29aaf5e51aade4a1cd3409abaab2eb7e33c66897",
+    "solid-workbench.js": "901bfbef322c98c12ba190654ae1723e8fa9333ce61f47c3b6c7044548fe74ce",
+    "cad-viewer.js": "21da62fb3c831e42260ac98a4f6457146e0325d2f6979104eafb1ef354d4bb5e",
+    "tools/solid-generator/solid.py": "6079b9a98a74eac9342bd9fc8afa2f9a4982f37125e8b0bd00e0e378c45b1b4d",
+    "tools/solid-generator/advanced.py": "09a2f264a98c6035e1d54968d0af85e0f9647298c416801958aed8a12aba1278",
+    "tools/solid-generator/curve_profile.py": "32d0441127d8bd3fbcdf14f07be92ccc9e0322f7528e2b7d47892b0969dda25c",
+    "tools/solid-generator/mesh_check.py": "5b50960ac726464a849fdb2e18f4e42299528a9071ff96696481def0a0875b0f",
+    "tools/assembly-generator/assembly.py": "0787540131c0f34f7e4a0f915d17f1b91590e2a0fca50308d4e29db5db030391",
+    "tools/tray-generator/server.py": "7bf513e074f768e726c8d58b7fb91d08947f9676446c7763ab74c600c214ec22"
+  },
+  "limits": [
+    "Narrow layout used an iframe, not physical phone hardware.",
+    "Browser validates local verifier reports and mesh hashes; it does not independently recompute analytic boundary distances.",
+    "Sampled same-kernel checks are not exhaustive mesh-distance, self-intersection, model accuracy, manufacturing or physical validation."
+  ]
+}

@@ -1,4 +1,4 @@
-import {validateSolidIntentRequest,solidIntentPrompt,solidIntentSchema,validateSolidIntentResponse} from './solid-intent.js?v=1';
+import {validateSolidIntentRequest,solidIntentPrompt,solidIntentSchema,validateSolidIntentResponse} from './solid-intent.js?v=2';
 import {boundedModelJson} from './draft-intake.js?v=1';
 import {createZip} from './zip.js?v=1';
 const ENDPOINT='http://127.0.0.1:11434';

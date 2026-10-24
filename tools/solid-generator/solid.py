@@ -10,6 +10,7 @@ import sys
 import tempfile
 
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tray-generator'))
 from generate import export, boolean, box
 from verify import read_step, bounds, volume, solid_count, checked_stl_span, overlap_volume
@@ -18,6 +19,8 @@ from OCP.BRepAlgoAPI import BRepAlgoAPI_Fuse, BRepAlgoAPI_Cut
 from OCP.BRepBuilderAPI import BRepBuilderAPI_MakePolygon, BRepBuilderAPI_MakeFace
 from OCP.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakePrism
 from OCP.gp import gp_Ax2, gp_Dir, gp_Pnt, gp_Vec
+from curve_profile import validate_curve_profile
+from mesh_check import check_mesh, normalize_export_mesh, verify_export_mesh_record
 
 SCHEMA = 'hardware-studio-solid-v1'
 PROFILE_EPS = 1e-9
@@ -75,26 +78,30 @@ def profile_points(raw, label):
     return [points[0], *reversed(points[1:])] if area2 < 0 else points
 
 def primitive(raw, label, metadata=()):
-    keys(raw, ['shape', 'origin', 'size', 'axis', 'radius', 'height', 'points', *metadata], label)
+    keys(raw, ['shape', 'origin', 'size', 'axis', 'radius', 'height', 'points', 'start', 'segments', *metadata], label)
     shape = raw.get('shape')
     origin = raw.get('origin')
     if not isinstance(origin, list) or len(origin) != 3:
         raise ValueError(f'{label} needs three origin coordinates.')
     result = {'shape': shape, 'origin': [number(n, f'{label}.origin') for n in origin]}
     if shape == 'box':
-        if any(key in raw for key in ('axis', 'radius', 'height', 'points')) or not isinstance(raw.get('size'), list) or len(raw['size']) != 3:
+        if any(key in raw for key in ('axis', 'radius', 'height', 'points', 'start', 'segments')) or not isinstance(raw.get('size'), list) or len(raw['size']) != 3:
             raise ValueError(f'{label} box needs size only.')
         result['size'] = [number(n, f'{label}.size', True) for n in raw['size']]
     elif shape == 'cylinder':
-        if 'size' in raw or 'points' in raw or raw.get('axis') not in ('x', 'y', 'z'):
+        if any(key in raw for key in ('size', 'points', 'start', 'segments')) or raw.get('axis') not in ('x', 'y', 'z'):
             raise ValueError(f'{label} cylinder needs an x, y or z axis.')
         result.update(axis=raw['axis'], radius=number(raw.get('radius'), f'{label}.radius', True), height=number(raw.get('height'), f'{label}.height', True))
     elif shape == 'profile':
-        if 'size' in raw or 'radius' in raw or raw.get('axis') not in ('x', 'y', 'z'):
+        if any(key in raw for key in ('size', 'radius', 'start', 'segments')) or raw.get('axis') not in ('x', 'y', 'z'):
             raise ValueError(f'{label} profile needs points and an x, y or z axis.')
         result.update(axis=raw['axis'], height=number(raw.get('height'), f'{label}.height', True), points=profile_points(raw.get('points'), label))
+    elif shape == 'curve':
+        if any(key in raw for key in ('size', 'radius', 'points')) or raw.get('axis') not in ('x', 'y', 'z'):
+            raise ValueError(f'{label} curved profile needs start, segments and an x, y or z axis.')
+        result.update(axis=raw['axis'], height=number(raw.get('height'), f'{label}.height', True), **validate_curve_profile(raw.get('start'), raw.get('segments')))
     else:
-        raise ValueError(f'{label} supports box, cylinder or profile only.')
+        raise ValueError(f'{label} supports box, cylinder, polygon or curved profile only.')
     return result
 
 def validate(raw):
@@ -109,6 +116,29 @@ def validate(raw):
         raise ValueError('Use 1–32 ordered features.')
     normalized, ids = [], set()
     for i, feature in enumerate(features):
+        if isinstance(feature, dict) and feature.get('operation') == 'fillet':
+            keys(feature, ['id', 'operation', 'radius', 'edges', 'tolerance'], f'Feature {i + 1}')
+            if i == 0:
+                raise ValueError('A fillet needs an existing solid; the first feature must add material.')
+            id_ = feature.get('id')
+            if not isinstance(id_, str) or not id_.strip() or len(id_) > 60 or id_ in ids:
+                raise ValueError('Feature IDs must be unique short text.')
+            ids.add(id_)
+            points = feature.get('edges')
+            if not isinstance(points, list) or not 1 <= len(points) <= 16:
+                raise ValueError('A fillet needs 1–16 edge interior points.')
+            edges = []
+            for point in points:
+                if not isinstance(point, list) or len(point) != 3:
+                    raise ValueError('Each fillet edge point needs X, Y, Z coordinates.')
+                edges.append([number(n, 'Fillet edge point') for n in point])
+            if len(set(tuple(point) for point in edges)) != len(edges):
+                raise ValueError('Fillet edge points must be distinct.')
+            tolerance = feature.get('tolerance', .01)
+            if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)) or not math.isfinite(tolerance) or not .000001 <= tolerance <= .1:
+                raise ValueError('Fillet edge tolerance must be 0.000001–0.1 mm.')
+            normalized.append({'id': id_, 'operation': 'fillet', 'radius': number(feature.get('radius'), 'Fillet radius', True), 'edges': edges, 'tolerance': float(tolerance)})
+            continue
         value = primitive(feature, f'Feature {i + 1}', ('id', 'operation'))
         id_ = feature.get('id')
         if not isinstance(id_, str) or not id_.strip() or len(id_) > 60 or id_ in ids:
@@ -132,6 +162,9 @@ def validate(raw):
     return {'schema': SCHEMA, 'title': title.strip(), 'units': 'mm', 'features': normalized, 'probes': checked}
 
 def make_primitive(feature):
+    if feature['shape'] == 'curve':
+        from advanced import curved_solid
+        return curved_solid(feature)
     if feature['shape'] == 'box':
         return box(*feature['origin'], *feature['size'])
     direction = {'x': (1, 0, 0), 'y': (0, 1, 0), 'z': (0, 0, 1)}[feature['axis']]
@@ -179,15 +212,29 @@ def check_probes(shape, spec):
 def build(spec):
     shape, history, prior = None, [], 0
     for feature in spec['features']:
-        tool = make_primitive(feature)
-        shape = tool if shape is None else boolean(BRepAlgoAPI_Fuse if feature['operation'] == 'add' else BRepAlgoAPI_Cut, shape, tool)
+        detail = {}
+        if feature['operation'] == 'fillet':
+            from advanced import fillet_solid
+            previous = shape
+            shape, detail = fillet_solid(shape, feature)
+        else:
+            tool = make_primitive(feature)
+            shape = tool if shape is None else boolean(BRepAlgoAPI_Fuse if feature['operation'] == 'add' else BRepAlgoAPI_Cut, shape, tool)
         v, span = check_shape(shape)
         delta = v - prior
         if (feature['operation'] == 'add' and delta <= .001) or (feature['operation'] == 'cut' and delta >= -.001):
             raise ValueError(f'Feature {feature["id"]} must change volume by more than 0.001 cubic mm.')
-        history.append({'id': feature['id'], 'operation': feature['operation'], 'volume_mm3': v, 'volume_delta_mm3': delta, 'span_mm': span})
+        if feature['operation'] == 'fillet':
+            changed = prior + v - 2 * overlap_volume(previous, shape)
+            if changed <= .001:
+                raise ValueError(f'Fillet {feature["id"]} must change material by more than 0.001 cubic mm.')
+            detail.update(changed_material_mm3=changed, selection_scope='Seed edges; the kernel may extend the fillet through connected tangent edges.')
+        history.append({'id': feature['id'], 'operation': feature['operation'], 'volume_mm3': v, 'volume_delta_mm3': delta, 'span_mm': span, **detail})
         prior = v
     return shape, history, check_probes(shape, spec)
+
+def needs_curved_runtime(spec):
+    return any(feature.get('operation') == 'fillet' or feature.get('shape') == 'curve' for feature in spec['features'] + spec['probes'])
 
 def verify_package(root):
     spec = validate(json.loads((root / 'spec.json').read_text()))
@@ -198,9 +245,27 @@ def verify_package(root):
         raise ValueError('STEP readback differs from the build dimensions or volume.')
     mesh_span, triangles = checked_stl_span(root / 'solid.stl', span)
     probes = check_probes(shape, spec)
+    rebuilt = None
+    if needs_curved_runtime(spec):
+        expected, _, _ = build(spec)
+        expected_volume = volume(expected)
+        difference = v + expected_volume - 2 * overlap_volume(shape, expected)
+        if difference > max(.01, expected_volume * 1e-6):
+            raise ValueError('STEP readback differs from independently reconstructed source geometry.')
+        rebuilt = {'matched': True, 'symmetric_difference_mm3': max(0., difference), 'tolerance_mm3': max(.01, expected_volume * 1e-6)}
     result = {'status': 'fresh-process same-kernel readback passed; physical fit untested', 'solid_count': 1, 'outer_span_mm': span, 'volume_mm3': v, 'stl_outer_span_mm': mesh_span, 'stl_triangles': triangles, 'probes': probes,
               'sha256': {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in ('spec.json', 'solid.step', 'solid.stl')},
               'limits': ['STEP writer and reader use the same OpenCascade kernel.', 'Probe checks test only the supplied regions, not full instruction fidelity.', 'No strength, tolerances, wall thickness, fastener fit, fabrication or physical measurements were validated.']}
+    if rebuilt is not None:
+        result['rebuilt_source'] = rebuilt
+    result['stl_check'] = check_mesh(root / 'solid.stl', shape)
+    if 'stl_export' in built:
+        result['stl_export'] = verify_export_mesh_record(root / 'solid.stl', built['stl_export'])
+    elif (root / 'solid.raw.stl').exists() or (root / 'solid.raw.stl').is_symlink():
+        raise ValueError('Raw STL exists without its export normalization receipt.')
+    result['sha256']['build-report.json'] = hashlib.sha256((root / 'build-report.json').read_bytes()).hexdigest()
+    if (root / 'solid.raw.stl').is_file():
+        result['sha256']['solid.raw.stl'] = hashlib.sha256((root / 'solid.raw.stl').read_bytes()).hexdigest()
     (root / 'verification.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 
@@ -213,7 +278,11 @@ def generate(spec_path, destination):
     try:
         (staging / 'spec.json').write_text(json.dumps(spec, indent=2) + '\n')
         export(shape, staging, 'solid')
-        report = {'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'feature_history': history, 'probes': probes}
+        normalization = normalize_export_mesh(staging / 'solid.stl', staging / 'solid.raw.stl')
+        report = {'outer_span_mm': bounds(shape), 'volume_mm3': volume(shape), 'feature_history': history, 'probes': probes, 'stl_export': normalization}
+        if needs_curved_runtime(spec):
+            import importlib.metadata
+            report['construction'] = {'library': 'build123d', 'version': importlib.metadata.version('build123d'), 'kernel': importlib.metadata.version('cadquery-ocp-novtk')}
         (staging / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
         subprocess.run([sys.executable, str(Path(__file__).resolve()), '--verify', str(staging)], check=True, capture_output=True, text=True, timeout=120)
         staging.rename(destination)
@@ -236,4 +305,8 @@ def main():
         parser.error('Provide --spec and --out, or --verify.')
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except ValueError as error:
+        print(json.dumps({'error': str(error)[:1000]}), file=sys.stderr)
+        sys.exit(1)

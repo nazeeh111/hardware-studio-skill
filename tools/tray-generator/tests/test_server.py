@@ -62,6 +62,36 @@ class LocalServerTests(unittest.TestCase):
         finally:
             server.shutdown();server.server_close();worker.join(timeout=5)
 
+    def test_curved_export_keeps_raw_facets_and_exact_normalization_receipt(self):
+        from server import CURVED_RUNTIME, generate_solid_package
+        if not CURVED_RUNTIME: self.skipTest('Optional build123d runtime unavailable')
+        spec = {'schema':'hardware-studio-solid-v1','title':'Rounded box','units':'mm','features':[
+            {'id':'b','operation':'add','shape':'box','origin':[0,0,0],'size':[20,15,6]},
+            {'id':'f','operation':'fillet','radius':1,'edges':[[0,0,3],[20,0,3],[0,15,3],[20,15,3],[10,0,0],[10,15,0],[10,0,6],[10,15,6],[0,7,0],[20,7,0],[0,7,6],[20,7,6]]}], 'probes':[]}
+        archive = zipfile.ZipFile(io.BytesIO(generate_solid_package(json.dumps(spec).encode())))
+        self.assertIsNone(archive.testzip())
+        self.assertIn('solid.raw.stl', archive.namelist())
+        report = json.loads(archive.read('verification.json'))
+        receipt = report['stl_export']
+        self.assertTrue(receipt['passed'] and receipt['exact_byte_replay'] and receipt['changed'])
+        self.assertEqual(receipt['replayed_zero_area_removals'],8)
+        import hashlib
+        self.assertEqual(hashlib.sha256(archive.read('solid.raw.stl')).hexdigest(),receipt['raw_sha256'])
+        self.assertEqual(hashlib.sha256(archive.read('solid.stl')).hexdigest(),receipt['final_sha256'])
+        self.assertTrue(report['stl_check']['passed'])
+        self.assertEqual(report['stl_check']['checked_triangle_centers'],4252)
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory)
+            for name in archive.namelist():
+                (package/name).write_bytes(archive.read(name))
+            built = json.loads((package/'build-report.json').read_text())
+            del built['stl_export']
+            (package/'build-report.json').write_text(json.dumps(built))
+            sys.path.insert(0,str(EXAMPLE.parents[2]/'solid-generator'))
+            import solid
+            with self.assertRaisesRegex(ValueError,'without its export normalization receipt'):
+                solid.verify_package(package)
+
     def test_generated_preview_uses_verified_meshes_and_origin_gate(self):
         import hashlib
         server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)

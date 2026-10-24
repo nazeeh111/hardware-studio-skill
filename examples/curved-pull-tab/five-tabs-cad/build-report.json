@@ -1,0 +1,171 @@
+{
+  "volume_mm3": 20467.714349425074,
+  "min_mm": [
+    0.0,
+    -2.220446049250313e-16,
+    0.0
+  ],
+  "max_mm": [
+    240.0,
+    20.0,
+    6.0
+  ],
+  "assets": [
+    {
+      "partId": "curved-tab",
+      "feature_history": [
+        {
+          "id": "f1",
+          "operation": "add",
+          "volume_mm3": 4284.955592153876,
+          "volume_delta_mm3": 4284.955592153876,
+          "span_mm": [
+            40.0,
+            20.0,
+            6.0
+          ]
+        },
+        {
+          "id": "f2",
+          "operation": "cut",
+          "volume_mm3": 4115.309588860026,
+          "volume_delta_mm3": -169.6460032938494,
+          "span_mm": [
+            40.0,
+            20.0,
+            6.0
+          ]
+        },
+        {
+          "id": "f3",
+          "operation": "fillet",
+          "volume_mm3": 4093.5428698850137,
+          "volume_delta_mm3": -21.766718975012736,
+          "span_mm": [
+            40.0,
+            20.0,
+            6.0
+          ],
+          "selected_edge_count": 4,
+          "radius_mm": 1.0,
+          "edge_points_mm": [
+            [
+              20.0,
+              0.0,
+              6.0
+            ],
+            [
+              40.0,
+              10.0,
+              6.0
+            ],
+            [
+              20.0,
+              20.0,
+              6.0
+            ],
+            [
+              0.0,
+              10.0,
+              6.0
+            ]
+          ],
+          "selection_tolerance_mm": 0.01,
+          "changed_material_mm3": 21.766718975013646,
+          "selection_scope": "Seed edges; the kernel may extend the fillet through connected tangent edges."
+        }
+      ],
+      "probes": [],
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "final_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    }
+  ],
+  "instance_exports": [
+    {
+      "id": "tab-1",
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "final_sha256": "ac6df75f3414e3c21f58a6766a10346587b2bcccecb175f26f4f1b40e7447bc0",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    },
+    {
+      "id": "tab-2",
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "c7d5619ceb2dcee5efbe7626e9f0da78f9f06eb0b7f93cd57d33c556e97c3058",
+        "final_sha256": "c7d5619ceb2dcee5efbe7626e9f0da78f9f06eb0b7f93cd57d33c556e97c3058",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    },
+    {
+      "id": "tab-3",
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "e81ca530233bbe8ad2a9f6860a6f2c0ec1d9e6042cd7e64e099dd628d2772e07",
+        "final_sha256": "e81ca530233bbe8ad2a9f6860a6f2c0ec1d9e6042cd7e64e099dd628d2772e07",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    },
+    {
+      "id": "tab-4",
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "8b82710debeff7b62d474337e5cd00068da5f8655ebe7a94cc092c60dd336438",
+        "final_sha256": "8b82710debeff7b62d474337e5cd00068da5f8655ebe7a94cc092c60dd336438",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    },
+    {
+      "id": "tab-5",
+      "stl_export": {
+        "changed": false,
+        "source_triangles": 4292,
+        "final_triangles": 4292,
+        "removed_zero_area_facets": 0,
+        "maximum_removed_area_mm2": 5e-13,
+        "criterion": "Squared cross-product length <= 1e-24 mm4; no nonzero-area topology repair or weld-collapse filtering.",
+        "raw_sha256": "dae42407f8bbe09a3c4d437052ad4b831a0853543e22236d7ad71cf5f0f25178",
+        "final_sha256": "dae42407f8bbe09a3c4d437052ad4b831a0853543e22236d7ad71cf5f0f25178",
+        "raw_file": null,
+        "limit": "Normalization alone does not establish valid topology or source fidelity. The final mesh must pass strict STEP comparison."
+      }
+    }
+  ],
+  "placement_convention": "T*Rz*Ry*Rx; degrees around source origin; mm translation"
+}

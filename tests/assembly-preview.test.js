@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {ASSEMBLY_PREVIEW_KEY,assemblySnapshot,readAssemblySnapshot,assemblyMeshes,assemblyReadbackText} from '../assembly-preview.js';
+import {mockMeshReadback} from './fixtures/mock-mesh-readback.js';
 import {setAssemblyPartSource} from '../assembly-spec.js';
 
 const source = {schema:'hardware-studio-solid-v1',title:'Test plate',units:'mm',features:[{id:'body',operation:'add',shape:'box',origin:[0,0,0],size:[10,4,2]}],probes:[]};
@@ -20,7 +21,7 @@ function payload(count=2) {
   for (const [i,instance] of spec.instances.entries()) {
     const name = `instance-${String(i+1).padStart(3,'0')}.stl`,min = [i*12,0,0],max = [i*12+10,4,2],bytes = boxStl(min,max);
     meshes.push({id:instance.id,partId:instance.partId,name,dataBase64:bytes.toString('base64')});
-    instances.push({id:instance.id,partId:instance.partId,name,min_mm:min,max_mm:max,stl_min_mm:[...min],stl_max_mm:[...max],volume_mm3:80,stl_triangles:12,sha256:{stl:hash(bytes)}});
+    instances.push({id:instance.id,partId:instance.partId,name,min_mm:min,max_mm:max,stl_min_mm:[...min],stl_max_mm:[...max],volume_mm3:80,stl_triangles:12,stl_check:mockMeshReadback(12,80),sha256:{stl:hash(bytes)}});
     for(let j=0;j<i;j++)pairs.push({firstId:spec.instances[j].id,secondId:instance.id,overlap_mm3:0,minimum_distance_mm:(i-j)*12-10,interference:false});
   }
   return {schema:'hardware-studio-assembly-preview-v1',spec,meshes,verification:{status:'passed',instances,pairs,assembly:{solid_count:count,min_mm:[0,0,0],max_mm:[(count-1)*12+10,4,2],volume_mm3:count*80}}};
@@ -73,6 +74,10 @@ test('hashes, absolute STEP/STL bounds and triangle counts reject shifted meshes
   moved.meshes[0].dataBase64=bytes.toString('base64');moved.verification.instances[0].sha256.stl=hash(bytes);
   // This box keeps the exact 80 mm³ volume, 10×4×2 span and 12 triangles.
   await assert.rejects(assemblyMeshes(moved,moved.spec),/position or bounds/);
+});
+
+test('every placed instance requires the full sampled mesh/STEP report even when hashes and bounds agree',async()=>{
+  for(const change of [r=>delete r.stl_check,r=>r.stl_check.checked_triangle_centers=1,r=>r.stl_check.center_tolerance_mm=1,r=>r.stl_check.step_surface_witnesses[1].face=0]){const data=payload(3);change(data.verification.instances[1]);await assert.rejects(assemblyMeshes(data,data.spec),/sampled readback/);}
 });
 
 test('combined bounds and retained solid count must agree with every placed mesh', async () => {

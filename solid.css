@@ -7,3 +7,6 @@
 
 .shell>#solid-project{color:#5c704b;font-size:10px;margin:14px 0 10px}
 .intent-context{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0 10px}.intent-context label{min-width:0;font:600 10px var(--mono);color:#466047;display:grid;gap:8px}.intent-context select{width:100%;min-width:0;box-sizing:border-box;padding:11px 8px;background:#fffef8;border:1px solid #94a795;color:#203e2c;font:11px var(--mono);height:43px}.intent-scope{font:10px/1.7 var(--mono);color:#596d53}#solid-earlier-proposal{border-top:1px solid #acbba2;margin-top:16px;padding-top:12px}#solid-earlier-proposal button{background:transparent;border:1px solid #839878;color:#324d35;padding:12px;font:10px var(--mono);cursor:pointer}@media(max-width:650px){.intent-context{grid-template-columns:1fr}}
+
+/* Curved source is edited directly; diagrams remain explicitly unbuilt. */
+.profile-diagram path{fill:#cee49933;stroke:#d4e69b;stroke-width:1.5}.curve-segment{border:1px solid #bdc8b3;margin:14px 0;padding:12px;min-width:0}.curve-segment>legend{font:600 10px var(--mono);padding:0 6px;color:#466047}.curve-controls .dimension-vector{grid-template-columns:repeat(2,minmax(0,1fr))}.curve-segment .dimension-commands{margin-top:10px}.dimension-feature.fillet[open]>summary{background:#dce5e6}.curve-controls>.dimension-commands button:last-child{margin-left:0;color:#3f593e}

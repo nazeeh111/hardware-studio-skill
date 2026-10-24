@@ -1,4 +1,4 @@
-import {validateAssemblySpec,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=1';
+import {validateAssemblySpec,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=2';
 // A tab draft may contain unfinished numeric fields or names. Its CAD sources
 // and references still pass the structural rules; it is never buildable directly.
 export function editableAssembly(raw){

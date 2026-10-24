@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "instances": 5,
+  "triangles": 21460,
+  "verticesCompared": 64380,
+  "maximumGlbPositionErrorMetres": 7.3909759701340505e-9,
+  "glbSha256": "5431309d940b6cfe41bb2159854b89c505d28791a3a655dfafa08312bb669199",
+  "inspectionPngSha256": "bddbd3543430e685f67e1d71870b1b696d27578e962f137bdb2f54ac76ce9e7d",
+  "boundsMm": [
+    240,
+    20,
+    6
+  ],
+  "pairChecks": 10,
+  "limits": [
+    "GLB/inspection byte and geometry identity checks, not physical validation.",
+    "Analytic geometry is checked separately by verify_intent.py."
+  ]
+}

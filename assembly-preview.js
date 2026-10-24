@@ -1,4 +1,5 @@
-import {validateAssemblySpec,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=1';
+import {validateMeshReadback} from './mesh-readback.js?v=1';
+import {validateAssemblySpec,ASSEMBLY_MAX_BYTES} from './assembly-spec.js?v=2';
 import {parseStl} from './stl.js?v=1';
 export const ASSEMBLY_PREVIEW_KEY='hardware-studio-assembly-snapshot-v1';
 const vector=v=>Array.isArray(v)&&v.length===3&&v.every(Number.isFinite);
@@ -34,6 +35,7 @@ export async function assemblyMeshes(payload,expected){
   if(hash!==r.sha256?.stl)throw new Error('Placed STL hash differs from readback.');
   const mesh=parseStl(bytes.buffer);totalTriangles+=mesh.triangles;
   if(mesh.triangles!==r.stl_triangles||totalTriangles>400000||!equalPoint(mesh.min,r.min_mm)||!equalPoint(mesh.max,r.max_mm))throw new Error('Placed mesh position or bounds differ from STEP readback.');
+  validateMeshReadback(r.stl_check,mesh.triangles,r.volume_mm3);
   const source=spec.assets.find(a=>a.partId===expectedInstance.partId).source;
   next.push({...mesh,name:source.title+' / '+expectedInstance.id,cover:false,partId:expectedInstance.partId,instanceId:expectedInstance.id});
  }
@@ -45,5 +47,5 @@ export function assemblyReadbackText(report){
  const interference=report.pairs.filter(p=>p.interference);
  const summary=interference.length?`INTERFERENCE: ${interference.length} instance pair${interference.length===1?'':'s'} overlap by more than 0.01 mm³. `:'No pair overlap above 0.01 mm³ in these nominal placements. ';
  const pairs=report.pairs.map(p=>`${p.firstId} ↔ ${p.secondId}: overlap ${p.overlap_mm3.toFixed(4)} mm³; minimum distance ${p.minimum_distance_mm.toFixed(4)} mm.`).join('\n');
- return 'Readback matched instance STL hashes, positions and dimensions. '+summary+(pairs?'\n'+pairs:'')+'\nRigid solids only. Joints, motion, tolerances and physical fit remain untested.';
+ return 'Readback matched instance STL hashes, positions, topology, volume and sampled STEP boundary checks. '+summary+(pairs?'\n'+pairs:'')+'\nRigid solids only. Joints, motion, tolerances and physical fit remain untested.';
 }

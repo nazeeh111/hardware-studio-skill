@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {validateSolidSpec,solidProposal} from '../solid-spec.js';
 import {solidSnapshot,readSolidSnapshot,solidMeshes} from '../solid-preview.js';
+import {mockMeshReadback} from './fixtures/mock-mesh-readback.js';
 const spec=JSON.parse(await readFile(new URL('../tools/solid-generator/examples/mounting-bracket.json',import.meta.url),'utf8'));
 test('feature source preserves ordered geometry and rejects executable, invalid or unbounded records',()=>{
  const valid=validateSolidSpec(spec);assert.equal(valid.features.length,5);assert.equal(valid.probes.length,3);
@@ -14,10 +15,13 @@ test('solid preview freezes source and refuses expired or future snapshots',()=>
  assert.equal(readSolidSnapshot(JSON.stringify(frozen),100001).returnTo,'./solid.html');
  assert.throws(()=>readSolidSnapshot(JSON.stringify(frozen),2000000),/expired/);assert.throws(()=>readSolidSnapshot(JSON.stringify(frozen),1000),/expired/);
 });
-test('actual bracket mesh requires source, hash, dimensions and selected-region readback agreement',async()=>{
+test('historical bracket mesh with explicit mock sampled report requires client readback agreement',async()=>{
  const base=new URL('../examples/feature-bracket/generated/',import.meta.url),bytes=await readFile(new URL('solid.stl',base)),report=JSON.parse(await readFile(new URL('verification.json',base),'utf8'));
+ // Historical bytes stay unchanged; the new sampled-report fields are a mock.
+ report.stl_check=mockMeshReadback(report.stl_triangles,report.volume_mm3);
  const payload={schema:'hardware-studio-solid-preview-v1',spec,verification:report,meshes:[{name:'solid.stl',dataBase64:bytes.toString('base64')}]};
  const meshes=await solidMeshes(payload,validateSolidSpec(spec));assert.equal(meshes.length,1);assert.deepEqual(meshes[0].max.map((n,k)=>n-meshes[0].min[k]),[60,30,40]);
+ for(const change of [r=>delete r.stl_check,r=>r.stl_check.checked_triangle_centers--,r=>r.stl_check.maximum_center_distance_mm=.1,r=>r.stl_check.step_surface_witnesses.pop()]){const incomplete=structuredClone(payload);change(incomplete.verification);await assert.rejects(()=>solidMeshes(incomplete,validateSolidSpec(spec)),/sampled readback/);}
  const tampered=structuredClone(payload);tampered.meshes[0].dataBase64=Buffer.from('corrupt').toString('base64');await assert.rejects(()=>solidMeshes(tampered,validateSolidSpec(spec)),/hash/);
  const noProbe=structuredClone(payload);noProbe.verification.probes.pop();await assert.rejects(()=>solidMeshes(noProbe,validateSolidSpec(spec)),/probes/);
  const moved=structuredClone(payload);moved.spec.features[0].size[0]=70;await assert.rejects(()=>solidMeshes(moved,validateSolidSpec(spec)),/match/);

@@ -1,4 +1,4 @@
-import { projectContentChanged } from './core.js?v=41';
+import { projectContentChanged } from './core.js?v=43';
 
 const text = (maxLength, minLength = 0) => ({ type: 'string', minLength, maxLength, ...(minLength ? { pattern: '\\S' } : {}) });
 // Imported projects may use human-readable IDs. Preserve those exact IDs in

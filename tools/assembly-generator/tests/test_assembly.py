@@ -47,7 +47,11 @@ class AssemblyTests(unittest.TestCase):
                 self.assertEqual(item['sha256']['step'], assembly.sha(out/'instances'/item['name'].replace('.stl', '.step')))
             self.assertAlmostEqual(report['pairs'][0]['minimum_distance_mm'], math.sqrt(26**2+6**2), places=5)
             self.assertEqual(len(report['assets']), 2)
-            self.assertEqual(report, assembly.verify_package(out))
+            repeated = assembly.verify_package(out)
+            for record in (report, repeated):
+                for mesh in record['assets'] + record['instances']:
+                    self.assertGreaterEqual(mesh['stl_check'].pop('seconds'), 0)
+            self.assertEqual(report, repeated)
 
     def test_known_gap_touch_and_interference_are_reported_and_exported(self):
         for translation, status, gap, overlap in [(12, 'passed', 2, 0), (10, 'passed', 0, 0), (9, 'interference', 0, 8), (0, 'interference', 0, 80)]:

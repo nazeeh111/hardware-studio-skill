@@ -1,0 +1,166 @@
+{
+  "schema": "hardware-studio-inspection-sheet-v1",
+  "units": "mm (assumed from STL coordinates)",
+  "visibleMeshesOnly": true,
+  "displayLiftIncluded": false,
+  "positions": "original shared mesh positions",
+  "projection": "orthographic; no perspective",
+  "pixelsPerAssumedMm": 2,
+  "bounds": {
+    "min": [
+      0,
+      -2.220446049250313e-16,
+      0
+    ],
+    "max": [
+      240,
+      20,
+      6
+    ],
+    "spans": [
+      240,
+      20,
+      6
+    ]
+  },
+  "views": [
+    {
+      "name": "TOP",
+      "axes": "X → / Y ↑ · looking from +Z",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "name": "FRONT",
+      "axes": "X → / Z ↑ · looking from −Y",
+      "rotationColumnMajor": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "RIGHT",
+      "axes": "Y → / Z ↑ · looking from +X",
+      "rotationColumnMajor": [
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        0
+      ]
+    }
+  ],
+  "geometryEncoding": "Float32 little-endian interleaved x,y,z,nx,ny,nz for each rendered vertex",
+  "meshes": [
+    {
+      "name": "Capsule Pull Tab / tab-1",
+      "triangles": 4292,
+      "bounds": {
+        "min": [
+          0,
+          -2.220446049250313e-16,
+          0
+        ],
+        "max": [
+          40,
+          20,
+          6
+        ]
+      },
+      "geometrySha256": "0a60098fb44c383582539663f94a0180777dfbd8ee5ac516608c01c38d329c3a"
+    },
+    {
+      "name": "Capsule Pull Tab / tab-2",
+      "triangles": 4292,
+      "bounds": {
+        "min": [
+          50,
+          -2.220446049250313e-16,
+          0
+        ],
+        "max": [
+          90,
+          20,
+          6
+        ]
+      },
+      "geometrySha256": "23e14ee59d5585a1280d335cc2867e1256320eb3bff2359879775b9384e6cf80"
+    },
+    {
+      "name": "Capsule Pull Tab / tab-3",
+      "triangles": 4292,
+      "bounds": {
+        "min": [
+          100,
+          -2.220446049250313e-16,
+          0
+        ],
+        "max": [
+          140,
+          20,
+          6
+        ]
+      },
+      "geometrySha256": "448ed94df1de1321ddde1561723a13acb6544971b8a812e654c887e5a244354c"
+    },
+    {
+      "name": "Capsule Pull Tab / tab-4",
+      "triangles": 4292,
+      "bounds": {
+        "min": [
+          150,
+          -2.220446049250313e-16,
+          0
+        ],
+        "max": [
+          190,
+          20,
+          6
+        ]
+      },
+      "geometrySha256": "8e6257af82e9ef60d9c75ba27317f7028bf107b28531a86e054ba5989c254bc0"
+    },
+    {
+      "name": "Capsule Pull Tab / tab-5",
+      "triangles": 4292,
+      "bounds": {
+        "min": [
+          200,
+          -2.220446049250313e-16,
+          0
+        ],
+        "max": [
+          240,
+          20,
+          6
+        ]
+      },
+      "geometrySha256": "ff984c70e88332bb825a64e2843eb7e589af511fe12e57b4fdca1ede460603a4"
+    }
+  ],
+  "limits": [
+    "Rendered mesh surfaces only; hidden cavities may not be visible.",
+    "Not a dimensioned engineering drawing or evidence of solid validity, fit, strength, tolerances or physical manufacture.",
+    "Pixel scale applies to the original PNG, not a resized or printed image."
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "schema": "hardware-studio-assembly-v1",
+  "title": "Five curved tabs",
+  "units": "mm",
+  "assets": [
+    {
+      "partId": "curved-tab",
+      "source": {
+        "schema": "hardware-studio-solid-v1",
+        "title": "Capsule Pull Tab",
+        "units": "mm",
+        "features": [
+          {
+            "id": "f1",
+            "operation": "add",
+            "shape": "curve",
+            "origin": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "axis": "z",
+            "height": 6.0,
+            "start": [
+              10,
+              0
+            ],
+            "segments": [
+              {
+                "kind": "line",
+                "end": [
+                  30,
+                  0
+                ]
+              },
+              {
+                "kind": "arc",
+                "via": [
+                  40,
+                  10
+                ],
+                "end": [
+                  30,
+                  20
+                ]
+              },
+              {
+                "kind": "line",
+                "end": [
+                  10,
+                  20
+                ]
+              },
+              {
+                "kind": "arc",
+                "via": [
+                  0,
+                  10
+                ],
+                "end": [
+                  10,
+                  0
+                ]
+              }
+            ]
+          },
+          {
+            "id": "f2",
+            "operation": "cut",
+            "shape": "cylinder",
+            "origin": [
+              10.0,
+              10.0,
+              0.0
+            ],
+            "axis": "z",
+            "radius": 3.0,
+            "height": 6.0
+          },
+          {
+            "id": "f3",
+            "operation": "fillet",
+            "radius": 1.0,
+            "edges": [
+              [
+                20.0,
+                0.0,
+                6.0
+              ],
+              [
+                40.0,
+                10.0,
+                6.0
+              ],
+              [
+                20.0,
+                20.0,
+                6.0
+              ],
+              [
+                0.0,
+                10.0,
+                6.0
+              ]
+            ],
+            "tolerance": 0.01
+          }
+        ],
+        "probes": []
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "tab-1",
+      "partId": "curved-tab",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "tab-2",
+      "partId": "curved-tab",
+      "position": [
+        50.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "tab-3",
+      "partId": "curved-tab",
+      "position": [
+        100.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "tab-4",
+      "partId": "curved-tab",
+      "position": [
+        150.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "tab-5",
+      "partId": "curved-tab",
+      "position": [
+        200.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ]
+}

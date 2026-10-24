@@ -1,22 +1,29 @@
-import {validateSolidSpec} from './solid-spec.js?v=2';
-import {installSolidIntent} from './solid-intent-ui.js?v=4';
-import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=4';
-import {createSolidEditor} from './solid-editor.js?v=3';
+import {validateSolidSpec,needsCurvedRuntime} from './solid-spec.js?v=3';
+import {installSolidIntent} from './solid-intent-ui.js?v=5';
+import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=5';
+import {createSolidEditor} from './solid-editor.js?v=4';
 import {writeWorkspace,WorkspaceConflictError} from './workspace-store.js?v=1';
-import {solidContext} from './project-geometry.js?v=3';
-import {validateAssemblySpec,emptyAssembly,setAssemblyPartSource} from './assembly-spec.js?v=1';
-import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=41';
+import {solidContext} from './project-geometry.js?v=4';
+import {validateAssemblySpec,emptyAssembly,setAssemblyPartSource} from './assembly-spec.js?v=2';
+import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=43';
 const context=solidContext(location.search);
 const $=s=>document.querySelector(s),KEY=context.key,DRAFT=context.draftKey;
-let spec=null,expectedRaw=null,preservedRaw=null,blocked=false,states=[],cursor=0,ready=false,busy=false,intent=null,assemblyBase=null,boundBaseline=null,embeddedBaseline=null;
+let spec=null,expectedRaw=null,preservedRaw=null,blocked=false,states=[],cursor=0,ready=false,advancedReady=false,busy=false,intent=null,assemblyBase=null,boundBaseline=null,embeddedBaseline=null;
 const note=text=>{$('#solid-status').textContent=text;};
 const source=()=>spec?JSON.stringify(spec,null,2):'';
 const dirty=()=>$('#solid-source').value!==source();
-function buttons(){const usable=Boolean(spec)&&!dirty();$('#solid-preview').disabled=!usable||!ready||busy;$('#solid-package').disabled=!usable||!ready||busy;$('#solid-export').disabled=!$('#solid-source').value;$('#solid-undo').disabled=dirty()||cursor<=0;$('#solid-redo').disabled=dirty()||cursor>=states.length-1;$('#solid-revert').disabled=!dirty();}
+function canGenerate(){return Boolean(spec)&&!dirty()&&ready&&(!needsCurvedRuntime(spec)||advancedReady);}
+function buttons(){const usable=Boolean(spec)&&!dirty();$('#solid-preview').disabled=!canGenerate()||busy;$('#solid-package').disabled=!canGenerate()||busy;$('#solid-export').disabled=!$('#solid-source').value;$('#solid-undo').disabled=dirty()||cursor<=0;$('#solid-redo').disabled=dirty()||cursor>=states.length-1;$('#solid-revert').disabled=!dirty();$('#solid-runtime').textContent=!ready?'Feature CAD runtime unavailable. Run the current local server to generate; source editing and export work here.':needsCurvedRuntime(spec)&&!advancedReady?'This source needs the curved CAD runtime. Run sh tools/cad-runtime/setup.sh, then restart the local server. Source is retained.':advancedReady?'Local CAD runtime ready, including curves and edge fillets. Builds and readback stay on this computer.':'Local basic CAD runtime ready. Curves and edge fillets need the optional project runtime.';}
+function featureDetail(feature){
+ if(feature.operation==='fillet')return `FILLET · R ${feature.radius} mm · ${feature.edges.length} edge seeds · picking tolerance ${feature.tolerance} mm`;
+ if(feature.shape==='box')return `BOX · ${feature.size.join(' × ')} mm · corner [${feature.origin.join(', ')}]`;
+ if(feature.shape==='cylinder')return `CYLINDER · R ${feature.radius} × ${feature.height} mm · +${feature.axis.toUpperCase()} · base [${feature.origin.join(', ')}]`;
+ return `${feature.shape==='curve'?'CURVED PROFILE · '+feature.segments.length+' line/arc segments':'POLYGON · '+feature.points.length+' corners'} × ${feature.height} mm · +${feature.axis.toUpperCase()} · base [${feature.origin.join(', ')}]`;
+}
 function keepEditor(){try{if($('#solid-source').value.length<=65536)sessionStorage.setItem(DRAFT,$('#solid-source').value);}catch{note('Tab storage unavailable. Export the current source before reloading.');}}
 function render(){
  $('#solid-source').value=source();if(!spec){$('#solid-dimensions').replaceChildren();const empty=document.createElement('p');empty.className='dimension-empty';empty.textContent='No part source yet. Describe a new part with dimensions, import a source, or explicitly load an example.';$('#solid-dimensions').append(empty);$('#solid-title').textContent='Your first part';$('#solid-chip').textContent='NO SOURCE';$('#solid-features').replaceChildren();buttons();intent?.refresh();return;}dimensionEditor.setSource(spec);$('#solid-title').textContent=spec.title;$('#solid-chip').textContent='SOURCE VALID';const list=$('#solid-features');list.replaceChildren();
- for(const [i,feature]of spec.features.entries()){const row=document.createElement('div');row.className='feature-item '+feature.operation;const index=document.createElement('span'),body=document.createElement('div'),title=document.createElement('b'),detail=document.createElement('small');index.className='feature-index';index.textContent=String(i+1).padStart(2,'0');title.textContent=`${feature.operation.toUpperCase()} / ${feature.id}`;detail.textContent=feature.shape==='box'?`BOX · ${feature.size.join(' × ')} mm · corner [${feature.origin.join(', ')}]`:feature.shape==='cylinder'?`CYLINDER · R ${feature.radius} × ${feature.height} mm · +${feature.axis.toUpperCase()} · base [${feature.origin.join(', ')}]`:`PROFILE · ${feature.points.length} corners × ${feature.height} mm · +${feature.axis.toUpperCase()} · base [${feature.origin.join(', ')}]`;body.append(title,detail);row.append(index,body);list.append(row);}
+ for(const [i,feature]of spec.features.entries()){const row=document.createElement('div');row.className='feature-item '+feature.operation;const index=document.createElement('span'),body=document.createElement('div'),title=document.createElement('b'),detail=document.createElement('small');index.className='feature-index';index.textContent=String(i+1).padStart(2,'0');title.textContent=`${feature.operation.toUpperCase()} / ${feature.id}`;detail.textContent=featureDetail(feature);body.append(title,detail);row.append(index,body);list.append(row);}
  const probes=document.createElement('div');probes.className='feature-probes';probes.textContent=`${spec.probes.length} selected region check${spec.probes.length===1?'':'s'}: ${spec.probes.map(p=>p.id+' = '+p.expect).join('; ')||'none supplied'}. These run on generated geometry, not on this source preview.`;list.append(probes);buttons();intent?.refresh();
 }
 function currentProject(){
@@ -77,7 +84,7 @@ function commit(next,history=true,mustSave=false){
 }
 function download(name,data,type='application/json'){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 async function example(name='mounting-bracket'){const response=await fetch(`./tools/solid-generator/examples/${name}.json`);if(!response.ok)throw new Error('Bracket example unavailable. Import a feature JSON file.');return validateSolidSpec(await response.json());}
-async function runtime(){try{const response=await fetch('./api/health',{cache:'no-store',signal:AbortSignal.timeout(4000)}),data=await response.json();ready=response.ok&&data.ok===true&&data.features?.includes('profile-solid-v1');}catch{}$('#solid-runtime').textContent=ready?'Local feature-solid runtime ready. Builds and readback stay on this computer.':'Feature CAD runtime unavailable. Run the current local server to generate; source editing and export work here.';buttons();}
+async function runtime(){try{const response=await fetch('./api/health',{cache:'no-store',signal:AbortSignal.timeout(4000)}),data=await response.json();ready=response.ok&&data.ok===true&&data.features?.includes('profile-solid-v1')&&data.features.includes('sampled-mesh-readback-v1');advancedReady=ready&&data.features.includes('curved-solid-v1');}catch{}buttons();}
 function sourceChanged(){if(dirty()){keepEditor();note('Unapplied changes. Apply changes before generating or using Undo / Redo.');$('#solid-chip').textContent='UNAPPLIED';}else{try{sessionStorage.removeItem(DRAFT);}catch{}note('Working source matches the latest applied source.');$('#solid-chip').textContent='SOURCE VALID';}buttons();intent?.refresh();}
 const dimensionEditor=createSolidEditor($('#solid-dimensions'),{change:raw=>{
  let text=JSON.stringify(raw,null,2);if(text.length>65536)text=JSON.stringify(raw);if(text.length>65536)throw new Error('Source exceeds 64 KB. Remove features or corners before adding more.');
@@ -90,6 +97,7 @@ $('#solid-apply').addEventListener('click',()=>{try{if($('#solid-source').value.
 for(const [id,delta]of [['solid-undo',-1],['solid-redo',1]])$('#'+id).addEventListener('click',()=>{const next=cursor+delta;if(next>=0&&next<states.length){cursor=next;commit(states[cursor],false);}});
 $('#solid-example').addEventListener('click',async()=>{try{commit(await example());}catch(error){note(error.message);}});
 $('#solid-profile-example').addEventListener('click',async()=>{try{commit(await example('profile-plate'));}catch(error){note(error.message);}});
+$('#solid-curve-example').addEventListener('click',async()=>{try{commit(await example('rounded-pull-tab'));}catch(error){note(error.message);}});
 $('#solid-import').addEventListener('change',async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>65536)throw new Error('Import source under 64 KB.');commit(JSON.parse(await file.text()));}catch(error){note(error.message);}});
 $('#solid-export').addEventListener('click',()=>download('hardware-studio-feature-source.json',$('#solid-source').value));
 $('#solid-backup').addEventListener('click',()=>{
@@ -108,8 +116,8 @@ $('#solid-replace').addEventListener('click',()=>{
   intent?.refresh();note(context.partId?'This part source saved after original-byte backup. Other part sources and all placements were preserved.':'Working source saved after original-byte backup.');
  }catch(error){try{preservedRaw=localStorage.getItem(KEY);}catch{}$('#solid-replace').disabled=true;note(error instanceof WorkspaceConflictError?'Saved bytes changed again. Download the current original bytes before replacing.':error.message);}
 });
-$('#solid-preview').addEventListener('click',()=>{if(dirty()||!ready||busy)return;try{sessionStorage.setItem(SOLID_PREVIEW_KEY,JSON.stringify(solidSnapshot(spec,Date.now(),location.search)));location.href='./cad-viewer.html?generated=solid';}catch(error){note(error.message||'Preview snapshot could not be retained. Export source first.');}});
-$('#solid-package').addEventListener('click',async()=>{if(dirty()||!ready||busy)return;const frozen=structuredClone(spec);busy=true;buttons();note('Building the frozen feature record and checking exported geometry…');try{const response=await fetch('./api/solid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(frozen),signal:AbortSignal.timeout(130000)});if(!response.ok){let message='Solid build failed.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('No CAD ZIP returned.');download('hardware-studio-feature-cad.zip',await response.blob(),'application/zip');note(`CAD ZIP downloaded for “${frozen.title}”. Inspect its source and verification report; the editor may now contain later changes.`);}catch(error){note(error.name==='TimeoutError'?'Build timed out. Source retained.':error.message);}finally{busy=false;buttons();}});
+$('#solid-preview').addEventListener('click',()=>{if(!canGenerate()||busy)return;try{sessionStorage.setItem(SOLID_PREVIEW_KEY,JSON.stringify(solidSnapshot(spec,Date.now(),location.search)));location.href='./cad-viewer.html?generated=solid';}catch(error){note(error.message||'Preview snapshot could not be retained. Export source first.');}});
+$('#solid-package').addEventListener('click',async()=>{if(!canGenerate()||busy)return;const frozen=structuredClone(spec);busy=true;buttons();note('Building the frozen feature record and checking exported geometry…');try{const response=await fetch('./api/solid',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(frozen),signal:AbortSignal.timeout(130000)});if(!response.ok){let message='Solid build failed.';try{message=(await response.json()).error||message;}catch{}throw new Error(message);}if(!response.headers.get('Content-Type')?.startsWith('application/zip'))throw new Error('No CAD ZIP returned.');download('hardware-studio-feature-cad.zip',await response.blob(),'application/zip');note(`CAD ZIP downloaded for “${frozen.title}”. Inspect its source and verification report; the editor may now contain later changes.`);}catch(error){note(error.name==='TimeoutError'?'Build timed out. Source retained.':error.message);}finally{busy=false;buttons();}});
 async function initialize(){
  $('#solid-project').textContent=context.id ? `PROJECT / ${context.title || context.id}` : 'STANDALONE / SOURCE';
  document.querySelectorAll('header a').forEach(link=>link.href=context.studioTo);

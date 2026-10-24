@@ -1,6 +1,6 @@
 import { installTrayIntent } from './tray-intent.js?v=2';
 import { validateTraySpec } from './tray-spec.js?v=4';
-import { STORAGE_KEY } from './core.js?v=29';
+import { STORAGE_KEY } from './core.js?v=43';
 import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
 import { PREVIEW_KEY, previewSnapshot } from './cad-preview.js?v=1';
 const schema = 'hardware-studio-tray-v1';

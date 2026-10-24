@@ -1,4 +1,4 @@
-import { CHANGE_SCHEMA, modelProjectContext, proposeProjectChange } from './project-change.js?v=4';
+import { CHANGE_SCHEMA, modelProjectContext, proposeProjectChange } from './project-change.js?v=5';
 import { boundedModelJson } from './draft-intake.js?v=1';
 import { writeWorkspace } from './workspace-store.js?v=1';
 import { createZip } from './zip.js?v=1';

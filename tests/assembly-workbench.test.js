@@ -1,3 +1,4 @@
+import {needsCurvedRuntime} from '../solid-spec.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -31,11 +32,11 @@ function setup({malformed=false,orphan=false,sharedData=null,sharedSession=null,
  const selectIds=['attach-part','place-part'];
  const get=id=>{if(!nodes.has(id))nodes.set(id,new Element(selectIds.includes(id)?'select':'div'));return nodes.get(id);};
  const storage={getItem:key=>data.get(key)??null,setItem:(key,value)=>data.set(key,value),removeItem:key=>data.delete(key)};
- const sandbox={editableAssembly,normalizeAssemblyDraft,validateAssemblySpec,emptyAssembly,setAssemblyPartSource,assemblyIssues,ASSEMBLY_MAX_BYTES,assemblyKey,parseSavedWorkspace,STORAGE_KEY,writeWorkspace,WorkspaceConflictError,assemblySnapshot,ASSEMBLY_PREVIEW_KEY,
+ const sandbox={needsCurvedRuntime,editableAssembly,normalizeAssemblyDraft,validateAssemblySpec,emptyAssembly,setAssemblyPartSource,assemblyIssues,ASSEMBLY_MAX_BYTES,assemblyKey,parseSavedWorkspace,STORAGE_KEY,writeWorkspace,WorkspaceConflictError,assemblySnapshot,ASSEMBLY_PREVIEW_KEY,
   document:{getElementById:id=>get(id.replace(/^assembly-/,'')),createElement:tag=>new Element(tag),querySelectorAll:()=>[]},
   localStorage:storage,sessionStorage:{getItem:key=>{if(sessionUnavailable)throw new Error('Storage unavailable');return session.get(key)??null;},setItem:(key,value)=>{if(sessionUnavailable)throw new Error('Storage unavailable');session.set(key,value);},removeItem:key=>session.delete(key)},
   location:{search:'?project=assembly-project'},URLSearchParams,URL:{createObjectURL:()=>String(downloads.length),revokeObjectURL(){}},Blob,TextEncoder,structuredClone,AbortSignal,addEventListener(){},setTimeout(){},
-  fetch:async()=>({ok:true,json:async()=>({ok:true,features:['placed-assembly-v1']})}),console};
+  fetch:async()=>({ok:true,json:async()=>({ok:true,features:['placed-assembly-v1','sampled-mesh-readback-v1']})}),console};
  vm.runInNewContext(executable,sandbox,{filename:'assembly-workbench.js'});
  return {get,data,key,session,downloads,p,read:()=>JSON.parse(get('source').value),saved:()=>JSON.parse(data.get(key)),mutateProject:change=>{const workspace=JSON.parse(data.get(STORAGE_KEY));change(workspace.projects[0]);data.set(STORAGE_KEY,JSON.stringify(workspace));},fields:()=>walk(get('instances')).filter(node=>node.tagName==='input'),buttons:()=>walk(get('instances')).filter(node=>node.tagName==='button')};
 }

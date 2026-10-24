@@ -74,6 +74,7 @@ test('schema constrains supported source records and each call returns independe
  assert.deepEqual(schema.properties.status.enum,['ready','needs-input','unsupported']);
  const source=schema.properties.spec.oneOf[0];assert.equal(source.additionalProperties,false);
  assert.equal(source.properties.features.maxItems,32);assert.equal(source.properties.probes.maxItems,16);
- assert.equal(source.properties.features.items.oneOf.length,3);
+ assert.deepEqual(source.properties.features.items.oneOf.map(item=>item.properties.shape?.const||item.properties.operation.const),['box','cylinder','profile','curve','fillet']);
+ assert.equal(source.properties.probes.items.oneOf.some(item=>item.properties.operation?.const==='fillet'),false);
  schema.properties.assumptions.maxItems=99;assert.equal(solidIntentSchema().properties.assumptions.maxItems,12);
 });
