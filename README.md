@@ -6,7 +6,7 @@ Plan parts, wiring and build steps. Give parts real geometry. Keep the captured 
 
 [Open the app](https://nazeeh111.github.io/hardware-studio-skill/) · [Capability guide](docs/CAPABILITY_GUIDE.md) · [Blueprint study](BLUEPRINT_ANALYSIS.md) · [Reusable skill](skills/hardware-studio/SKILL.md)
 
-![Hardware Studio: parts, connections and review in one workspace](assets/studio-desktop.png)
+![Current public Hardware Studio workspace](assets/studio-desktop-current.jpg)
 
 An original open-source workspace informed by a public study of [Blueprint.io](https://www.blueprint.io/). It runs without a paid API. Your project stays in browser storage; optional AI and CAD run through local services.
 

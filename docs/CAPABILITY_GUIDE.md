@@ -6,9 +6,9 @@ An original, local-first hardware design workspace informed by a public study of
 
 **[Open the live app](https://nazeeh111.github.io/hardware-studio-skill/)** · [Read the design analysis](../BLUEPRINT_ANALYSIS.md) · [Review checks and open gaps](../AUDIT.md) · [Use the Codex skill](../skills/hardware-studio/SKILL.md)
 
-![Hardware Studio desktop interface](../assets/studio-desktop.png)
+![Current public Hardware Studio workspace](../assets/studio-desktop-current.jpg)
 
-[View the narrow layout](../assets/studio-narrow.png) or [phone layout](../assets/studio-phone.png).
+[Inspect the current proposal result at phone width](../examples/proposal-geometry-check/narrow-layout.jpg). This is a static layout capture; the example records its scope.
 
 For a dimensioned example, see the [Pico + NeoPixel prototype tray](../examples/pico-neopixel-tray/README.md): editable OpenCascade source, STEP and STL exports, a Blender scene, a fit report checked against two original manufacturer STEP models, and a provisional electrical path. Its [connection register](../examples/pico-neopixel-tray/connections.csv) separates 28 proposed conductor paths; six still lack a named endpoint, while 17 use assembly-assigned labels that need a physical hole map. The proposed 5 V / 2 A source, two separate five-position splices, off-tray shifter carrier and 22 AWG wire are listed, while the power worksheet flags missing load and branch evidence. It remains a prototype with documented open checks.
 The [open-window cover revision](../examples/pico-neopixel-tray/README.md#open-window-cover-revision) cuts a measured aperture above the modeled Stick and retains the lid STEP, readback, maker-model fit report and Blender scene. It does not include a diffuser or verified optical design.
