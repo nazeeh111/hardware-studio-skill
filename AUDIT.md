@@ -144,3 +144,10 @@ A fresh independent read-only audit compared the original request and later UI/p
 The review found two remaining presentation inconsistencies: an obsolete unsupported-curves/fillets sentence and a stale primary workspace screenshot. The research now points to the implemented curved example/runtime. The overview and capability guide now use a fresh capture of the current public workspace; original screenshots remain preserved. The guide links the current phone-width result capture with its static-layout scope. No runtime code or geometry changed in this closeout.
 
 This accepts the requested original working product, public analysis/deeper research, reusable skill and GitHub delivery. It does not claim exact private Blueprint parity, universal model correctness, arbitrary CAD or physical engineering validation. Account/community services, live sourcing, solved motion, firmware and manufacture remain documented product boundaries rather than demonstrated capabilities.
+
+
+## Final live application review, 25 October 2026
+
+A new end-to-end browser review reproduced loss of an unfinished working note when another CAD tab saved. The sync path now preserves unrelated inline fields while updating geometry, mechanical review and revision staleness. Browser before/after replays retained text and focus; a pending power input also survived. Design tabs gained keyboard navigation and tab/panel relationships, the editor dialog gained a name, and tray return links retain project context.
+
+The final Node suite passed 311 tests. Fresh independent patch review passed 22 focused checks and found no consequential regression; the additional tray-link change was independently reviewed. Actual public navigation/export, manual edits and history, conflict backup/recovery, sketch undo/redo, an accepted local draft, JSON roundtrip, curved/tray/placed CAD, project handoff and local vision were exercised. Export hashes and CRCs, independent analytic readback and original-project preservation were checked. The [live review](docs/LIVE_REVIEW_2026-10-25.md) records successes, failed model trials and limits. No native generator or installed skill source changed.

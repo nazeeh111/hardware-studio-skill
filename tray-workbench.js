@@ -218,6 +218,10 @@ function initialize() {
   $('#fit-components').innerHTML = fitRow(0);
   const url = new URL(location.href);
   const projectId = (url.searchParams.get('project') || '').slice(0, 80);
+  if (projectId) {
+    const studioHref = `./index.html?${new URLSearchParams({project: projectId})}`;
+    for (const link of document.querySelectorAll('a[href="./index.html"]')) link.setAttribute('href', studioHref);
+  }
   storageKey = projectId ? `hardware-studio-tray-${projectId}` : 'hardware-studio-tray-standalone';
   const projectTitle = (url.searchParams.get('title') || 'Prototype').slice(0, 80);
   let initial = { schema, title: `${projectTitle} tray study`, units: 'mm', outer: { length: 80, width: 55, height: 18 }, wall: 2.5, floor: 2.5, mounts: [], cutouts: [] };

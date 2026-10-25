@@ -82,6 +82,8 @@ Public drafts share this GitHub host’s browser storage with sibling sites. Use
 
 ## Checks
 
+[Live browser review · 25 October 2026](docs/LIVE_REVIEW_2026-10-25.md): editing, recovery, local models, generated geometry, downloads and narrow layouts.
+
 ```sh
 npm test
 ```

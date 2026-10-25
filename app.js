@@ -459,12 +459,41 @@ function render() {
   const st = stats(p);
   const costLabel = !p.parts.length || p.parts.some(part => Number(part.unitCost) === 0) ? 'UNPRICED' : money(st.estimate);
   $('#stats').innerHTML = [[st.distinctParts, 'DISTINCT PARTS'], [st.wires, 'CONNECTIONS'], [costLabel, 'COST ESTIMATE'], [`${st.completed}/${p.steps.length}`, 'STEPS DONE']].map(([value, label]) => `<div class="stat"><strong>${html(value)}</strong><span>${label}</span></div>`).join('');
-  for (const tab of document.querySelectorAll('[data-tab]')) tab.setAttribute('aria-selected', String(tab.dataset.tab === activeTab));
+  for (const tab of document.querySelectorAll('[data-tab]')) {
+    const selected = tab.dataset.tab === activeTab;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+  }
+  $('#panel').setAttribute('aria-labelledby', `tab-${activeTab}`);
   const panels = { overview: renderOverview, parts: renderParts, wiring: renderWiring, power: renderPower, assembly: renderAssembly, build: renderBuild };
   $('#panel').innerHTML = panels[activeTab](p);
   renderReview(p);
   projectChange?.refresh();
   refreshProjectPackageUi();
+}
+
+function refreshGeometry() {
+  // Geometry saves in another workbench must not replace an inline field
+  // while someone is typing. Only Assembly and Build display CAD content.
+  if (activeTab === 'assembly' || activeTab === 'build') return render();
+  const p = current(); if (!p) return;
+  syncCurrentGeometry(p);
+  renderReview(p);
+  projectChange?.refresh();
+  refreshProjectPackageUi();
+}
+
+function handleTabKeydown(event) {
+  const tab = event.target.closest('[data-tab]');
+  if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  const tabs = [...document.querySelectorAll('[data-tab]')];
+  const index = tabs.indexOf(tab);
+  const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 :
+    (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+  event.preventDefault();
+  activeTab = tabs[next].dataset.tab;
+  render();
+  tabs[next].focus();
 }
 
 function panelHead(kicker, title, description, actions = '') { return `<div class="panel-head"><div><div class="eyebrow accent">${kicker}</div><h3>${title}</h3><p>${description}</p></div>${actions}</div>`; }
@@ -788,6 +817,7 @@ function initialize() {
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
+  $('.tabs').addEventListener('keydown', handleTabKeydown);
   $('#brief-input').addEventListener('input', () => { renderBriefGuidance(); savePendingRequest(); });
   $('#local-model').addEventListener('change', () => { try { sessionStorage.setItem('hardware-studio-local-model', $('#local-model').value); } catch {} });
   $('#brief-question-list').addEventListener('input', event => {
@@ -800,7 +830,7 @@ function initialize() {
   window.addEventListener('storage', event => {
     if (event.key === trayKey(current()?.id) || event.key === solidKey(current()?.id) || event.key === assemblyKey(current()?.id)) {
       clearTimeout(traySyncTimer);
-      traySyncTimer = setTimeout(() => render(), 800);
+      traySyncTimer = setTimeout(refreshGeometry, 800);
     }
   });
   let diagramLayout = window.innerWidth < 500 ? 0 : window.innerWidth < 530 ? 1 : window.innerWidth < 750 ? 2 : 3;
