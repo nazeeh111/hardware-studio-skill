@@ -4,11 +4,11 @@
 
 Plan parts, wiring and build steps. Give parts real geometry. Keep the captured sources and check reports with the handoff.
 
-[Open the app](https://nazeeh111.github.io/hardware-studio-skill/) · [Capability guide](docs/CAPABILITY_GUIDE.md) · [Blueprint study](BLUEPRINT_ANALYSIS.md) · [Reusable skill](skills/hardware-studio/SKILL.md)
+[Open the app](https://nazeeh111.github.io/hardware-studio-skill/) · [Capability guide](docs/CAPABILITY_GUIDE.md) · [Reusable skill](skills/hardware-studio/SKILL.md)
 
 ![Current public Hardware Studio workspace](assets/studio-desktop-current.jpg)
 
-An original open-source workspace informed by a public study of [Blueprint.io](https://www.blueprint.io/). It runs without a paid API. Your project stays in browser storage; optional AI and CAD run through local services.
+Hardware Studio runs without a paid API. Your project stays in browser storage; optional AI and CAD run through local services.
 
 ## What you can do
 
@@ -78,7 +78,7 @@ These retain actual artifacts and repeatable checks, including failed or incorre
 
 Geometry is nominal. Software checks do not establish physical fit, fabrication tolerances, materials, strength, electrical behavior or safety. Parts, prices, ratings and wiring need independent evidence. There is no live sourcing service, firmware generator, joint/motion solver or manufacturing service.
 
-Public drafts share this GitHub host’s browser storage with sibling sites. Use a local origin for sensitive work. GitHub Pages cannot run native CAD or local AI. The [Blueprint study](BLUEPRINT_ANALYSIS.md) separates direct observations, published claims and unknown private behavior; this project does not establish Blueprint feature parity.
+Public drafts share this GitHub host’s browser storage with sibling sites. Use a local origin for sensitive work. GitHub Pages cannot run native CAD or local AI.
 
 ## Checks
 
@@ -100,4 +100,4 @@ The structural checker does not validate electrical or mechanical engineering.
 
 ## License
 
-MIT for this original repository. It does not grant rights to Blueprint’s code, name, graphics or content.
+[MIT](LICENSE).
