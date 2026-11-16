@@ -1,4 +1,4 @@
-import {validate, safeReferenceImage, bomCsv, mountingCsv, wiringCsv} from './core.js?v=43';
+import {validate, safeReferenceImage, bomCsv, mountingCsv, wiringCsv} from './core.js?v=44';
 import {validateTraySpec} from './tray-spec.js?v=4';
 import {validateSolidSpec} from './solid-spec.js?v=3';
 import {validateAssemblySpec} from './assembly-spec.js?v=2';

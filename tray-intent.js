@@ -32,9 +32,9 @@ export function installTrayIntent({readSpec,applySpec}){
  });
  $('#intent-cancel').addEventListener('click',()=>controller?.abort());
  $('#intent-discard').addEventListener('click',()=>{discard();status('Proposal discarded. Current dimensions retained.');});
- $('#intent-apply').addEventListener('click',()=>{
+ $('#intent-apply').addEventListener('click',async()=>{
   if(!pending)return;
-  try{if(JSON.stringify(validateTraySpec(readSpec()))!==pending.base)throw new Error('Dimensions changed while drafting. Request a new proposal from the current form.');const spec=pending.spec;applySpec(spec);discard();status('Proposed dimensions applied to the form. Check its save status, then generate CAD and inspect readback.');}
+  try{if(JSON.stringify(validateTraySpec(readSpec()))!==pending.base)throw new Error('Dimensions changed while drafting. Request a new proposal from the current form.');const selected=pending,spec=selected.spec,request=$('#intent-instruction').value,model=$('#intent-model').value;const saved=await applySpec(spec,()=>{if(pending!==selected||$('#intent-instruction').value!==request||$('#intent-model').value!==model||JSON.stringify(validateTraySpec(readSpec()))!==JSON.stringify(spec))throw new Error('The proposal or dimensions changed; review again before applying.');});if(saved===false)throw new Error('The proposal was not saved. Export this form and resolve the storage conflict.');if(pending===selected)discard();status('Proposed dimensions applied to the form. Check its save status, then generate CAD and inspect readback.');}
   catch(error){status(error.message);}
  });
  void models();

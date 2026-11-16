@@ -136,9 +136,10 @@ export function installSolidIntent({readState,apply,project,storageKey,boundPart
  });
  $('cancel').addEventListener('click',()=>controller?.abort());
  $('discard').addEventListener('click',()=>{if(controller||checking)return;pending=null;render();status('Proposal discarded. Current source retained.');});
- $('accept').addEventListener('click',()=>{
+ $('accept').addEventListener('click',async()=>{
   if(controller||checking||!pending||pending.output?.status!=='ready')return;
-  try{if(!current(pending))throw new Error('Request, model, target, project or source changed. Request a fresh proposal.');apply(pending.output.spec);pending.appliedAt=new Date().toISOString();refresh();status(boundPartId?'Proposed source saved for the bound assembly part. Other sources and placements were retained. Generate CAD to check geometry.':'Proposed source saved. Generate CAD to check geometry. The selected part is request context, not an assembly binding.');}
+  const selected=pending;
+  try{if(!current(selected))throw new Error('Request, model, target, project or source changed. Request a fresh proposal.');await apply(selected.output.spec,()=>{if(pending!==selected||!current(selected))throw new Error('Request, model, target, project or source changed. Request a fresh proposal.');});selected.appliedAt=new Date().toISOString();refresh();status(boundPartId?'Proposed source saved for the bound assembly part. Other sources and placements were retained. Generate CAD to check geometry.':'Proposed source saved. Generate CAD to check geometry. The selected part is request context, not an assembly binding.');}
   catch(error){status(error.message);refresh();}
  });
  $('check').addEventListener('click',async()=>{

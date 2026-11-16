@@ -1,12 +1,12 @@
 import {validateAssemblySpec} from './assembly-spec.js?v=2';
 import { assemblyInventory, assemblySvg } from './assembly-inventory.js?v=2';
-import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=43';
+import { STARTERS, STORAGE_KEY, REVISIONS_KEY, MAX_REFERENCE_DATA_URL, safeReferenceImage, safePinList, makeProject, blankProject, stats, validate, bomCsv, mountingCsv, wiringCsv, safeProject, powerBudget, partReviewRecorded, projectContentChanged, parseSavedWorkspace, restoreProjectFromRevision, mechanicalOnly } from './core.js?v=44';
 import { MODEL_PLAN_SCHEMA, coordinatedAiDraft } from './draft-plan.js?v=5';
 import { REQUEST_KEY, requestRecord, parseRequest, requestSignature, boundedModelJson } from './draft-intake.js?v=1';
-import { createProjectChangeController } from './project-change-ui.js?v=10';
+import { createProjectChangeController } from './project-change-ui.js?v=11';
 import { validateTraySpec } from './tray-spec.js?v=4';
 import { validateSolidSpec } from './solid-spec.js?v=3';
-import {trayKey,solidKey,assemblyKey,projectWithGeometry,readGeometryState,replaceGeometryCache} from './project-geometry.js?v=4';
+import {createProjectStore,PROJECT_STORE_KEY,ProjectStoreConflict} from './project-store.js';
 import {projectSourceArchive} from './project-package.js?v=1';
 import {createProjectCadController} from './project-cad-package.js?v=1';
 import {invalidateManualEdit,manualEditNotice} from './manual-edit-effects.js?v=1';
@@ -20,7 +20,8 @@ const safeUrl = value => /^https?:\/\//i.test(String(value || '')) ? String(valu
 const money = value => '$' + Number(value || 0).toFixed(2);
 let projects = [];
 let currentId = '';
-let activeTab = 'overview';
+let activeTab = 'overview', renderedProjectId = null;
+const notesDrafts = new Map();
 let editor = null;
 let toastTimer;
 let traySyncTimer;
@@ -38,6 +39,7 @@ let modelCapabilities = new Map();
 let unreadableSavedData = null;
 let storageUnavailable = false;
 let expectedWorkspaceRaw = null, conflictingWorkspace = null;
+let projectStore = null, revisions = [], saving = false, recoveryLegacy = null;
 const OLLAMA_URL = 'http://127.0.0.1:11434';
 // Request links even for preparation. The local validator also permits global
 // Prepare steps, but an unconditional minimum guides small model grammars.
@@ -252,88 +254,67 @@ function editorError(message) { const el = $('#dialog-error'); el.textContent = 
 function current() { return projects.find(p => p.id === currentId) || projects[0]; }
 function captureProjectChange() {
   if (storageUnavailable || unreadableSavedData !== null) throw new Error('Recover the saved workspace before proposing a revision.');
-  if (localStorage.getItem(STORAGE_KEY) !== expectedWorkspaceRaw) throw new Error('The saved workspace changed. Reload its latest state before proposing a revision.');
-  const p = current(), geometry = readGeometryState(p, localStorage);
-  if (!syncCurrentGeometry(p, geometry)) throw new Error('The latest CAD source could not be saved. Preserve it before revising the project.');
-  return {project:structuredClone(p), workspaceRaw:expectedWorkspaceRaw, geometryRaw:geometry.raw};
+  try{projectStore.assertCurrent(expectedWorkspaceRaw);}catch{throw new Error('The saved workspace changed. Reload its latest state before proposing a revision.');}
+  return {project:structuredClone(current()), workspaceRaw:expectedWorkspaceRaw};
 }
 function assertProjectChangeCurrent(base) {
-  if (current()?.id !== base.project.id || localStorage.getItem(STORAGE_KEY) !== base.workspaceRaw || expectedWorkspaceRaw !== base.workspaceRaw) throw new Error('The project or saved workspace changed. Close and reopen this editor to propose changes from its latest state.');
-  const latest = readGeometryState(current(), localStorage);
-  if (projectContentChanged(base.project, latest.project) || Object.keys(base.geometryRaw).some(key => latest.raw[key] !== base.geometryRaw[key])) throw new Error('The project or CAD workbench changed. Close and reopen this editor from the latest state; this proposal remains available to download.');
+  try{projectStore.assertCurrent(base.workspaceRaw);}catch{throw new Error('The project changed. Reopen this editor from its latest state; the proposal remains available to download.');}
+  if (current()?.id !== base.project.id || expectedWorkspaceRaw !== base.workspaceRaw || projectContentChanged(base.project,current())) throw new Error('The project changed. Reopen this editor from its latest state; the proposal remains available to download.');
 }
-function applyProjectChange(base, next) {
+async function applyProjectChange(base, next, guard) {
   assertProjectChangeCurrent(base);
-  // Refuse the edit if its recovery snapshot cannot be saved. CAD sidecars are
-  // unchanged by this route, and their captured bytes were checked above.
-  try { recordRevision(base.project, 'Before local AI revision'); }
-  catch { throw new Error('The earlier project could not be saved in History. Export it and free browser storage before applying this revision.'); }
-  const p = current(), before = structuredClone(p);
-  Object.assign(p, next);
-  const saved = saveWithRollback(p, before, 'Local AI revision', {skipRevision:true});
+  const p=current(), before=structuredClone(p);
+  Object.assign(p,next);
+  const saved=await saveWithRollback(p,before,'Before local AI revision',{guard});
   render(); return saved;
 }
-function readRevisions() {
-  const raw = localStorage.getItem(REVISIONS_KEY);
-  if (!raw) return [];
-  const entries = JSON.parse(raw);
-  if (!Array.isArray(entries) || entries.some(entry => !entry || typeof entry.id !== 'string' || typeof entry.projectId !== 'string' || !entry.snapshot || typeof entry.snapshot !== 'object')) throw new Error('Revision history is unreadable.');
-  return entries;
-}
+function readRevisions() { return structuredClone(revisions); }
 function recordRevision(snapshot, reason) {
-  const entries = readRevisions();
-  entries.push({ id: crypto.randomUUID(), projectId: snapshot.id, at: new Date().toISOString(), reason, snapshot });
-  while (entries.filter(entry => entry.projectId === snapshot.id).length > 12) entries.splice(entries.findIndex(entry => entry.projectId === snapshot.id), 1);
-  while (entries.length > 1 && JSON.stringify(entries).length > 2_000_000) entries.shift();
-  if (JSON.stringify(entries).length > 2_000_000) throw new Error('Revision exceeds the local history limit.');
-  localStorage.setItem(REVISIONS_KEY, JSON.stringify(entries));
+  const entries = revisions;
+  entries.push({id:crypto.randomUUID(),projectId:snapshot.id,at:new Date().toISOString(),reason,snapshot:structuredClone(snapshot)});
+  while(entries.filter(entry=>entry.projectId===snapshot.id).length>12)entries.splice(entries.findIndex(entry=>entry.projectId===snapshot.id),1);
+  while(entries.length>1 && JSON.stringify(entries).length>2_000_000)entries.shift();
+  if(JSON.stringify(entries).length>2_000_000)throw new Error('Revision exceeds the local history limit.');
 }
+function draftWorkspace() {return {projects:projects.map(p=>notesDrafts.has(p.id)?{...p,notes:notesDrafts.get(p.id)}:p),currentId,revisions};}
 function showRecovery() { if (!$('#recovery-dialog').open) $('#recovery-dialog').showModal(); }
-function save(reason = 'edit', { skipRevision = false } = {}) {
-  if (storageUnavailable) { showToast('Browser storage is unavailable. Export JSON to keep this project.'); return false; }
-  if (unreadableSavedData !== null) { showRecovery(); showToast('Download the unreadable saved data before starting a new workspace.'); return false; }
-  const p = current(); if (p) p.updatedAt = new Date().toISOString();
-  let before = null;
+async function save(reason = 'edit', { skipRevision = false, guard = null } = {}) {
+  if (storageUnavailable || !projectStore) {
+    conflictingWorkspace=JSON.stringify(draftWorkspace(),null,2);
+    $('#conflict-explanation').textContent='Safe browser storage is unavailable. Download this attempted workspace before reloading.';
+    $('#conflict-reload').disabled=true;if(!$('#conflict-dialog').open)$('#conflict-dialog').showModal();return false;
+  }
+  if (unreadableSavedData !== null) { showRecovery(); return false; }
+  if (saving) { showToast('Another save is in progress. Keep this edit and retry.'); return false; }
+  const oldRevisions=structuredClone(revisions), p=current();
   try {
-    const saved = localStorage.getItem(STORAGE_KEY) === null ? null : parseSavedWorkspace(localStorage.getItem(STORAGE_KEY));
-    before = saved?.projects?.find(item => item.id === p?.id) || null;
-  } catch {
-    try { unreadableSavedData = localStorage.getItem(STORAGE_KEY); }
-    catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep this project.'); return false; }
-    showRecovery(); showToast('Saved workspace data became unreadable. Download it before editing further.'); return false;
-  }
-  try { expectedWorkspaceRaw = writeWorkspace(localStorage, STORAGE_KEY, expectedWorkspaceRaw, JSON.stringify({ projects, currentId })); }
-  catch (error) {
-    if (error instanceof WorkspaceConflictError) {
-      conflictingWorkspace = JSON.stringify({ projects, currentId }, null, 2);
-      $('#conflict-reload').disabled = true;
-      if (!$('#conflict-dialog').open) $('#conflict-dialog').showModal();
-    } else showToast('Local storage could not be written. Export your project to keep a copy.');
+    const previous=expectedWorkspaceRaw===null?null:JSON.parse(expectedWorkspaceRaw).workspace;
+    const before=previous?.projects?.find(item=>item.id===p?.id);
+    if(!skipRevision && before && projectContentChanged(before,p))recordRevision(before,reason);
+    if(p)p.updatedAt=new Date().toISOString();
+    saving=true;
+    const committed=await projectStore.commit(expectedWorkspaceRaw,{projects,currentId},revisions,guard);
+    expectedWorkspaceRaw=committed.raw; revisions=committed.document.revisions;
+    return true;
+  } catch(error) {
+    revisions=oldRevisions;
+    conflictingWorkspace=JSON.stringify({...draftWorkspace(),revisions:oldRevisions},null,2);
+    $('#conflict-explanation').textContent=error instanceof ProjectStoreConflict?'Another tab or legacy workbench changed saved data. Download this attempted workspace before reloading.':'Storage could not save this change. Download this attempted workspace before reloading or retrying.';
+    $('#conflict-reload').disabled=true;if(!$('#conflict-dialog').open)$('#conflict-dialog').showModal();
     return false;
-  }
-  if (!skipRevision && before && projectContentChanged(before, p)) {
-    try { recordRevision(before, reason); }
-    catch { queueMicrotask(() => showToast('Project saved, but revision history could not be stored. Export JSON for a backup.')); }
-  }
-  return true;
+  } finally {saving=false;}
 }
-function saveWithRollback(project, before, reason, options) {
-  if (save(reason, options)) return true;
-  for (const key of Object.keys(project)) delete project[key];
-  Object.assign(project, before);
-  return false;
+async function saveWithRollback(project,before,reason,options) {
+  if(await save(reason,options))return true;
+  for(const key of Object.keys(project))delete project[key];Object.assign(project,before);return false;
 }
-function saveManualEdit(project,before,reason){
+async function saveManualEdit(project,before,reason,guard=null){
   const effects=invalidateManualEdit(before,project);
-  return saveWithRollback(project,before,reason)?effects:false;
+  return await saveWithRollback(project,before,reason,{guard})?effects:false;
 }
-function editProject(project, reason, change) {
-  const before = structuredClone(project);
-  change();
-  const saved = saveManualEdit(project, before, reason);
-  render();
-  if(saved&&manualEditNotice(saved))showToast(manualEditNotice(saved));
-  return saved;
+async function editProject(project,reason,change){
+  const before=structuredClone(project);change();const saved=await saveManualEdit(project,before,reason);render();
+  if(saved&&manualEditNotice(saved))showToast(manualEditNotice(saved));return saved;
 }
 function download(name, contents, type) {
   const blob = new Blob([contents], { type }); const url = URL.createObjectURL(blob);
@@ -341,28 +322,19 @@ function download(name, contents, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 const filename = p => (p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project');
-function projectWithCurrentGeometry(p) { return projectWithGeometry(p, localStorage); }
-function syncCurrentGeometry(p, state = null) {
-  let next;
-  try { next = state ? state.project : projectWithCurrentGeometry(p); }
-  catch { showToast('Saved geometry could not be read. Original bytes remain in its workbench; download them before replacing.'); return false; }
-  if (next === p) return true;
-  const before = structuredClone(p);
-  Object.assign(p, next);
-  return saveWithRollback(p, before, 'Before updating CAD source');
+function projectWithCurrentGeometry(p,{allowDraft=false}={}) {
+  let saved=false;try{if(!saving){projectStore.assertCurrent(expectedWorkspaceRaw);saved=!notesDrafts.has(p.id);}}catch{}
+  if(!saved && !allowDraft)throw new Error('The project changed or is not saved. Export the working backup and reload before packaging.');
+  let revision=null;try{revision=expectedWorkspaceRaw?JSON.parse(expectedWorkspaceRaw):null;}catch{}
+  const project=structuredClone(p);if(notesDrafts.has(p.id))project.notes=notesDrafts.get(p.id);
+  return {...project,sourceRevision:{schema:'hardware-studio-source-revision-v1',status:saved?'saved':'unsaved-draft',storeId:revision?.storeId??null,generation:revision?.generation??null,projectId:p.id}};
 }
-function geometryFailure(error) {
-  if (error.recovery) download('hardware-studio-geometry-recovery.json', JSON.stringify(error.recovery,null,2), 'application/json');
-  showToast(error.recovery ? error.message : 'Geometry cache could not be updated. The project and original bytes remain available.');
-}
-function rollbackGeometry(transaction) {
-  try { transaction.rollback(); } catch (error) { geometryFailure(error); }
-}
+function syncCurrentGeometry() { return true; }
 function sourceProjectArchive(p) {
   return projectSourceArchive(p, {wiringMarkup:wiringSvg(p), assemblyMarkup:assemblySvg(p)});
 }
 function exportPackage(p) {
-  const captured = projectWithCurrentGeometry(p);
+  const captured = projectWithCurrentGeometry(p,{allowDraft:true});
   download(`${filename(captured)}-package.zip`, sourceProjectArchive(captured), 'application/zip');
   showToast('Project source ZIP downloaded. Generated geometry is available through the checked project export in Build.');
 }
@@ -396,60 +368,34 @@ function openHistory() {
   $('#history-trash').innerHTML = deleted.length ? `<div class="history-section-title">RECENTLY DELETED</div><div class="history-list">${deleted.map(entry => `<div class="history-entry"><div><strong>${html(entry.snapshot.title || 'Untitled project')}</strong><small>${html(new Date(entry.at).toLocaleString())} · ${html(entry.snapshot.parts?.length ?? '?')} parts</small></div><button class="button button-outline" type="button" data-recover-project="${html(entry.id)}">Recover</button></div>`).join('')}</div>` : '';
   $('#history-dialog').showModal();
 }
-function restoreRevision(id) {
-  const p = current(); let geometryState;
-  try { geometryState = readGeometryState(p, localStorage); } catch (error) { geometryFailure(error); return; }
-  if (!syncCurrentGeometry(p, geometryState)) return; let entry;
-  try { entry = readRevisions().find(item => item.id === id && item.projectId === p.id); }
-  catch { return showToast('Revision history could not be read.'); }
-  if (!entry) return showToast('That revision is no longer available.');
-  let restored;
-  try { restored = restoreProjectFromRevision(p, entry.snapshot); }
-  catch { return showToast('This revision is invalid and was not restored.'); }
-  try { recordRevision(p, 'Before restoring an older revision'); }
-  catch { return showToast('Current state could not be preserved in history. Export JSON before restoring.'); }
-  let transaction;
-  try { transaction = replaceGeometryCache(restored, localStorage, geometryState.raw); }
-  catch (error) { geometryFailure(error); return; }
-  const index = projects.findIndex(item => item.id === p.id);
-  projects[index] = restored;
-  if (!save('Restored revision', { skipRevision: true })) {
-    projects[index] = p;
-    rollbackGeometry(transaction);
-    return;
-  }
-  $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Older state restored. Verification marks were reset.');
+async function restoreRevision(id) {
+  const p=current(),entry=readRevisions().find(item=>item.id===id&&item.projectId===p.id);
+  if(!entry)return showToast('That revision is no longer available.');
+  let restored;try{restored=restoreProjectFromRevision(p,entry.snapshot);}catch{return showToast('This revision is invalid and was not restored.');}
+  const index=projects.findIndex(item=>item.id===p.id),priorRevisions=structuredClone(revisions);
+  try{recordRevision(p,'Before restoring an older revision');}catch{return showToast('Current state could not be preserved in history.');}
+  projects[index]=restored;
+  if(!await save('Restored revision',{skipRevision:true})){projects[index]=p;revisions=priorRevisions;return;}
+  $('#history-dialog').close();activeTab='overview';render();showToast('Older state restored. Verification marks were reset.');
 }
-function recoverDeletedProject(id) {
-  let entry;
-  try { entry = readRevisions().find(item => item.id === id && item.reason === 'Deleted project' && !projects.some(project => project.id === item.projectId)); }
-  catch { return showToast('Deleted-project history could not be read.'); }
-  if (!entry) return showToast('That deleted project is no longer available.');
-  let recovered, geometryState;
-  try { geometryState = readGeometryState(restoreProjectFromRevision(entry.snapshot, entry.snapshot), localStorage); recovered = geometryState.project; }
-  catch { return showToast('This saved project is invalid and was not recovered.'); }
-  let transaction;
-  try { transaction = replaceGeometryCache(recovered, localStorage, geometryState.raw); }
-  catch (error) { geometryFailure(error); return; }
-  const priorProjects = projects, priorId = currentId;
-  projects = [recovered, ...projects]; currentId = recovered.id;
-  if (!save('Recover deleted project', { skipRevision: true })) {
-    projects = priorProjects; currentId = priorId;
-    rollbackGeometry(transaction);
-    return;
-  }
-  $('#history-dialog').close(); activeTab = 'overview'; render(); showToast('Project recovered. Verification and step marks were reset.');
+async function recoverDeletedProject(id) {
+  const entry=readRevisions().find(item=>item.id===id&&item.reason==='Deleted project'&&!projects.some(p=>p.id===item.projectId));
+  if(!entry)return showToast('That deleted project is no longer available.');
+  let recovered;try{recovered=restoreProjectFromRevision(entry.snapshot,entry.snapshot);}catch{return showToast('This saved project is invalid and was not recovered.');}
+  const priorProjects=projects,priorId=currentId;projects=[recovered,...projects];currentId=recovered.id;
+  if(!await save('Recover deleted project',{skipRevision:true})){projects=priorProjects;currentId=priorId;return;}
+  $('#history-dialog').close();activeTab='overview';render();showToast('Project recovered. Verification and step marks were reset.');
 }
-function addProject(p) {
-  const priorProjects = projects, priorId = currentId;
-  projects = [p, ...projects]; currentId = p.id; activeTab = 'overview';
-  if (!save('Before creating project')) { projects = priorProjects; currentId = priorId; render(); return false; }
-  try { replaceGeometryCache(p, localStorage); } catch (error) { geometryFailure(error); }
-  render(); showToast('Project created. Review the design before building.'); return true;
+async function addProject(p) {
+  const priorProjects=projects,priorId=currentId;projects=[p,...projects];currentId=p.id;activeTab='overview';
+  if(!await save('Before creating project')){projects=priorProjects;currentId=priorId;render();return false;}
+  render();showToast('Project created. Review the design before building.');return true;
 }
-
 function render() {
   const p = current(); if (!p) return;
+  const notes=renderedProjectId ? $('#project-notes') : null, rendered=projects.find(item=>item.id===renderedProjectId);
+  const focusedNotes=notes && document.activeElement===notes ? {id:renderedProjectId,start:notes.selectionStart,end:notes.selectionEnd} : null;
+  if(notes && rendered && notes.value!==rendered.notes)notesDrafts.set(rendered.id,notes.value);
   syncCurrentGeometry(p);
   $('#project-count').textContent = String(projects.length).padStart(2, '0');
   $('#project-list').innerHTML = projects.map(item => `<button class="project-item ${item.id === p.id ? 'active' : ''}" data-project="${html(item.id)}" type="button"><span class="item-icon">${html(STARTERS.find(s => s.id === item.starterId)?.icon || '◇')}</span><span><strong>${html(item.title)}</strong><small>${html(item.starterId === 'ai' ? 'LOCAL AI DRAFT' : item.starterId === 'blank' ? 'CUSTOM CONCEPT' : item.starterId === 'imported' ? 'IMPORTED CONCEPT' : 'DESIGN PROJECT')}</small></span></button>`).join('');
@@ -467,6 +413,11 @@ function render() {
   $('#panel').setAttribute('aria-labelledby', `tab-${activeTab}`);
   const panels = { overview: renderOverview, parts: renderParts, wiring: renderWiring, power: renderPower, assembly: renderAssembly, build: renderBuild };
   $('#panel').innerHTML = panels[activeTab](p);
+  renderedProjectId=activeTab==='overview'?p.id:null;
+  if(activeTab==='overview' && notesDrafts.has(p.id)){
+    const field=$('#project-notes'),status=$('#notes-retention');field.value=notesDrafts.get(p.id);status.hidden=false;
+    if(focusedNotes?.id===p.id){field.focus({preventScroll:true});if(Number.isInteger(focusedNotes.start)&&Number.isInteger(focusedNotes.end))field.setSelectionRange(focusedNotes.start,focusedNotes.end);}
+  }
   renderReview(p);
   projectChange?.refresh();
   refreshProjectPackageUi();
@@ -500,7 +451,7 @@ function panelHead(kicker, title, description, actions = '') { return `<div clas
 function renderOverview(p) {
   const reference = safeReferenceImage(p.referenceImage);
   return panelHead('DESIGN RECORD', 'Working concept', 'Keep the goal, open decisions and review status in one place.') +
-    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea></div></div>${reference ? `<div class="project-reference"><div><span class="eyebrow accent">VISUAL REFERENCE / UNVERIFIED</span><p>${html(reference.name)} · Sketches and photos do not establish dimensions or electrical details.</p>${reference.sketch ? '<button id="edit-project-sketch" class="text-link" type="button">Edit sketch</button> · ' : ''}<button id="remove-project-reference" class="text-link" type="button">Remove image</button></div><img src="${html(reference.dataUrl)}" alt="Project visual reference"></div>` : ''}<div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
+    `<div class="overview-grid"><div class="overview-card dark"><h4>DESIGN INTENT</h4><p>${html(p.brief || 'Add a brief to describe the function, operating environment and constraints.')}</p><div class="phase-line"><b>1</b> Specify the job and constraints</div><div class="phase-line"><b>2</b> Lay out parts and connections</div><div class="phase-line"><b>3</b> Verify against exact components</div></div><div class="overview-card"><h4>WORKING NOTES</h4><textarea id="project-notes" aria-label="Working notes" placeholder="Dimensions, decisions, questions to resolve...">${html(p.notes)}</textarea><p id="notes-retention" role="status" hidden>Notes have unsaved changes. Focus and leave this field to save them, or export the project before reloading.</p></div></div>${reference ? `<div class="project-reference"><div><span class="eyebrow accent">VISUAL REFERENCE / UNVERIFIED</span><p>${html(reference.name)} · Sketches and photos do not establish dimensions or electrical details.</p>${reference.sketch ? '<button id="edit-project-sketch" class="text-link" type="button">Edit sketch</button> · ' : ''}<button id="remove-project-reference" class="text-link" type="button">Remove image</button></div><img src="${html(reference.dataUrl)}" alt="Project visual reference"></div>` : ''}${p.originRevision ? `<div class="notice">Imported source revision ${html(p.originRevision.generation ?? 'unknown')} · ${html(p.originRevision.status)}. This is a supplied record, not authenticated evidence; review marks were reset on import.</div>` : ''}<div class="notice">This workspace produces a design plan, not a certified schematic, purchase quote or manufacturing CAD. Exact part ratings, pinouts, clearances and supplier listings need verification.</div>`;
 }
 function renderParts(p) {
   const rows = p.parts.map((part, i) => { const checked = partReviewRecorded(part); return `<tr><td><div class="part-name">${html(part.name)}</div><div class="part-detail">${html(part.detail)}</div>${part.pins?.length ? `<div class="part-pin-count">${part.pins.length} recorded pin${part.pins.length === 1 ? '' : 's'}</div>` : ''}${safeUrl(part.sourceUrl) ? `<a class="source-link" href="${html(safeUrl(part.sourceUrl))}" target="_blank" rel="noopener noreferrer">Supplier ↗</a>` : ''}${safeUrl(part.specUrl) ? ` <a class="source-link" href="${html(safeUrl(part.specUrl))}" target="_blank" rel="noopener noreferrer">Specification ↗</a>` : ''}</td><td><span class="badge">${html(part.category)}</span></td><td>${html(part.qty)}</td><td>${Number(part.unitCost) === 0 ? '—' : money(part.unitCost)}</td><td><span class="badge ${checked ? '' : 'warn'}">${checked ? `Checked ${html(part.checkedAt.slice(0, 10))}` : part.verified ? 'Evidence missing' : 'Review'}</span></td><td><button class="text-link" data-edit-part="${i}" type="button">Edit</button></td></tr>`; }).join('');
@@ -596,9 +547,10 @@ function openEditor(kind, index = -1) {
   $('#dialog-fields').innerHTML = fields; updatePinHints(); $('#editor-dialog').showModal();
 }
 function closeEditor() { $('#editor-dialog').close(); editor = null; }
-function saveEditor(event) {
-  event.preventDefault(); if (!editor) return;
-  const p = current(); const form = new FormData($('#editor-form')); const { kind, index } = editor;
+async function saveEditor(event) {
+  event.preventDefault(); if(saving)return editorError('Save in progress. Keep this edit and retry.'); if (!editor) return;
+  const p=current(), form=new FormData($('#editor-form')), selectedEditor=editor, formBefore=JSON.stringify([...form.entries()]), {kind,index}=editor;
+  const guard=()=>{if(editor!==selectedEditor||JSON.stringify([...new FormData($('#editor-form')).entries()])!==formBefore)throw new Error('Editor changed while saving. Review and retry.');};
   const before = structuredClone(p);
   if (kind === 'part') {
     let pins;
@@ -651,34 +603,36 @@ function saveEditor(event) {
     if (wiringUrl !== (p.wiringUrl || '')) p.review.electrical = false;
     p.title = title; p.brief = String(form.get('brief') || '').trim(); p.summary = String(form.get('summary') || '').trim(); p.cadUrl = cadUrl; p.wiringUrl = wiringUrl;
   }
-  const effects=saveManualEdit(p,before,`Before ${kind} edit`);
+  const effects=await saveManualEdit(p,before,`Before ${kind} edit`,guard);
   if (!effects) return editorError('This edit was not saved. Export the project or free browser storage, then try again.');
   closeEditor(); render(); showToast('Saved locally. '+manualEditNotice(effects));
 }
-function deleteEntry() {
+async function deleteEntry() {
   if (!editor || editor.index < 0) return;
   const p = current(), { kind, index } = editor;
   if (!window.confirm(`Delete this ${kind} from the project?`)) return;
+  const selectedEditor=editor, guard=()=>{if(editor!==selectedEditor)throw new Error('Editor changed while deleting. Review and retry.');};
   const before = structuredClone(p);
   if (kind === 'part') { const id = p.parts[index].id; p.parts.splice(index, 1); p.wires = p.wires.filter(w => w.from !== id && w.to !== id); p.mechanicalConnections = (p.mechanicalConnections || []).filter(link => link.from !== id && link.to !== id); p.steps.forEach(step => { step.partIds = (step.partIds || []).filter(partId => partId !== id); }); for (const rail of p.powerRails || []) { rail.loads = rail.loads.filter(load => load.partId !== id); if (rail.sourcePartId === id) rail.sourcePartId = ''; } p.review = { electrical: false, mechanical: false, sourcing: false }; }
   if (kind === 'wire') { p.wires.splice(index, 1); p.review.electrical = false; }
   if (kind === 'mount') { p.mechanicalConnections.splice(index, 1); p.review.mechanical = false; }
   if (kind === 'step') p.steps.splice(index, 1);
-  const effects=saveManualEdit(p,before,`Before deleting ${kind}`);
+  const effects=await saveManualEdit(p,before,`Before deleting ${kind}`,guard);
   if (!effects) return editorError('The entry was not deleted because the change could not be saved.');
   closeEditor(); render(); showToast('Entry removed. '+manualEditNotice(effects));
 }
-function handleClick(event) {
+async function handleClick(event) {
+  if (saving) return showToast('Save in progress. Try again when it finishes.');
   const button = event.target.closest('button'); if (!button) return;
   const p = current();
-  if (button.dataset.project) { const priorId = currentId; currentId = button.dataset.project; activeTab = 'overview'; if (!save()) currentId = priorId; render(); }
-  else if (button.dataset.starter) addProject(makeProject(STARTERS.find(s => s.id === button.dataset.starter)));
+  if (button.dataset.project) { const priorId = currentId; currentId = button.dataset.project; activeTab = 'overview'; if (!await save()) currentId = priorId; render(); }
+  else if (button.dataset.starter) await addProject(makeProject(STARTERS.find(s => s.id === button.dataset.starter)));
   else if (button.dataset.tab) { activeTab = button.dataset.tab; render(); }
   else if (button.dataset.editPart != null) openEditor('part', Number(button.dataset.editPart));
   else if (button.dataset.editWire != null) openEditor('wire', Number(button.dataset.editWire));
   else if (button.dataset.editMount != null) openEditor('mount', Number(button.dataset.editMount));
   else if (button.dataset.editStep != null) openEditor('step', Number(button.dataset.editStep));
-  else if (button.id === 'new-project') addProject(blankProject());
+  else if (button.id === 'new-project') await addProject(blankProject());
   else if (button.id === 'create-from-brief') {
     const idea = $('#brief-input').value.trim(); if (!idea) return showToast('Describe your idea first.');
     const composed = composeBrief(idea, briefAnswers);
@@ -687,52 +641,54 @@ function handleClick(event) {
     const next = blankProject(title); next.brief = composed.text; next.referenceImage = pendingReference;
     const openSummary = composed.openQuestions.length ? `${composed.openQuestions.length} design question${composed.openQuestions.length === 1 ? '' : 's'} ${composed.openQuestions.length === 1 ? 'remains' : 'remain'} open.` : 'Intake questions answered.';
     next.summary = `Custom concept. Add parts, connections and build steps. ${openSummary} No automatic design was generated.`;
-    if (addProject(next)) clearPendingRequest();
+    if (await addProject(next)) clearPendingRequest();
   }
   else if (button.id === 'draft-local') void draftWithLocalAi();
   else if (button.id === 'revise-project') { if (draftController) return showToast('Finish or cancel the new-concept draft before revising this project.'); projectChange.open(); }
   else if (button.id === 'choose-reference') $('#reference-file').click();
   else if (button.id === 'draw-sketch' && !draftController) { sketchProjectId=null;sketchPad.open(pendingReference?.sketch); }
   else if (button.id === 'edit-project-sketch' && !draftController) { sketchProjectId=p.id;sketchPad.open(p.referenceImage?.sketch,p.id); }
-  else if (button.id === 'accept-draft' && pendingDraft) { if (!refreshDraftGate()) return; if (addProject(pendingDraft)) { $('#draft-dialog').close(); clearPendingRequest(); } }
+  else if (button.id === 'accept-draft' && pendingDraft) { if (!refreshDraftGate()) return; if (await addProject(pendingDraft)) { $('#draft-dialog').close(); clearPendingRequest(); } }
   else if (button.id === 'download-draft' && pendingDraft) download(`${filename(pendingDraft)}-draft.json`, JSON.stringify(pendingDraft, null, 2), 'application/json');
   else if (button.id === 'request-backup' && requestRecovery !== null) { download('hardware-studio-saved-request.json', requestRecovery, 'application/json'); requestBackedUp = true; requestStorageStatus('Saved bytes downloaded. You can now replace them with the current form.'); }
   else if (button.id === 'request-replace' && requestBackedUp) { try { expectedRequestRaw = writeWorkspace(sessionStorage, REQUEST_KEY, requestRecovery, JSON.stringify(requestRecord($('#brief-input').value, briefAnswers))); requestRecovery = null; requestBackedUp = false; requestStorageStatus('Current request retained in this tab.'); } catch { requestBackedUp = false; try { requestRecovery = sessionStorage.getItem(REQUEST_KEY); } catch {} requestStorageStatus('Saved request changed again. Download its current bytes first.'); } }
   else if (button.id === 'clear-brief-answers') { briefAnswers = {}; renderBriefGuidance(); savePendingRequest(); }
   else if (button.id === 'discard-draft' || button.id === 'discard-draft-x') { pendingDraft = null; $('#draft-dialog').close(); showToast('Draft discarded. Your brief is still here.'); }
   else if (button.id === 'remove-reference' && !draftController) { updatePendingReference(null); }
-  else if (button.id === 'remove-project-reference') { if (editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
+  else if (button.id === 'remove-project-reference') { if (await editProject(p, 'Before removing visual reference', () => { p.referenceImage = null; })) showToast('Visual reference removed.'); }
   else if (button.id === 'rename-project') openEditor('title', 0);
   else if (button.id === 'history-project') { if (syncCurrentGeometry(p)) openHistory(); }
   else if (button.id === 'close-history' || button.id === 'history-done') $('#history-dialog').close();
-  else if (button.id === 'history-export') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p), null, 2), 'application/json'); showToast('Current project JSON downloaded.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
-  else if (button.dataset.restoreRevision) restoreRevision(button.dataset.restoreRevision);
-  else if (button.dataset.recoverProject) recoverDeletedProject(button.dataset.recoverProject);
-  else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = false; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
+  else if (button.id === 'history-export') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p,{allowDraft:true}), null, 2), 'application/json'); showToast('Current project JSON downloaded.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
+  else if (button.dataset.restoreRevision) await restoreRevision(button.dataset.restoreRevision);
+  else if (button.dataset.recoverProject) await recoverDeletedProject(button.dataset.recoverProject);
+  else if (button.id === 'download-unreadable' && unreadableSavedData !== null) { download('hardware-studio-unreadable-saved-data.json', unreadableSavedData, 'application/json'); $('#start-clean').disabled = !projectStore; showToast('Original saved bytes downloaded. Keep that file before starting clean.'); }
   else if (button.id === 'conflict-export' && conflictingWorkspace !== null) { download('hardware-studio-unsaved-workspace.json', conflictingWorkspace, 'application/json'); $('#conflict-reload').disabled=false; }
   else if (button.id === 'conflict-reload' && !button.disabled) location.reload();
   else if (button.id === 'conflict-close') $('#conflict-dialog').close();
   else if (button.id === 'start-clean' && unreadableSavedData !== null && !$('#start-clean').disabled) {
     if (!window.confirm('Replace the unreadable workspace only after keeping its downloaded backup?')) return;
-    const fresh = makeProject(STARTERS[0]);
-    try { expectedWorkspaceRaw = writeWorkspace(localStorage, STORAGE_KEY, unreadableSavedData, JSON.stringify({ projects: [fresh], currentId: fresh.id })); }
-    catch { return showToast('Saved data changed or could not be written. Reload to inspect it; no workspace was replaced.'); }
-    unreadableSavedData = null; projects = [fresh]; currentId = fresh.id; activeTab = 'overview'; $('#recovery-dialog').close(); render(); showToast('New workspace started. Keep the downloaded original for recovery.');
+    const fresh=makeProject(STARTERS[0]);
+    try{const saved=await projectStore.recover(expectedWorkspaceRaw,recoveryLegacy,{projects:[fresh],currentId:fresh.id});expectedWorkspaceRaw=saved.raw;}
+    catch{return showToast('Saved data changed or could not be written. Reload to inspect it; no workspace was replaced.');}
+    unreadableSavedData=null;recoveryLegacy=null;projects=[fresh];revisions=[];currentId=fresh.id;activeTab='overview';$('#recovery-dialog').close();render();showToast('New workspace started. Keep the downloaded original for recovery.');
   }
   else if (button.id === 'import-project') $('#import-file').click();
   else if (button.id === 'delete-project') {
+    if(notesDrafts.has(p.id))return showToast('Save or export the unsaved notes before deleting this project.');
     if (!syncCurrentGeometry(p)) return;
     if (!window.confirm(`Move “${p.title}” to Recently deleted? It can be recovered while this browser keeps its bounded history.`)) return;
+    const priorRevisions=structuredClone(revisions);
     try { recordRevision(p, 'Deleted project'); }
     catch { return showToast('Project was not deleted because its recovery snapshot could not be saved. Export JSON first.'); }
     const priorProjects = projects, priorId = currentId;
     projects = projects.filter(item => item.id !== p.id);
     if (!projects.length) projects = [makeProject(STARTERS[0])];
     currentId = projects[0].id; activeTab = 'overview';
-    if (!save('Deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; render(); return; }
+    if (!await save('Deleted project', { skipRevision: true })) { projects = priorProjects; currentId = priorId; revisions=priorRevisions; render(); return; }
     render(); showToast('Project moved to Recently deleted. Open History to recover it.');
   }
-  else if (button.id === 'export-project') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p), null, 2), 'application/json'); showToast('Project JSON downloaded, including saved tray and feature CAD source.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
+  else if (button.id === 'export-project') { try { download(`${filename(p)}.json`, JSON.stringify(projectWithCurrentGeometry(p,{allowDraft:true}), null, 2), 'application/json'); showToast('Project JSON downloaded, including saved tray and feature CAD source.'); } catch { showToast('Saved CAD source could not be read. Download the original bytes from its workbench before replacing.'); } }
   else if (button.id === 'export-package' || button.id === 'handoff-source') { try { exportPackage(p); } catch { showToast('Package export failed. Export JSON to preserve the project.'); } }
   else if (button.id === 'project-cad-build') void projectCad.build();
   else if (button.id === 'project-cad-cancel') projectCad.cancel();
@@ -742,18 +698,19 @@ function handleClick(event) {
   else if (button.id === 'export-connections') { download(`${filename(p)}-connections.csv`, wiringCsv(p), 'text/csv'); showToast('Connection register downloaded. Pin names still need independent review.'); }
   else if (button.id === 'export-diagram') { const svg = activeTab === 'assembly' ? assemblySvg(p).replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"') : $('#panel svg') ? new XMLSerializer().serializeToString($('#panel svg')) : ''; if (svg) { download(`${filename(p)}-${activeTab}.svg`, svg, 'image/svg+xml'); showToast('Diagram downloaded.'); } }
   else if (button.id === 'add-part') openEditor('part');
-  else if (button.id === 'add-rail') editProject(p, 'Before adding power rail', () => { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; });
-  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) editProject(p, 'Before adding rail load', () => { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; }); }
-  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); if (p.powerRails?.[railIndex]?.loads?.[loadIndex]) editProject(p, 'Before removing rail load', () => { p.powerRails[railIndex].loads.splice(loadIndex, 1); p.review.electrical = false; }); }
-  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; if (p.powerRails?.[index]) editProject(p, 'Before removing power rail', () => { p.powerRails.splice(index, 1); p.review.electrical = false; }); }
+  else if (button.id === 'add-rail') await editProject(p, 'Before adding power rail', () => { p.powerRails ||= []; p.powerRails.push({ id: `rail-${crypto.randomUUID().slice(0, 8)}`, name: 'New rail', voltageV: 5, supplyCurrentMa: null, marginPercent: 20, sourcePartId: '', loads: [] }); p.review.electrical = false; });
+  else if (button.dataset.addLoad != null) { const index = Number(button.dataset.addLoad), rail = p.powerRails?.[index], partId = $(`#add-load-${index}`)?.value; if (rail && partId && !rail.loads.some(load => load.partId === partId)) await editProject(p, 'Before adding rail load', () => { rail.loads.push({ partId, currentMaEach: null }); p.review.electrical = false; }); }
+  else if (button.dataset.removeLoad) { const [railIndex, loadIndex] = button.dataset.removeLoad.split(':').map(Number); if (p.powerRails?.[railIndex]?.loads?.[loadIndex]) await editProject(p, 'Before removing rail load', () => { p.powerRails[railIndex].loads.splice(loadIndex, 1); p.review.electrical = false; }); }
+  else if (button.dataset.removeRail != null) { const index = Number(button.dataset.removeRail); if (!window.confirm(`Remove “${p.powerRails?.[index]?.name || 'this rail'}” and its budget from this project?`)) return; if (p.powerRails?.[index]) await editProject(p, 'Before removing power rail', () => { p.powerRails.splice(index, 1); p.review.electrical = false; }); }
   else if (button.id === 'add-wire') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('wire'); }
   else if (button.id === 'add-mount') { if (p.parts.length < 2) return showToast('Add at least two parts first.'); openEditor('mount'); }
   else if (button.id === 'add-step') openEditor('step');
   else if (button.id === 'edit-prep') openEditor('prep');
   else if (button.id === 'close-dialog' || button.id === 'cancel-dialog') closeEditor();
-  else if (button.id === 'delete-entry') deleteEntry();
+  else if (button.id === 'delete-entry') await deleteEntry();
 }
-function handleChange(event) {
+async function handleChange(event) {
+  if (saving) return showToast('Save in progress. Keep this edit and retry.');
   const p = current(); const target = event.target;
   if (target.id === 'reference-file') {
     const file = target.files?.[0]; target.value = ''; if (!file || draftController) return;
@@ -768,24 +725,25 @@ function handleChange(event) {
     if (key === 'supplyCurrentMa' && value != null && (!Number.isFinite(value) || value <= 0)) return showToast('Enter a positive supply rating.');
     if (key === 'marginPercent' && (!Number.isFinite(value) || value < 0 || value >= 100)) return showToast('Enter a margin target from 0 to 99%.');
     if (key === 'name' && !value) return showToast('Give the rail a name.');
-    editProject(p, 'Before changing power rail', () => { rail[key] = value; p.review.electrical = false; }); return;
+    await editProject(p, 'Before changing power rail', () => { rail[key] = value; p.review.electrical = false; }); return;
   }
   if (target.dataset.loadRail != null) {
     const load = p.powerRails?.[Number(target.dataset.loadRail)]?.loads?.[Number(target.dataset.loadIndex)]; if (!load) return;
     const value = target.value === '' ? null : Number(target.value);
     if (value != null && (!Number.isFinite(value) || value < 0)) return showToast('Enter a nonnegative peak current or leave it blank.');
-    editProject(p, 'Before changing load current', () => { load.currentMaEach = value; p.review.electrical = false; }); return;
+    await editProject(p, 'Before changing load current', () => { load.currentMaEach = value; p.review.electrical = false; }); return;
   }
-  if (target.dataset.doneStep != null) editProject(p, 'Before changing step progress', () => { p.steps[Number(target.dataset.doneStep)].done = target.checked; });
-  if (target.dataset.review) editProject(p, 'Before changing review mark', () => { p.review[target.dataset.review] = target.checked; });
+  if (target.dataset.doneStep != null) await editProject(p, 'Before changing step progress', () => { p.steps[Number(target.dataset.doneStep)].done = target.checked; });
+  if (target.dataset.review) await editProject(p, 'Before changing review mark', () => { p.review[target.dataset.review] = target.checked; });
   if (target.id === 'import-file') {
     const file = target.files?.[0]; if (!file) return;
     if (file.size > 2_000_000) { showToast('Choose a project smaller than 2 MB.'); target.value = ''; return; }
-    file.text().then(text => { try { addProject(safeProject(JSON.parse(text))); } catch (error) { showToast(error.message); } }).finally(() => { target.value = ''; });
+    const capturedGeneration=expectedWorkspaceRaw;
+    file.text().then(async text => { try { if(expectedWorkspaceRaw!==capturedGeneration||localStorage.getItem(PROJECT_STORE_KEY)!==capturedGeneration)throw new Error('The project changed while the file was read. Choose the file again.');await addProject(safeProject(JSON.parse(text))); } catch (error) { showToast(error.message); } }).finally(() => { target.value = ''; });
   }
 }
-function initialize() {
-  projectCad=createProjectCadController({getProject:()=>projectWithCurrentGeometry(current()),makeSourceArchive:sourceProjectArchive,download,onChange:refreshProjectPackageUi});
+async function initialize() {
+  projectCad=createProjectCadController({getProject:()=>{if(saving)throw new Error('Wait for the current project save to finish.');return projectWithCurrentGeometry(current());},makeSourceArchive:sourceProjectArchive,download,onChange:refreshProjectPackageUi});
   projectChange = createProjectChangeController({
     capture:captureProjectChange, assertCurrent:assertProjectChangeCurrent, apply:applyProjectChange,
     getModels:() => [...$('#local-model').options].filter(option => option.value).map(option => ({value:option.value,label:option.textContent})),
@@ -793,9 +751,9 @@ function initialize() {
     setModel:value => { $('#local-model').value = value; try {sessionStorage.setItem('hardware-studio-local-model',value);} catch {} },
     download, toast:showToast
   });
-  sketchPad=createSketchPad({onUse(reference){
+  sketchPad=createSketchPad({async onUse(reference){
     const safe=safeReferenceImage(reference);
-    if(sketchProjectId){const p=projects.find(item=>item.id===sketchProjectId);if(!p)throw new Error('That project is no longer available. Close the sketch and choose a project.');if(!editProject(p,'Before editing sketch',()=>{p.referenceImage=safe;p.review={electrical:false,mechanical:false,sourcing:false};}))throw new Error('The sketch could not be saved. Export your project to free storage, then try again.');}
+    if(sketchProjectId){const p=projects.find(item=>item.id===sketchProjectId);if(!p)throw new Error('That project is no longer available. Close the sketch and choose a project.');if(!await editProject(p,'Before editing sketch',()=>{p.referenceImage=safe;p.review={electrical:false,mechanical:false,sourcing:false};}))throw new Error('The sketch could not be saved. Export your project to free storage, then try again.');}
     else{const retained=updatePendingReference(safe);if(!retained)return {keepDraft:true};}
     showToast('Sketch attached with editable strokes.');return true;
   }});
@@ -803,18 +761,25 @@ function initialize() {
   try{const pending=sessionStorage.getItem(PENDING_REFERENCE_KEY);if(pending&&pending.length<=500000)pendingReference=safeReferenceImage(JSON.parse(pending));}catch{ /* Keep unreadable bytes intact; choosing another reference replaces them. */ }
   try { expectedRequestRaw = sessionStorage.getItem(REQUEST_KEY); if (expectedRequestRaw !== null) { const request = parseRequest(expectedRequestRaw); $('#brief-input').value = request.idea; briefAnswers = request.answers; } requestStorageStatus('Request retained in this tab through reload.'); } catch { requestRecovery = expectedRequestRaw; requestStorageStatus(requestRecovery !== null ? 'Saved request is unreadable. Download its original bytes before replacing it.' : 'Tab storage is unavailable. Create a project before reloading.'); }
   renderReferenceInput();
-  try { rawSavedData = localStorage.getItem(STORAGE_KEY); expectedWorkspaceRaw = rawSavedData; }
-  catch { storageUnavailable = true; showToast('Browser storage is unavailable. Export JSON to keep projects.'); }
   try {
-    if (!storageUnavailable && rawSavedData !== null) {
-      const saved = parseSavedWorkspace(rawSavedData);
-      projects = saved.projects.map(safeProjectForStorage); currentId = saved.currentId;
-    }
-  } catch { unreadableSavedData = rawSavedData; showToast('Saved data could not be read. The original bytes are preserved.'); }
-  if (!projects.length) { projects = [makeProject(STARTERS[0])]; currentId = projects[0].id; if (unreadableSavedData === null && !storageUnavailable) save('Initial workspace'); }
+    projectStore=createProjectStore({storage:localStorage,locks:navigator.locks});
+    const opened=await projectStore.open();expectedWorkspaceRaw=opened.raw;
+    if(opened.document){projects=opened.document.workspace.projects.map(safeProjectForStorage);currentId=opened.document.workspace.currentId;revisions=opened.document.revisions;}
+  } catch(error) {
+    try {
+      if(!projectStore)storageUnavailable=true;
+      expectedWorkspaceRaw=localStorage.getItem(PROJECT_STORE_KEY);recoveryLegacy={};
+      for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith('hardware-studio-')&&key!==PROJECT_STORE_KEY)recoveryLegacy[key]=localStorage.getItem(key);}
+      for(const key of [STORAGE_KEY,REVISIONS_KEY])if(!(key in recoveryLegacy))recoveryLegacy[key]=null;
+      unreadableSavedData=JSON.stringify({canonical:expectedWorkspaceRaw,legacy:recoveryLegacy},null,2);
+      showToast('Saved project could not be opened safely. Download its original bytes before recovery.');
+    } catch {storageUnavailable=true;showToast('Browser storage is unavailable. Export any working data.');}
+  }
+  if(!projects.length){projects=[makeProject(STARTERS[0])];currentId=projects[0].id;if(!storageUnavailable)await save('Initial workspace');}
   const requestedProject = new URLSearchParams(location.search).get('project');
   if (projects.some(p => p.id === requestedProject)) currentId = requestedProject;
   if (!projects.some(p => p.id === currentId)) currentId = projects[0].id;
+  for(const type of ['click','change','submit'])document.addEventListener(type,event=>{if(saving){event.preventDefault();event.stopImmediatePropagation();showToast('Save in progress. Keep your edit and retry.');}},true);
   document.addEventListener('click', handleClick);
   document.addEventListener('change', handleChange);
   $('.tabs').addEventListener('keydown', handleTabKeydown);
@@ -828,9 +793,12 @@ function initialize() {
     $('#brief-progress').textContent = `${questions.filter(item => String(briefAnswers[item.id] || '').trim()).length} / ${questions.length} ANSWERED`;
   });
   window.addEventListener('storage', event => {
-    if (event.key === trayKey(current()?.id) || event.key === solidKey(current()?.id) || event.key === assemblyKey(current()?.id)) {
-      clearTimeout(traySyncTimer);
-      traySyncTimer = setTimeout(refreshGeometry, 800);
+    if(event.key===PROJECT_STORE_KEY && event.newValue!==expectedWorkspaceRaw){
+      conflictingWorkspace=JSON.stringify(draftWorkspace(),null,2);
+      $('#conflict-explanation').textContent='Another tab changed the saved workspace. Download this tab’s workspace before reloading.';
+      $('#conflict-reload').disabled=true;if(!$('#conflict-dialog').open)$('#conflict-dialog').showModal();
+      showToast('Workspace changed in another tab. Export this tab before reloading.');
+      projectChange?.refresh();
     }
   });
   let diagramLayout = window.innerWidth < 500 ? 0 : window.innerWidth < 530 ? 1 : window.innerWidth < 750 ? 2 : 3;
@@ -841,7 +809,8 @@ function initialize() {
   $('#editor-form').addEventListener('submit', saveEditor);
   $('#editor-form').addEventListener('change', event => { if (event.target.name === 'from' || event.target.name === 'to') updatePinHints(); });
   $('#draft-dialog').addEventListener('close', () => { pendingDraft = null; pendingDraftContext = null; });
-  $('#panel').addEventListener('change', event => { if (event.target.id === 'project-notes') { const p = current(), before = structuredClone(p); p.notes = event.target.value; if (saveWithRollback(p, before, 'Before editing notes')) showToast('Notes saved locally.'); } });
+  $('#panel').addEventListener('input', event=>{if(event.target.id==='project-notes' && renderedProjectId){const p=projects.find(item=>item.id===renderedProjectId);if(p&&event.target.value===p.notes)notesDrafts.delete(renderedProjectId);else notesDrafts.set(renderedProjectId,event.target.value);$('#notes-retention').hidden=!notesDrafts.has(renderedProjectId);}});
+  $('#panel').addEventListener('change', async event => { if (event.target.id === 'project-notes') { const p=current(),before=structuredClone(p),savedText=event.target.value;p.notes=savedText;if(await saveWithRollback(p,before,'Before editing notes')){const field=$('#project-notes');if(notesDrafts.get(p.id)===savedText && (!field || field.value===savedText)){notesDrafts.delete(p.id);if(field)$('#notes-retention').hidden=true;}showToast('Notes saved locally.');} } });
   render();
   renderBriefGuidance();
   if (unreadableSavedData !== null) showRecovery();
@@ -852,4 +821,4 @@ function safeProjectForStorage(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('Invalid stored project');
   return { ...input, powerRails: Array.isArray(input.powerRails) ? input.powerRails : [], mechanicalConnections: Array.isArray(input.mechanicalConnections) ? input.mechanicalConnections : [], traySpec: input.traySpec == null ? null : validateTraySpec(input.traySpec), solidSpec: input.solidSpec == null ? null : validateSolidSpec(input.solidSpec), assemblySpec: input.assemblySpec == null ? null : validateAssemblySpec(input.assemblySpec), review: { electrical: false, mechanical: false, sourcing: false, ...(input.review || {}) } };
 }
-initialize();
+void initialize();

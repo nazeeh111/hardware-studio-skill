@@ -80,6 +80,15 @@ Geometry is nominal. Software checks do not establish physical fit, fabrication 
 
 Public drafts share this GitHub host’s browser storage with sibling sites. Use a local origin for sensitive work. GitHub Pages cannot run native CAD or local AI.
 
+### Project revisions and recovery
+
+The studio and its project-linked tray, feature and assembly workbenches save the project, editable CAD sources and bounded history in one versioned record. They use the browser Web Locks API to serialize participating tabs, then compare the captured revision before saving. If another tab wins, download the working backup and reload before reconciling. Unsaved form edits remain exportable. If Web Locks or storage is unavailable, changes cannot be saved safely; use the offered download to retain them. Standalone tray and feature sources use separate locked records.
+
+On first open, valid prior workspace, history and CAD sidecars are copied into the new record; original storage keys are retained. An old tab still running earlier code does not participate in the new lock. A later change to recorded legacy keys is detected and blocks new saves so both versions can be recovered, but no protection is claimed against a change between separate checks by an uncooperative old tab. Download the recovery data and reconcile deliberately. Storage quota and browser data clearing can still prevent persistence; keep independent exports. Notes typed while a save is pending remain as an unsaved draft across editor redraws and project navigation; leave the notes field to save them, or export the project before reloading. A failed feature-source save keeps the edited text unapplied for retry or export.
+
+Project JSON and source ZIPs include a supplied store ID, generation, project ID and saved/draft label. Importing `project.json` makes an independent editable copy, retains the claimed source revision as an unauthenticated record, and resets verification and completion marks. Generated CAD ZIPs preserve the exact source ZIP and hash it. Same-kernel readback and sampled mesh checks do not establish independent CAD interoperability, physical fit or electrical safety.
+
+
 ## Checks
 
 [Live browser review · 25 October 2026](docs/LIVE_REVIEW_2026-10-25.md): editing, recovery, local models, generated geometry, downloads and narrow layouts.

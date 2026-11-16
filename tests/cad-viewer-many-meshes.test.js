@@ -7,7 +7,7 @@ const source=readFileSync(new URL('../cad-viewer.js',import.meta.url),'utf8');
 // Boundaries are consecutive functions. The controls and replacement logic run
 // unchanged, with only browser elements and GPU allocation mocked.
 const replace=source.slice(source.indexOf('function replaceMeshes('),source.indexOf('\nasync function loadExample'));
-const controls=source.slice(source.indexOf('function controls('),source.indexOf('\nfunction replaceMeshes'));
+const controls=source.slice(source.indexOf('function updateVisibility('),source.indexOf('\nfunction replaceMeshes'));
 const buffer=readFileSync(new URL('../examples/pico-neopixel-tray/generated/window-cover-v1/tray.stl',import.meta.url));
 const parsed=parseStl(buffer.buffer.slice(buffer.byteOffset,buffer.byteOffset+buffer.byteLength));
 const next=count=>Array.from({length:count},(_,i)=>({...parsed,name:'Instance '+(i+1),cover:false}));
@@ -16,7 +16,7 @@ function setup(failAt=Infinity){
  const node=()=>({children:[],style:{},handlers:new Map(),append(...items){this.children.push(...items);},replaceChildren(){this.children=[];},addEventListener(name,callback){this.handlers.set(name,callback);},closest(){return {hidden:false};}});
  const $=id=>{if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);};
  const original={...parsed,name:'Previous',color:[.5,.6,.4],visible:true,buffer:{original:true}};
- const sandbox={meshes:[original],geometryRevision:5,palette:[[.53,.67,.35],[.87,.84,.64],[.65,.76,.75],[.77,.51,.34]],sheetBusy:false,visionPanel:null,$,document:{createElement:node},reset(){},status(){},gl:{ARRAY_BUFFER:1,STATIC_DRAW:2,createBuffer(){return allocated++===failAt?null:{id:allocated};},bindBuffer(){},bufferData(){},deleteBuffer(buffer){removed.push(buffer);}}};
+ const sandbox={meshes:[original],geometryRevision:5,palette:[[.53,.67,.35],[.87,.84,.64],[.65,.76,.75],[.77,.51,.34]],sheetBusy:false,visionPanel:null,$,document:{createElement:node},reset(){},draw(){},status(){},gl:{isContextLost:()=>false,ARRAY_BUFFER:1,STATIC_DRAW:2,createBuffer(){return allocated++===failAt?null:{id:allocated};},bindBuffer(){},bufferData(){},deleteBuffer(buffer){removed.push(buffer);}}};
  vm.runInNewContext(controls+'\n'+replace,sandbox);return {sandbox,nodes,removed,original};
 }
 test('all supported sixteen instances render controls and export finite GLB materials',()=>{
@@ -28,4 +28,23 @@ test('all supported sixteen instances render controls and export finite GLB mate
 });
 test('allocation failure preserves prior mesh and frees only newly prepared GPU buffers',()=>{
  const env=setup(2);assert.throws(()=>env.sandbox.replaceMeshes(next(5)),/allocation|allocated/);assert.equal(env.sandbox.meshes[0],env.original);assert.equal(env.sandbox.geometryRevision,5);assert.equal(env.removed.length,2);assert.ok(!env.removed.includes(env.original.buffer));
+});
+
+test('hiding every loaded mesh explains the empty view and restores exports on selection', () => {
+ const {sandbox,nodes}=setup();
+ sandbox.replaceMeshes(next(2));
+ const checkboxes=nodes.get('#mesh-list').children.map(row=>row.children[0].children[0]);
+ for (const checkbox of checkboxes) {
+   checkbox.checked=false;
+   checkbox.handlers.get('change')();
+ }
+ assert.equal(nodes.get('#empty-view').hidden,true);
+ assert.equal(nodes.get('#hidden-view').hidden,false);
+ assert.equal(nodes.get('#export-glb').disabled,true);
+ assert.equal(nodes.get('#export-sheet').disabled,true);
+ checkboxes[0].checked=true;
+ checkboxes[0].handlers.get('change')();
+ assert.equal(nodes.get('#hidden-view').hidden,true);
+ assert.equal(nodes.get('#export-glb').disabled,false);
+ assert.equal(nodes.get('#export-sheet').disabled,false);
 });

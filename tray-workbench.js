@@ -1,7 +1,8 @@
-import { installTrayIntent } from './tray-intent.js?v=2';
+import { installTrayIntent } from './tray-intent.js?v=3';
 import { validateTraySpec } from './tray-spec.js?v=4';
-import { STORAGE_KEY } from './core.js?v=43';
-import { writeWorkspace, WorkspaceConflictError } from './workspace-store.js?v=1';
+import { STORAGE_KEY } from './core.js?v=44';
+import { writeWorkspace, writeStandalone, WorkspaceConflictError } from './workspace-store.js?v=2';
+import {createProjectStore,PROJECT_STORE_KEY,ProjectStoreConflict} from './project-store.js';
 import { PREVIEW_KEY, previewSnapshot } from './cad-preview.js?v=1';
 const schema = 'hardware-studio-tray-v1';
 const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -11,7 +12,7 @@ const select = (label, key, value, options) => `<label class="type-field">${labe
 const idField = (label, key, value) => `<label class="wide-field">${label}<input data-key="${key}" maxlength="80" value="${escapeHtml(value ?? '')}"></label>`;
 const num = 'type="number" step="0.1"';
 let draft = null;
-let storageKey = '';
+let storageKey = '', projectId = '', owner = null, storeRaw = null, saveSequence = 0, recoveryBundle = null, traySaved = false;
 let expectedTrayRaw = null, preservedTrayRaw = null, trayStorageBlocked = false;
 let cadAvailable = false;
 let previewAvailable = false;
@@ -29,10 +30,11 @@ const rotations = {
 };
 
 function updateCadButton() {
-  $('#generate-cad').disabled = !draft || !cadAvailable || cadBusy;
-  $('#preview-cad').disabled = !draft || !previewAvailable || cadBusy || fitBusy;
+  let current=traySaved;if(projectId){try{owner.assertCurrent(storeRaw);}catch{current=false;}}
+  $('#generate-cad').disabled = !draft || !current || !cadAvailable || cadBusy;
+  $('#preview-cad').disabled = !draft || !current || !previewAvailable || cadBusy || fitBusy;
   $('#download').disabled = !draft;
-  $('#check-fit').disabled = !draft || !cadAvailable || fitBusy || cadBusy;
+  $('#check-fit').disabled = !draft || !current || !cadAvailable || fitBusy || cadBusy;
 }
 
 async function detectCadService() {
@@ -89,7 +91,8 @@ function svg(spec) {
   const lightOpening = spec.lid?.window ? `<rect class="light-opening" x="${x0 + spec.lid.window.x * scale}" y="${y0 + spec.lid.window.y * scale}" width="${spec.lid.window.length * scale}" height="${spec.lid.window.width * scale}"/><text x="${x0 + spec.lid.window.x * scale + 7}" y="${y0 + spec.lid.window.y * scale + 15}" font-size="9" font-family="monospace" fill="#6b5b20">LIGHT OPENING</text>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w + 145 + 2 * coverMargin} ${h + 145 + 2 * coverMargin}" role="img" aria-label="Scaled tray top view${spec.lid ? ' with lift-off cover outline' : ''}${spec.lid?.window ? ' and light opening' : ''}; physical fit unverified"><rect width="100%" height="100%" fill="#edf2e7"/><text x="72" y="28" font-family="monospace" font-size="10" fill="#657d66">TOP PLAN / mm / FIT UNTESTED</text>${cover}<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="#c8dbb2" stroke="#243c2e" stroke-width="2"/><rect x="${x0 + border}" y="${y0 + border}" width="${w - 2 * border}" height="${h - 2 * border}" fill="#edf2e7" stroke="#738d77"/>${openings}${mounts}${lightOpening}<path d="M${x0} ${y0 + h + 18}H${x0 + w}M${x0} ${y0 + h + 13}v10M${x0 + w} ${y0 + h + 13}v10" stroke="#395640"/><text x="${x0 + w / 2}" y="${y0 + h + 36}" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${length} mm</text><path d="M${x0 - 20} ${y0}V${y0 + h}M${x0 - 25} ${y0}h10M${x0 - 25} ${y0 + h}h10" stroke="#395640"/><text x="${x0 - 30}" y="${y0 + h / 2}" transform="rotate(-90 ${x0 - 30} ${y0 + h / 2})" font-size="10" font-family="monospace" text-anchor="middle" fill="#395640">${width} mm</text><text x="72" y="${y0 + h + 60}" font-size="9" font-family="monospace" fill="#627c67">HEIGHT ${height} · WALL ${spec.wall} · FLOOR ${spec.floor} · ${spec.mounts.length} BOSSES · ${spec.cutouts.length} OPENINGS${spec.lid ? ` · COVER ${spec.lid.clearance} CLEARANCE` : ''}${spec.lid?.window ? ` · WINDOW ${spec.lid.window.length}×${spec.lid.window.width}` : ''}</text></svg>`;
 }
-function show() {
+async function show(guard=null) {
+  const sequence=++saveSequence;traySaved=false;updateCadButton();
   fitRevision += 1;
   if (fitReport) { fitReport = null; $('#fit-result').replaceChildren(); $('#fit-status').textContent = 'Tray changed. Run the fit check again for this geometry.'; }
   try {
@@ -97,18 +100,25 @@ function show() {
     draft = spec;
     $('#preview').innerHTML = svg(spec);
     let persisted = false;
-    try { if (storageKey && !trayStorageBlocked) { expectedTrayRaw = writeWorkspace(localStorage, storageKey, expectedTrayRaw, JSON.stringify(spec)); persisted = true; } }
+    try { if (storageKey && !trayStorageBlocked) {
+      if(projectId){const savedProject=JSON.parse(storeRaw).workspace.projects.find(p=>p.id===projectId);if(!savedProject)throw new Error('Project no longer available.');const next=structuredClone(savedProject);next.traySpec=spec;const saved=await owner.revise(storeRaw,projectId,next,'Before tray CAD edit',{guard:()=>{if(sequence!==saveSequence)throw new Error('Dimensions changed while saving.');if(guard)guard();}});storeRaw=saved.raw;expectedTrayRaw=JSON.stringify(spec);}
+      else expectedTrayRaw=await writeStandalone(localStorage,navigator.locks,storageKey,expectedTrayRaw,JSON.stringify(spec),()=>{if(sequence!==saveSequence)throw new Error('Dimensions changed while saving.');if(guard)guard();});
+      persisted=true;
+    } }
     catch (error) {
-      if (error instanceof WorkspaceConflictError) {
-        preservedTrayRaw = localStorage.getItem(storageKey); trayStorageBlocked = true;
+      if (error instanceof WorkspaceConflictError || error instanceof ProjectStoreConflict) {
+        preservedTrayRaw = localStorage.getItem(projectId?PROJECT_STORE_KEY:storageKey); if(projectId)recoveryBundle=JSON.stringify({schema:'hardware-studio-workbench-recovery-v1',canonicalRaw:preservedTrayRaw,legacyGeometryRaw:localStorage.getItem(storageKey),working:spec},null,2);trayStorageBlocked = true;
         $('#tray-storage-recovery').hidden = false; $('#replace-tray-draft').disabled = true;
       }
       // Keep the form and spec export available when storage cannot be written.
     }
+    if(sequence!==saveSequence)return false;
+    traySaved=persisted;
     $('#status').textContent = `Valid generator input. Cavity: ${(spec.outer.length - 2 * spec.wall).toFixed(1)} × ${(spec.outer.width - 2 * spec.wall).toFixed(1)} × ${(spec.outer.height - spec.floor).toFixed(1)} mm. ${spec.lid ? `Lift-off cover side clearance ${spec.lid.clearance.toFixed(1)} mm is nominal and untested. ` : ''}${spec.lid?.window ? `Opening ${spec.lid.window.length.toFixed(1)} × ${spec.lid.window.width.toFixed(1)} mm has no diffuser. ` : ''}${persisted ? 'Draft saved in this browser.' : trayStorageBlocked ? 'Saved draft preserved; this form has not replaced it. Download the current spec to keep these edits.' : 'Browser storage unavailable; download the spec now.'} Check exact parts and clearance separately.`;
     $('#status').classList.remove('error');
     $('#status-chip').textContent = 'SPEC READY'; $('#status-chip').classList.remove('invalid');
     updateCadButton();
+    return persisted;
   } catch (error) {
     draft = null; $('#preview').innerHTML = '<div class="placeholder">Adjust dimensions to see the scaled plan.</div>';
     $('#status').textContent = error.message; $('#status').classList.add('error');
@@ -184,7 +194,7 @@ async function runFit() {
     $('#fit-status').textContent = `Fit check complete. ${collisions.length} modeled collisions above ${report.overlap_limit_mm3} mm³.`;
   } finally { fitBusy = false; updateCadButton(); }
 }
-function populate(spec) {
+async function populate(spec,guard=null) {
   $('#title').value = spec.title;
   for (const [key, value] of Object.entries(spec.outer)) $(`[name="${key}"]`).value = value;
   $('[name="wall"]').value = spec.wall; $('[name="floor"]').value = spec.floor;
@@ -195,7 +205,7 @@ function populate(spec) {
   syncCoverInputs();
   $('#mounts').innerHTML = spec.mounts.map(mountRow).join('') || '<div class="empty">No bosses. Add measured mounting points if needed.</div>';
   $('#cutouts').innerHTML = spec.cutouts.map(cutoutRow).join('') || '<div class="empty">No openings. Add access for connectors, airflow or cables if needed.</div>';
-  show();
+  return show(guard);
 }
 function syncCoverInputs() {
   const enabled = $('#lid-enabled').checked;
@@ -214,10 +224,11 @@ function appendRow(kind) {
   container.insertAdjacentHTML('beforeend', kind === 'mount' ? mountRow(row, count) : cutoutRow(row, count));
   show();
 }
-function initialize() {
+async function initialize() {
   $('#fit-components').innerHTML = fitRow(0);
   const url = new URL(location.href);
-  const projectId = (url.searchParams.get('project') || '').slice(0, 80);
+  projectId = (url.searchParams.get('project') || '').slice(0, 80);
+  if(projectId){try{owner=createProjectStore({storage:localStorage,locks:navigator.locks});const opened=await owner.open();storeRaw=opened.raw;if(!storeRaw)throw new Error('Project unavailable.');}catch(error){trayStorageBlocked=true;$('#status').textContent=error.message;}}
   if (projectId) {
     const studioHref = `./index.html?${new URLSearchParams({project: projectId})}`;
     for (const link of document.querySelectorAll('a[href="./index.html"]')) link.setAttribute('href', studioHref);
@@ -226,19 +237,20 @@ function initialize() {
   const projectTitle = (url.searchParams.get('title') || 'Prototype').slice(0, 80);
   let initial = { schema, title: `${projectTitle} tray study`, units: 'mm', outer: { length: 80, width: 55, height: 18 }, wall: 2.5, floor: 2.5, mounts: [], cutouts: [] };
   let loaded = false;
-  try { expectedTrayRaw = localStorage.getItem(storageKey); if (expectedTrayRaw !== null) { initial = validateTraySpec(JSON.parse(expectedTrayRaw)); loaded = true; } }
+  try { expectedTrayRaw=projectId?null:localStorage.getItem(storageKey); if(projectId&&storeRaw){const p=JSON.parse(storeRaw).workspace.projects.find(p=>p.id===projectId);if(!p)throw new Error('Project unavailable.');if(p.traySpec){initial=validateTraySpec(p.traySpec);expectedTrayRaw=JSON.stringify(p.traySpec);loaded=true;}}else if(expectedTrayRaw!==null){initial=validateTraySpec(JSON.parse(expectedTrayRaw));loaded=true;} }
   catch { if (expectedTrayRaw !== null) { preservedTrayRaw = expectedTrayRaw; trayStorageBlocked = true; $('#tray-storage-recovery').hidden = false; } }
   $('#backup-tray-draft').addEventListener('click', () => {
-    const raw = preservedTrayRaw ?? ''; const blob = new Blob([raw], {type:'application/json'}), url = URL.createObjectURL(blob);
+    const raw = recoveryBundle ?? preservedTrayRaw ?? ''; const blob = new Blob([raw], {type:'application/json'}), url = URL.createObjectURL(blob);
     const anchor = document.createElement('a'); anchor.href=url; anchor.download='hardware-studio-original-tray-draft.json'; anchor.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
     $('#replace-tray-draft').disabled=false;
   });
-  $('#replace-tray-draft').addEventListener('click', () => {
+  $('#replace-tray-draft').addEventListener('click', async () => {
     if (!draft || $('#replace-tray-draft').disabled) return;
-    try { expectedTrayRaw = writeWorkspace(localStorage,storageKey,preservedTrayRaw,JSON.stringify(draft)); trayStorageBlocked=false;preservedTrayRaw=null;$('#tray-storage-recovery').hidden=true;show(); }
+    if(projectId){$('#status').textContent='Export this draft and reload the latest project before applying it.';return;}
+    try { expectedTrayRaw = await writeStandalone(localStorage,navigator.locks,storageKey,preservedTrayRaw,JSON.stringify(draft)); trayStorageBlocked=false;preservedTrayRaw=null;$('#tray-storage-recovery').hidden=true;show(); }
     catch { $('#replace-tray-draft').disabled=true;try { preservedTrayRaw=localStorage.getItem(storageKey); } catch {} $('#status').textContent='Saved draft changed again or could not be written. Back up the current saved bytes before replacing it.'; }
   });
-  if (!loaded && projectId) {
+  if (!loaded && projectId && !owner) {
     try {
       const workspace = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
       const attached = workspace?.projects?.find(project => project.id === projectId)?.traySpec;
@@ -327,15 +339,20 @@ function initialize() {
     } finally { cadBusy = false; updateCadButton(); }
   });
   $('#load-example').addEventListener('click', async () => {
-    try { const response = await fetch('./tools/tray-generator/examples/pico-neopixel-tray.json'); if (!response.ok) throw new Error('Example unavailable.'); populate(validateTraySpec(await response.json())); }
+    const before=JSON.stringify(readForm()),generation=storeRaw;
+    try { const response = await fetch('./tools/tray-generator/examples/pico-neopixel-tray.json'); if (!response.ok) throw new Error('Example unavailable.');const value=await response.json();if(JSON.stringify(readForm())!==before||(projectId&&(storeRaw!==generation||localStorage.getItem(PROJECT_STORE_KEY)!==generation)))throw new Error('Dimensions or project changed while loading. Choose the example again.');await populate(validateTraySpec(value)); }
     catch (error) { $('#status').textContent = error.message; $('#status').classList.add('error'); }
   });
   $('#import-spec').addEventListener('change', async event => {
     const file = event.target.files?.[0]; event.target.value = '';
     if (!file) return;
     if (file.size > 65536) { $('#status').textContent = 'Choose a spec under 64 KB.'; $('#status').classList.add('error'); return; }
-    try { populate(validateTraySpec(JSON.parse(await file.text()))); }
+    const before=JSON.stringify(readForm()),generation=storeRaw;
+    try {const text=await file.text();if(JSON.stringify(readForm())!==before||(projectId&&(storeRaw!==generation||localStorage.getItem(PROJECT_STORE_KEY)!==generation)))throw new Error('Dimensions or project changed while reading. Choose the file again.');await populate(validateTraySpec(JSON.parse(text))); }
     catch (error) { $('#status').textContent = error.message; $('#status').classList.add('error'); }
   });
 }
-if (typeof document !== 'undefined') initialize();
+if (typeof document !== 'undefined') {
+  addEventListener('storage',event=>{if(projectId&&(event.key===PROJECT_STORE_KEY||event.key===STORAGE_KEY||event.key===storageKey)){updateCadButton();try{owner.assertCurrent(storeRaw);}catch{$('#status').textContent='Project or legacy source changed elsewhere. Download this form and reload before generating.';}}});
+  void initialize();
+}

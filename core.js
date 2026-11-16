@@ -354,6 +354,13 @@ export function wiringCsv(project) {
   ].join('\r\n') + '\r\n';
 }
 
+function importedRevision(input) {
+  const revision=input.sourceRevision;
+  if(revision==null)return null;
+  if(!revision || typeof revision!=='object' || Array.isArray(revision) || revision.schema!=='hardware-studio-source-revision-v1' || !['saved','unsaved-draft'].includes(revision.status) || (revision.storeId!==null && (typeof revision.storeId!=='string'||!/^[0-9a-f-]{36}$/i.test(revision.storeId))) || (revision.generation!==null && (!Number.isSafeInteger(revision.generation)||revision.generation<0)) || (revision.status==='saved' && (revision.storeId===null || revision.generation===null)) || typeof revision.projectId!=='string' || !revision.projectId || revision.projectId.length>100)throw new Error('Invalid source revision record.');
+  return {schema:revision.schema,status:revision.status,storeId:revision.storeId,generation:revision.generation,projectId:revision.projectId};
+}
+
 export function safeProject(input) {
   if (!input || typeof input !== 'object' || !Array.isArray(input.parts) || !Array.isArray(input.wires) || !Array.isArray(input.steps)) throw new Error('This file is not a Hardware Studio project.');
   if (input.parts.length > 200 || input.wires.length > 500 || input.steps.length > 200 || (input.mechanicalConnections || []).length > 500 || (input.powerRails || []).length > 20) throw new Error('This project exceeds the local editor limits.');
@@ -364,6 +371,7 @@ export function safeProject(input) {
   return {
     id: crypto.randomUUID(), title: String(input.title || 'Imported concept').slice(0, 100),
     brief: String(input.brief || '').slice(0, 5000), summary: String(input.summary || '').slice(0, 5000),
+    originRevision: importedRevision(input),
     starterId: 'imported', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     notes: String(input.notes || '').slice(0, 10000),
     tools: safeTextList(input.tools, 'Tools'), assumptions: safeTextList(input.assumptions, 'Assumptions'),
