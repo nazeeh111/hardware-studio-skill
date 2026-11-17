@@ -1,0 +1,35 @@
+{
+  "input": "case.json",
+  "input_sha256": "7ec51aa5522e5f04b83ea68077a8bb02cef2d5d4c213ecdc896f5f8a904a5b9c",
+  "encoding": "Nominal source rectangles x=origin+mm*scale, width=10*scale, height=8*scale; equal XY units and common scale between the two panels. Native STEP check independently corroborates gap and overlap. No physical measurement.",
+  "variants": {
+    "handoff.svg": [
+      {
+        "x0": 62,
+        "y0": 361,
+        "scale": 15,
+        "second_x": 13
+      },
+      {
+        "x0": 602,
+        "y0": 361,
+        "scale": 15,
+        "second_x": 9
+      }
+    ],
+    "handoff-mobile.svg": [
+      {
+        "x0": 48,
+        "y0": 329,
+        "scale": 11,
+        "second_x": 13
+      },
+      {
+        "x0": 48,
+        "y0": 588,
+        "scale": 11,
+        "second_x": 9
+      }
+    ]
+  }
+}

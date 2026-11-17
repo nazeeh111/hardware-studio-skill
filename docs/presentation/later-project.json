@@ -1,0 +1,121 @@
+{
+  "id": "48eed12e-425b-4b3d-9667-0e5d148fc899",
+  "title": "Two nominal spacers: captured handoff",
+  "brief": "Offline synthetic demonstration; two 10x8x4 mm boxes with explicit 3 mm nominal separation. No hardware or supplier claims.",
+  "summary": "A captured project source is distinct from checked CAD. Mechanical/electrical review remains unverified.",
+  "starterId": "imported",
+  "createdAt": "2026-11-17T14:26:28.642Z",
+  "updatedAt": "2026-11-17T14:26:30.263Z",
+  "notes": "Later edit remains outside the earlier captured CAD package.",
+  "tools": [
+    "Local browser and existing OCP runtime"
+  ],
+  "assumptions": [
+    "Synthetic nominal CAD only; no purchased parts, fabrication tolerances or physical fit.",
+    "Costs are unknown, not zero-price quotes."
+  ],
+  "referenceImage": null,
+  "traySpec": null,
+  "solidSpec": null,
+  "assemblySpec": {
+    "schema": "hardware-studio-assembly-v1",
+    "title": "Two nominal spacers",
+    "units": "mm",
+    "assets": [
+      {
+        "partId": "spacer",
+        "source": {
+          "schema": "hardware-studio-solid-v1",
+          "title": "Nominal rectangular spacer",
+          "units": "mm",
+          "features": [
+            {
+              "id": "body",
+              "operation": "add",
+              "shape": "box",
+              "origin": [
+                0,
+                0,
+                0
+              ],
+              "size": [
+                10,
+                8,
+                4
+              ]
+            }
+          ],
+          "probes": []
+        }
+      }
+    ],
+    "instances": [
+      {
+        "id": "spacer-a",
+        "partId": "spacer",
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "spacer-b",
+        "partId": "spacer",
+        "position": [
+          13,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "cadUrl": "",
+  "wiringUrl": "",
+  "parts": [
+    {
+      "id": "spacer",
+      "name": "Synthetic 10 x 8 x 4 mm spacer",
+      "category": "Mechanical",
+      "qty": 2,
+      "unitCost": 0,
+      "detail": "Unpriced illustrative boxes, not an exact manufactured part.",
+      "voltage": "not applicable",
+      "pins": [],
+      "sourceUrl": "",
+      "specUrl": "",
+      "checkedAt": "",
+      "verified": false
+    }
+  ],
+  "wires": [],
+  "mechanicalConnections": [],
+  "steps": [
+    {
+      "id": "step-1",
+      "phase": "Inspect",
+      "title": "Reopen both placed STEP solids",
+      "detail": "Compare nominal x bounds and 3 mm software gap; physical fit remains unchecked.",
+      "partIds": [
+        "spacer"
+      ],
+      "done": false
+    }
+  ],
+  "powerRails": [],
+  "review": {
+    "electrical": false,
+    "mechanical": false,
+    "sourcing": false
+  }
+}

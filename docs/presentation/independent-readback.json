@@ -1,0 +1,52 @@
+{
+  "originalSourceCaptureSHA256": "70ac0e0d8164659ec89c75d76c18ab5edd1604c53d97ca0fb7b88b9891103d76",
+  "checkedCADSHA256": "4ef09141aeded19c7d87f76a45b37ec30315105c97e4480fd809e87183af8f8a",
+  "outerMembers": 24,
+  "outerPayloadHashes": 23,
+  "nestedSourceMembers": 11,
+  "allNestedSourceBytesExact": true,
+  "freshNativeSTEPValid": true,
+  "independentSameKernelReadback": {
+    "positive": {
+      "a_bounds_mm": [
+        -1e-07,
+        -1e-07,
+        -1e-07,
+        10.0000001,
+        8.0000001,
+        4.0000001
+      ],
+      "b_bounds_mm": [
+        12.9999999,
+        -1e-07,
+        -1e-07,
+        23.0000001,
+        8.0000001,
+        4.0000001
+      ],
+      "a_volume_mm3": 319.99999999999994,
+      "b_volume_mm3": 319.99999999999994,
+      "minimum_distance_mm": 3.0
+    },
+    "control": {
+      "a_bounds_mm": [
+        -1e-07,
+        -1e-07,
+        -1e-07,
+        10.0000001,
+        8.0000001,
+        4.0000001
+      ],
+      "b_bounds_mm": [
+        8.9999999,
+        -1e-07,
+        -1e-07,
+        19.0000001,
+        8.0000001,
+        4.0000001
+      ],
+      "overlap_mm3": 31.999999999999993
+    }
+  },
+  "meaning": "Independent direct OpenCascade inspection, same kernel family, nominal software geometry only"
+}

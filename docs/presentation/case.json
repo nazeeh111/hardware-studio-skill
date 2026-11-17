@@ -1,0 +1,17 @@
+{
+  "source_commit": "c649cc9b9ee84b8b667aa0fa26984d1d7746bc9d",
+  "dimensions_mm": [
+    10,
+    8,
+    4
+  ],
+  "captured_second_x_mm": 13,
+  "control_second_x_mm": 9,
+  "captured_gap_mm": 3.0,
+  "control_overlap_mm3": 31.999999999999993,
+  "captured_source_sha256": "70ac0e0d8164659ec89c75d76c18ab5edd1604c53d97ca0fb7b88b9891103d76",
+  "checked_cad_sha256": "4ef09141aeded19c7d87f76a45b37ec30315105c97e4480fd809e87183af8f8a",
+  "positive_status": "passed",
+  "control_status": "interference",
+  "meaning": "Synthetic nominal software geometry; structural validity is not clearance or physical approval. Control is a separate standalone assembly build, not a second browser project-CAD capture."
+}

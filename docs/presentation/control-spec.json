@@ -1,0 +1,63 @@
+{
+  "schema": "hardware-studio-assembly-v1",
+  "title": "Two nominal spacers",
+  "units": "mm",
+  "assets": [
+    {
+      "partId": "spacer",
+      "source": {
+        "schema": "hardware-studio-solid-v1",
+        "title": "Nominal rectangular spacer",
+        "units": "mm",
+        "features": [
+          {
+            "id": "body",
+            "operation": "add",
+            "shape": "box",
+            "origin": [
+              0,
+              0,
+              0
+            ],
+            "size": [
+              10,
+              8,
+              4
+            ]
+          }
+        ],
+        "probes": []
+      }
+    }
+  ],
+  "instances": [
+    {
+      "id": "spacer-a",
+      "partId": "spacer",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "spacer-b",
+      "partId": "spacer",
+      "position": [
+        9,
+        0,
+        0
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}
