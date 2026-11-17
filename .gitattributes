@@ -4,3 +4,6 @@
 *.blend binary
 *.jpg binary
 *.glb binary
+
+# Keep exact native downloads and presentation evidence.
+docs/presentation/** -text

@@ -1,0 +1,183 @@
+{
+  "schema": "hardware-studio-project-cad-v1",
+  "status": "passed",
+  "readback": "All requested CAD branches generated and fresh-process readback passed.",
+  "source_archive_sha256": "70ac0e0d8164659ec89c75d76c18ab5edd1604c53d97ca0fb7b88b9891103d76",
+  "project_json_sha256": "b5546635bd8495cee54b6afe4f283dce4cda945da20d2f97c2194a2728421cc0",
+  "source_archive_entry": "captured-source.zip",
+  "source_entries": {
+    "README.md": {
+      "sha256": "06a59f8044e6e42c3de8e50dcd858e804bbbfd2118fb99820bb4714f0e6f2505",
+      "bytes": 1253
+    },
+    "project.json": {
+      "sha256": "b5546635bd8495cee54b6afe4f283dce4cda945da20d2f97c2194a2728421cc0",
+      "bytes": 2924
+    },
+    "bill-of-materials.csv": {
+      "sha256": "1b9dd3e86841cc580ba6ce122b5cb049ca364b342de01bc6703e48e9811f4cf6",
+      "bytes": 276
+    },
+    "connections.csv": {
+      "sha256": "8b9789682b9cdcbf5466015b0daf375e07d2868d1cca971b328c81667ecf63f1",
+      "bytes": 159
+    },
+    "build-plan.txt": {
+      "sha256": "eaf2926dab860b93f7ad65f52d17bbb655f203b309d14cbd000c941b3789a582",
+      "bytes": 547
+    },
+    "mounting.csv": {
+      "sha256": "585685c9dc9594c038d4dff765dae57eead852b3ade7754698636749d4a75f07",
+      "bytes": 74
+    },
+    "wiring.svg": {
+      "sha256": "526dae1f1445e6e0536bdf5c412b576f96b42ef946633e72d79e5da99d050a66",
+      "bytes": 734
+    },
+    "assembly.svg": {
+      "sha256": "fb000d82b199e1a0b36847da7ccc1194d00d3190395bef75cb7e44f77e705269",
+      "bytes": 1184
+    },
+    "review.txt": {
+      "sha256": "9dce353e0292f664a4ef832fd5153fdbb600b4d5dbdf45df6654d5985531f41e",
+      "bytes": 661
+    },
+    "assembly-spec.json": {
+      "sha256": "87f5a57decdf1683f53a36fbe77987f106a4d5af5d8bd27edb6660d2cf7e6edc",
+      "bytes": 1026
+    },
+    "cad-sources/part-001.json": {
+      "sha256": "d7006bfd390b08c5726adbe801fd4cd5f8eed424f96333d1488b43ce91a17482",
+      "bytes": 334
+    }
+  },
+  "part_bindings": [
+    {
+      "partId": "spacer",
+      "source_entry": "cad-sources/part-001.json",
+      "asset_index": 1,
+      "instance_ids": [
+        "spacer-a",
+        "spacer-b"
+      ],
+      "placed": true,
+      "generated_asset": "generated-cad/assembly/assets/part-001"
+    }
+  ],
+  "branches": [
+    {
+      "branch": "assembly",
+      "project_field": "assemblySpec",
+      "source_entry": "assembly-spec.json",
+      "source_sha256": "87f5a57decdf1683f53a36fbe77987f106a4d5af5d8bd27edb6660d2cf7e6edc",
+      "status": "generated and fresh-process readback passed",
+      "geometry_status": "passed",
+      "build_report": "generated-cad/assembly/build-report.json",
+      "verification": "generated-cad/assembly/verification.json",
+      "strict_mesh_verification": null
+    }
+  ],
+  "files": {
+    "README.md": {
+      "sha256": "06a59f8044e6e42c3de8e50dcd858e804bbbfd2118fb99820bb4714f0e6f2505",
+      "bytes": 1253
+    },
+    "project.json": {
+      "sha256": "b5546635bd8495cee54b6afe4f283dce4cda945da20d2f97c2194a2728421cc0",
+      "bytes": 2924
+    },
+    "bill-of-materials.csv": {
+      "sha256": "1b9dd3e86841cc580ba6ce122b5cb049ca364b342de01bc6703e48e9811f4cf6",
+      "bytes": 276
+    },
+    "connections.csv": {
+      "sha256": "8b9789682b9cdcbf5466015b0daf375e07d2868d1cca971b328c81667ecf63f1",
+      "bytes": 159
+    },
+    "build-plan.txt": {
+      "sha256": "eaf2926dab860b93f7ad65f52d17bbb655f203b309d14cbd000c941b3789a582",
+      "bytes": 547
+    },
+    "mounting.csv": {
+      "sha256": "585685c9dc9594c038d4dff765dae57eead852b3ade7754698636749d4a75f07",
+      "bytes": 74
+    },
+    "wiring.svg": {
+      "sha256": "526dae1f1445e6e0536bdf5c412b576f96b42ef946633e72d79e5da99d050a66",
+      "bytes": 734
+    },
+    "assembly.svg": {
+      "sha256": "fb000d82b199e1a0b36847da7ccc1194d00d3190395bef75cb7e44f77e705269",
+      "bytes": 1184
+    },
+    "review.txt": {
+      "sha256": "9dce353e0292f664a4ef832fd5153fdbb600b4d5dbdf45df6654d5985531f41e",
+      "bytes": 661
+    },
+    "assembly-spec.json": {
+      "sha256": "87f5a57decdf1683f53a36fbe77987f106a4d5af5d8bd27edb6660d2cf7e6edc",
+      "bytes": 1026
+    },
+    "cad-sources/part-001.json": {
+      "sha256": "d7006bfd390b08c5726adbe801fd4cd5f8eed424f96333d1488b43ce91a17482",
+      "bytes": 334
+    },
+    "captured-source.zip": {
+      "sha256": "70ac0e0d8164659ec89c75d76c18ab5edd1604c53d97ca0fb7b88b9891103d76",
+      "bytes": 10346
+    },
+    "generated-cad/assembly/assembly.step": {
+      "sha256": "e58d3edfc5a289de08f17983b1397dd84551ca5ece7ee869e3174590ac38ac9b",
+      "bytes": 32492
+    },
+    "generated-cad/assembly/assets/part-001/solid.step": {
+      "sha256": "c5ab7a80ee5c6251521031fd260ff82cf67ce9024e88cb862f64211951ef4121",
+      "bytes": 15390
+    },
+    "generated-cad/assembly/assets/part-001/solid.stl": {
+      "sha256": "f6b2f26e82f72dd1802ed26b38ce1bea00b4ef70318515d4b998f651fca6e15d",
+      "bytes": 684
+    },
+    "generated-cad/assembly/assets/part-001/spec.json": {
+      "sha256": "a7060a811aa5cd4b9fc2f7814f61aba401250da0333195608be4ca9a786ba259",
+      "bytes": 346
+    },
+    "generated-cad/assembly/build-report.json": {
+      "sha256": "c1fe1bdef99b2e5d0f2a573337e9ef0b074e51cd35bd4359f2e6dd48557f98df",
+      "bytes": 2706
+    },
+    "generated-cad/assembly/instances/instance-001.step": {
+      "sha256": "fc0073f76b4bdd97b7573577be85951d30823a61ce8531b91985f13e1f4a0301",
+      "bytes": 15376
+    },
+    "generated-cad/assembly/instances/instance-001.stl": {
+      "sha256": "f6b2f26e82f72dd1802ed26b38ce1bea00b4ef70318515d4b998f651fca6e15d",
+      "bytes": 684
+    },
+    "generated-cad/assembly/instances/instance-002.step": {
+      "sha256": "b19d29a4f066d1f14643242bcacd4d21686abf6d66ad736a802bc941862f21f1",
+      "bytes": 15393
+    },
+    "generated-cad/assembly/instances/instance-002.stl": {
+      "sha256": "25d38d2dcf20b2147e38834c63e1842107befbc686f56fdc360797d680b7553b",
+      "bytes": 684
+    },
+    "generated-cad/assembly/spec.json": {
+      "sha256": "164af8cc9e39b0422524269017e2dbd92be85c6afe52a646ef0b529cd6004470",
+      "bytes": 1062
+    },
+    "generated-cad/assembly/verification.json": {
+      "sha256": "7263abb8ce762ff351f13ba5bf5f4b75161ed1739a09e40f1f026d8dfe01854b",
+      "bytes": 22179
+    }
+  },
+  "manifest_self_hash": "excluded to avoid a circular digest",
+  "limits": [
+    "STEP writing, reconstruction and readback use the same OpenCascade kernel; independent CAD interoperability is unverified.",
+    "Mesh boundary tests are sampled comparisons with fixed tolerances, not exhaustive surface-distance or self-intersection proof.",
+    "Geometry and interference describe nominal dimensions. Physical fit, manufacturing tolerances, materials, strength, electrical behavior and assembly instructions are unverified.",
+    "Tray and shared solid are project-level geometry without per-part bindings. Only explicit assembly sources and placements are bound to parts.",
+    "Unplaced assembly assets are preserved and checked locally, but excluded from assembly placements and pairwise interference checks.",
+    "Original project notes, diagrams, estimates and URLs are preserved as supplied. External resources are not fetched and planning claims are not validated."
+  ]
+}

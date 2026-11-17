@@ -6,7 +6,16 @@ Plan parts, wiring and build steps. Give parts real geometry. Keep the captured 
 
 [Open the app](https://nazeeh111.github.io/hardware-studio-skill/) · [Capability guide](docs/CAPABILITY_GUIDE.md) · [Reusable skill](skills/hardware-studio/SKILL.md)
 
-![Current public Hardware Studio workspace](assets/studio-desktop-current.jpg)
+<picture>
+  <source media="(max-width: 600px)" srcset="docs/presentation/handoff-mobile.png">
+  <img src="docs/presentation/handoff.png" alt="Two synthetic spacers share valid source. Captured placement gives a nominal 3 mm gap; a separate valid placement control gives 32 cubic mm interference. Structural checks, CAD readback and physical validation are different claims.">
+</picture>
+
+[Follow the actual captured handoff](docs/presentation/README.md) · [Portable source and CAD example](docs/presentation/worked-example.zip) · [Actual phone workspace](docs/presentation/workspace-375.png)
+
+One source can be structurally valid and still place parts in interference. This worked case keeps the actual source ZIP, generated STEP/STL, fresh readback and exact file hashes together. The nominal checks do not mark the device safe or ready to build.
+
+[Original workspace capture](assets/studio-desktop-current.jpg)
 
 Hardware Studio runs without a paid API. Your project stays in browser storage; optional AI and CAD run through local services.
 
@@ -22,6 +31,12 @@ Hardware Studio runs without a paid API. Your project stays in browser storage; 
 | Handoff | Source-only ZIP or one captured project + checked CAD ZIP | Sources, generated files and hashes kept together |
 
 Optional local vision supplies qualitative observations of captured mesh views. Model text is separate from geometry checks and never certifies a project. See [the complete workflow and limits](docs/CAPABILITY_GUIDE.md).
+
+## Choose the surface
+
+- **Browser workspace:** edit and transfer project records. The public site and a static local server can export source, but cannot run native CAD.
+- **Repository skill:** read [the skill](skills/hardware-studio/SKILL.md) and its project format, then run its Node structural checker. This is source supplied for a compatible agent host; cloning it or passing the checker does not install or validate a native host integration.
+- **Local CAD service or CLI:** supply an explicitly selected matching OCP runtime. The simple worked example uses the documented fallback; curves and fillets require the separate pinned build123d runtime. Models and vision are optional and were not used in this example.
 
 ## Run
 
