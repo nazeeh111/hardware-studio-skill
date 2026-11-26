@@ -70,7 +70,7 @@ test('project creation sends selected brief and part with no inherited CAD and a
  const entries=await env.zip('proposal-download'),report=JSON.parse(new TextDecoder().decode(entries.get('proposal.json')));
  assert.equal(report.request.context.target.id,'part-1');assert.equal(report.model.digest,MODEL.digest);assert.equal(report.model.identityCheckedBeforeAndAfter,true);assert.equal('identity'in report,false);assert.equal(report.schema,'hardware-studio-solid-intent-v1');
  assert.match(new TextDecoder().decode(entries.get('README.txt')),/no solved assembly or per-part CAD binding/);
- env.nodes.get('accept').click();assert.equal(env.applied,1);assert.deepEqual(env.state.spec,PART);assert.match(env.nodes.get('ai-status').textContent,/not an assembly binding/);
+ await env.nodes.get('accept').click();assert.equal(env.applied,1);assert.deepEqual(env.state.spec,PART);assert.match(env.nodes.get('ai-status').textContent,/not an assembly binding/);
 });
 
 test('project target is required before any model request',async t=>{
@@ -144,7 +144,7 @@ test('optional production geometry handler captures checked evidence without sav
  assert.equal(report.geometryChecks.length,1);assert.equal(report.geometryChecks[0].status,'passed');assert.equal('result'in report.geometryChecks[0],false);assert.equal('response'in report.geometryChecks[0],false);assert.equal('stlBytes'in report.geometryChecks[0],false);
  assert.equal(bytesSha(entries.get(folder+'source.json')),receipt.sourceSha256);assert.equal(bytesSha(entries.get(folder+'solid.stl')),receipt.stlSha256);assert.equal(binding.model.digest,MODEL.digest);assert.equal(binding.request.context.target.id,'part-1');assert.equal(binding.proposalCapturedAt,report.capturedAt);
  assert.match(new TextDecoder().decode(entries.get(folder+'README.txt')),/No STEP/);assert.match(new TextDecoder().decode(entries.get('README.txt')),/does not establish design intent/);
- env.nodes.get('accept').click();assert.equal(env.applied,1);assert.deepEqual(env.state.spec,CHECK_SOURCE);
+ await env.nodes.get('accept').click();assert.equal(env.applied,1);assert.deepEqual(env.state.spec,CHECK_SOURCE);
 });
 
 test('retry failure and cancellation retain the exact successful capture with bounded attempt history',async t=>{
