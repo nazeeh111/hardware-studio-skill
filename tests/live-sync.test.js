@@ -5,13 +5,13 @@ import vm from 'node:vm';
 const source=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 function productionFunction(name){const start=source.indexOf(`function ${name}(`),end=source.indexOf('\nfunction ',start+1);assert.ok(start>=0);return source.slice(start,end);}
 
-test('external CAD sync retains unfinished overview and power fields while updating geometry and review',()=>{
+test('CAD status refresh retains unfinished overview and power fields',()=>{
  for(const activeTab of ['overview','power','parts','wiring']){
-  const field={value:'Unfinished input',focused:true},project={geometry:'old'},calls=[];
-  const env={activeTab,current:()=>project,render(){field.value='last saved value';field.focused=false;calls.push('render');},syncCurrentGeometry(p){p.geometry='new';calls.push('sync');},renderReview(){calls.push('review');},projectChange:{refresh(){calls.push('revision');}},refreshProjectPackageUi(){calls.push('package');}};
+  const field={value:'Unfinished input',focused:true},project={},calls=[];
+  const env={activeTab,current:()=>project,render(){field.value='last saved value';field.focused=false;calls.push('render');},renderReview(){calls.push('review');},projectChange:{refresh(){calls.push('revision');}},refreshProjectPackageUi(){calls.push('package');}};
   vm.runInNewContext(productionFunction('refreshGeometry'),env);
   env.refreshGeometry();
-  assert.equal(project.geometry,'new');assert.deepEqual(field,{value:'Unfinished input',focused:true});assert.deepEqual(calls,['sync','review','revision','package']);
+  assert.deepEqual(field,{value:'Unfinished input',focused:true});assert.deepEqual(calls,['review','revision','package']);
  }
 });
 test('external CAD sync refreshes CAD-dependent Assembly and Build views',()=>{

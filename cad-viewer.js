@@ -41,10 +41,26 @@ function draw(){
   renderGeometry(width,height,{meshes,center},[c,sp*s,-cp*s,-s,sp*c,-cp*c,0,cp,sp],1.25*zoom/Math.max(span,1e-6)*Math.min(1,width/height),lift);
 }
 function reset(){yaw=-.65;pitch=.72;zoom=1;draw();}
+function updateVisibility() {
+  const visible = meshes.filter(mesh => mesh.visible);
+  $('#empty-view').hidden = meshes.length > 0;
+  $('#hidden-view').hidden = meshes.length === 0 || visible.length > 0;
+  const canExport = visible.length > 0 && gl && !gl.isContextLost();
+  $('#export-glb').disabled = !canExport;
+  $('#export-sheet').disabled = sheetBusy || !canExport;
+  return visible;
+}
 function controls(){
   const list=$('#mesh-list');list.replaceChildren();
-  for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible=check.checked;$('#export-glb').disabled=!meshes.some(m=>m.visible);$('#export-sheet').disabled=sheetBusy||!meshes.some(m=>m.visible);geometryRevision++;visionPanel?.geometryChanged();draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
-  $('#empty-view').hidden=meshes.length>0;$('#export-glb').disabled=!meshes.length;$('#export-sheet').disabled=sheetBusy||!meshes.length;$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').closest('label').hidden=!meshes.some(m=>m.cover);$('#explode').checked=false;$('#glb-note').textContent='GLB uses meters and a Y-up scene. It preserves original mesh positions. '+(meshes.some(m=>m.cover)?'The lifted display offset is excluded. ':'')+'Mesh dimensions do not establish fit or manufacturing quality.';reset();
+  for(const mesh of meshes){const row=document.createElement('div');row.className='mesh-row';const label=document.createElement('label'),check=document.createElement('input'),color=document.createElement('span'),name=document.createElement('span'),detail=document.createElement('small');check.type='checkbox';check.checked=mesh.visible;check.addEventListener('change',()=>{mesh.visible = check.checked;
+    const visible = updateVisibility();
+    const triangles = visible.reduce((total, part) => total + part.triangles, 0);
+    status(`${visible.length} of ${meshes.length} meshes visible · ${triangles.toLocaleString()} triangles. ` +
+      (visible.length ? 'Exports use the visible geometry.' : 'Select a mesh to inspect or export it.'));
+    geometryRevision++;
+    visionPanel?.geometryChanged();
+    draw();});color.className='mesh-color';color.style.background=`rgb(${mesh.color.map(n=>Math.round(n*255)).join(',')})`;name.textContent=mesh.name;detail.textContent=`${mesh.max.map((n,k)=>(n-mesh.min[k]).toFixed(2)).join(' × ')} mm · ${mesh.triangles.toLocaleString()} triangles`;label.append(check,color,name);row.append(label,detail);list.append(row);}
+  updateVisibility();$('#explode').disabled=!meshes.some(m=>m.cover);$('#explode').closest('label').hidden=!meshes.some(m=>m.cover);$('#explode').checked=false;$('#glb-note').textContent='GLB uses meters and a Y-up scene. It preserves original mesh positions. '+(meshes.some(m=>m.cover)?'The lifted display offset is excluded. ':'')+'Mesh dimensions do not establish fit or manufacturing quality.';reset();
 }
 function replaceMeshes(next){
  const prepared=[];

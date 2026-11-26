@@ -8,3 +8,13 @@ export function writeWorkspace(storage, key, expectedRaw, nextRaw) {
   storage.setItem(key, nextRaw);
   return nextRaw;
 }
+
+// Standalone workbench files remain separate from project revisions, but their
+// competing tabs still need one serialized compare-and-write operation.
+export async function writeStandalone(storage, locks, key, expectedRaw, nextRaw, guard=null) {
+  if (!locks || typeof locks.request !== 'function') throw new Error('Safe source saving requires Web Locks.');
+  return locks.request(`hardware-studio-standalone:${key}`, {mode:'exclusive'}, () => {
+    if(guard)guard();
+    return writeWorkspace(storage,key,expectedRaw,nextRaw);
+  });
+}

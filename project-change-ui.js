@@ -148,7 +148,7 @@ export function createProjectChangeController({ capture, assertCurrent, apply, g
       if (ticket === run) { controller = null; $('generate').textContent = 'Propose changes'; refresh(); }
     }
   }
-  dialog.addEventListener('click', event => {
+  dialog.addEventListener('click', async event => {
     const id = event.target.closest('button')?.id;
     if (id === 'change-close' || id === 'change-discard') dialog.close();
     else if (id === 'change-generate') void generate();
@@ -165,8 +165,10 @@ export function createProjectChangeController({ capture, assertCurrent, apply, g
     }
     else if (id === 'change-apply' && proposal) {
       const stale = contextError(); if (stale) return error(stale);
+      const selectedProposal=proposal, selectedCapture=captured, selectedBase=base;
+      const guard=()=>{if(proposal!==selectedProposal||captured!==selectedCapture||base!==selectedBase||$('request').value!==selectedCapture.request||$('model').value!==selectedCapture.model)throw new Error('The proposal or request changed. Review it again before applying.');};
       try {
-        if (!apply(base, proposal.project)) return error('The change could not be saved. The proposal and original project are preserved. Download the proposal before closing.');
+        if (!await apply(selectedBase, selectedProposal.project, guard)) return error('The change could not be saved. The proposal and original project are preserved. Download the proposal before closing.');
         if (recoveryRaw === null) {
           try { expectedRaw = writeWorkspace(sessionStorage, requestKey(base.project.id), expectedRaw, ''); $('request').value = ''; }
           catch { toast('Changes saved. The change request remains in tab storage because it could not be cleared.'); }

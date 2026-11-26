@@ -1,18 +1,20 @@
 import {validateSolidSpec,needsCurvedRuntime} from './solid-spec.js?v=3';
-import {installSolidIntent} from './solid-intent-ui.js?v=7';
+import {installSolidIntent} from './solid-intent-ui.js?v=8';
 import {SOLID_PREVIEW_KEY,solidSnapshot} from './solid-preview.js?v=5';
 import {createSolidEditor} from './solid-editor.js?v=4';
-import {writeWorkspace,WorkspaceConflictError} from './workspace-store.js?v=1';
+import {writeWorkspace,writeStandalone,WorkspaceConflictError} from './workspace-store.js?v=2';
+import {createProjectStore,PROJECT_STORE_KEY,ProjectStoreConflict} from './project-store.js?v=4';
 import {solidContext} from './project-geometry.js?v=4';
 import {validateAssemblySpec,emptyAssembly,setAssemblyPartSource} from './assembly-spec.js?v=2';
-import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=43';
+import {parseSavedWorkspace,STORAGE_KEY} from './core.js?v=44';
 const context=solidContext(location.search);
 const $=s=>document.querySelector(s),KEY=context.key,DRAFT=context.draftKey;
+let owner=null,storeRaw=null,recoveryBundle=null,sourcePersisted=true;
 let spec=null,expectedRaw=null,preservedRaw=null,blocked=false,states=[],cursor=0,ready=false,advancedReady=false,busy=false,intent=null,assemblyBase=null,boundBaseline=null,embeddedBaseline=null;
 const note=text=>{$('#solid-status').textContent=text;};
 const source=()=>spec?JSON.stringify(spec,null,2):'';
 const dirty=()=>$('#solid-source').value!==source();
-function canGenerate(){return Boolean(spec)&&!dirty()&&ready&&(!needsCurvedRuntime(spec)||advancedReady);}
+function canGenerate(){return Boolean(spec)&&!dirty()&&sourcePersisted&&(!context.id||projectRaw()===expectedRaw)&&ready&&(!needsCurvedRuntime(spec)||advancedReady);}
 function buttons(){const usable=Boolean(spec)&&!dirty();$('#solid-preview').disabled=!canGenerate()||busy;$('#solid-package').disabled=!canGenerate()||busy;$('#solid-export').disabled=!$('#solid-source').value;$('#solid-undo').disabled=dirty()||cursor<=0;$('#solid-redo').disabled=dirty()||cursor>=states.length-1;$('#solid-revert').disabled=!dirty();$('#solid-runtime').textContent=!ready?'Feature CAD runtime unavailable. Run the current local server to generate; source editing and export work here.':needsCurvedRuntime(spec)&&!advancedReady?'This source needs the curved CAD runtime. Run sh tools/cad-runtime/setup.sh, then restart the local server. Source is retained.':advancedReady?'Local CAD runtime ready, including curves and edge fillets. Builds and readback stay on this computer.':'Local basic CAD runtime ready. Curves and edge fillets need the optional project runtime.';}
 function featureDetail(feature){
  if(feature.operation==='fillet')return `FILLET · R ${feature.radius} mm · ${feature.edges.length} edge seeds · picking tolerance ${feature.tolerance} mm`;
@@ -27,7 +29,7 @@ function render(){
  const probes=document.createElement('div');probes.className='feature-probes';probes.textContent=`${spec.probes.length} selected region check${spec.probes.length===1?'':'s'}: ${spec.probes.map(p=>p.id+' = '+p.expect).join('; ')||'none supplied'}. These run on generated geometry, not on this source preview.`;list.append(probes);buttons();intent?.refresh();
 }
 function currentProject(){
- const project=parseSavedWorkspace(localStorage.getItem(STORAGE_KEY)).projects.find(p=>p.id===context.id);
+ const project=JSON.parse(localStorage.getItem(PROJECT_STORE_KEY)).workspace.projects.find(p=>p.id===context.id);
  if(!project)throw new Error('Project unavailable. Return to the studio and open an existing project.');
  return project;
 }
@@ -56,31 +58,35 @@ function intentProjectIdentity(){
  const project=context.partId?requireBoundCurrent():currentProject();
  return JSON.stringify({design:designIdentity(project),...(expectedRaw===null?(context.partId?{embedded:embeddedIdentity(project)}:{source:project.solidSpec??null}):{})});
 }
+function projectRaw(){try{owner.assertCurrent(storeRaw);return expectedRaw;}catch{return 'changed elsewhere';}}
 function intentReadState(){
  let projectSignature=null,contextError=null;
  try{projectSignature=intentProjectIdentity();}catch(error){contextError=error.message;}
- return {spec,dirty:dirty(),blocked:blocked||!!contextError,expectedRaw,currentRaw:localStorage.getItem(KEY),projectSignature,contextError};
+ return {spec,dirty:dirty(),blocked:blocked||!!contextError,expectedRaw,currentRaw:context.id?projectRaw():localStorage.getItem(KEY),projectSignature,contextError};
 }
 function recovery(error){
- if(error instanceof WorkspaceConflictError){try{preservedRaw=localStorage.getItem(KEY);}catch{}blocked=true;$('#solid-recovery').hidden=false;$('#solid-replace').disabled=true;}
+ if(error instanceof WorkspaceConflictError||error instanceof ProjectStoreConflict){try{preservedRaw=context.id?localStorage.getItem(PROJECT_STORE_KEY):localStorage.getItem(KEY);if(context.id)recoveryBundle=JSON.stringify({schema:'hardware-studio-workbench-recovery-v1',canonicalRaw:preservedRaw,legacyGeometryRaw:localStorage.getItem(KEY),working:$('#solid-source').value},null,2);}catch{}blocked=true;$('#solid-recovery').hidden=false;$('#solid-replace').disabled=true;}
 }
 // Bound sources share one assembly sidecar. Replace only the selected asset,
 // then compare the complete captured raw value so another part cannot be lost.
-function persist(next){
+async function persist(next,guard=null){
  if(blocked)throw new Error('Resolve saved-source recovery first.');
- const project=context.partId?requireBoundCurrent():null;
+ const project=context.id?(context.partId?requireBoundCurrent():currentProject()):null;
  const nextAssembly=context.partId?setAssemblyPartSource(assemblyBase,context.partId,next,project.title.slice(0,100)):null;
- try{expectedRaw=writeWorkspace(localStorage,KEY,expectedRaw,JSON.stringify(nextAssembly||next));}
+ try{if(context.id){const changed=structuredClone(project);changed[context.partId?'assemblySpec':'solidSpec']=nextAssembly||next;const saved=await owner.revise(storeRaw,context.id,changed,'Before feature CAD edit',{guard});storeRaw=saved.raw;expectedRaw=JSON.stringify(nextAssembly||next);}else expectedRaw=await writeStandalone(localStorage,navigator.locks,KEY,expectedRaw,JSON.stringify(next),guard);}
  catch(error){recovery(error);throw error;}
  if(nextAssembly){assemblyBase=nextAssembly;boundBaseline=boundIdentity(project);embeddedBaseline=embeddedIdentity(project);}
  try{sessionStorage.removeItem(DRAFT);}catch{}
 }
-function commit(next,history=true,mustSave=false){
- next=validateSolidSpec(next);let saved=false,saveFailure='';
- try{persist(next);saved=true;}catch(error){if(mustSave)throw error;saveFailure=error.message||'Storage unavailable.';}
+async function commit(next,history=true,mustSave=false,guard=null){
+ next=validateSolidSpec(next);let saved=false,saveFailure='';const editorBefore=$('#solid-source').value,priorSpec=spec;
+ const currentGuard=()=>{if($('#solid-source').value!==editorBefore||spec!==priorSpec)throw new Error('Working source changed while saving. Apply the newer draft again.');if(guard)guard();};
+ try{await persist(next,currentGuard);saved=true;}catch(error){if(mustSave)throw error;keepEditor();saveFailure=error.message||'Storage unavailable.';note(`Working source is not saved. ${saveFailure} Export it or retry before closing.`);return false;}
+ sourcePersisted=saved;
  if(history&&JSON.stringify(next)!==JSON.stringify(spec)){states=states.slice(0,cursor+1);states.push(next);if(states.length>20)states.shift();cursor=states.length-1;}
  spec=next;render();if(!saved)keepEditor();
  note(`${spec.features.length} applied features; ${spec.probes.length} selected region checks. ${saved?context.partId?'CAD source saved for this assembly part in this browser.':context.id?'Source saved for this project in this browser.':'Source saved in this browser.':`Working copy is not saved over the stored source. ${saveFailure} Export it before closing.`} Generate CAD to check the solid.`);
+ return true;
 }
 function download(name,data,type='application/json'){const url=URL.createObjectURL(new Blob([data],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 async function example(name='mounting-bracket'){const response=await fetch(`./tools/solid-generator/examples/${name}.json`);if(!response.ok)throw new Error('Bracket example unavailable. Import a feature JSON file.');return validateSolidSpec(await response.json());}
@@ -93,24 +99,26 @@ const dimensionEditor=createSolidEditor($('#solid-dimensions'),{change:raw=>{
 $('#solid-source').addEventListener('input',()=>{dimensionEditor.setSource($('#solid-source').value);sourceChanged();});
 $('#solid-revert').addEventListener('click',()=>{render();try{sessionStorage.removeItem(DRAFT);}catch{}note('Unapplied changes discarded. Last applied source retained.');});
 $('#solid-choose-import').addEventListener('click',()=>$('#solid-import').click());
-$('#solid-apply').addEventListener('click',()=>{try{if($('#solid-source').value.length>65536)throw new Error('Source must be under 64 KB.');commit(JSON.parse($('#solid-source').value));}catch(error){note(error.message);}});
-for(const [id,delta]of [['solid-undo',-1],['solid-redo',1]])$('#'+id).addEventListener('click',()=>{const next=cursor+delta;if(next>=0&&next<states.length){cursor=next;commit(states[cursor],false);}});
-$('#solid-example').addEventListener('click',async()=>{try{commit(await example());}catch(error){note(error.message);}});
-$('#solid-profile-example').addEventListener('click',async()=>{try{commit(await example('profile-plate'));}catch(error){note(error.message);}});
-$('#solid-curve-example').addEventListener('click',async()=>{try{commit(await example('rounded-pull-tab'));}catch(error){note(error.message);}});
-$('#solid-import').addEventListener('change',async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>65536)throw new Error('Import source under 64 KB.');commit(JSON.parse(await file.text()));}catch(error){note(error.message);}});
+$('#solid-apply').addEventListener('click',async()=>{try{if($('#solid-source').value.length>65536)throw new Error('Source must be under 64 KB.');await commit(JSON.parse($('#solid-source').value));}catch(error){note(error.message);}});
+for(const [id,delta]of [['solid-undo',-1],['solid-redo',1]])$('#'+id).addEventListener('click',async()=>{const next=cursor+delta;if(next>=0&&next<states.length){if(await commit(states[next],false)){cursor=next;buttons();}}});
+$('#solid-example').addEventListener('click',async()=>{const generation=storeRaw,before=$('#solid-source').value;try{const loaded=await example();if($('#solid-source').value!==before||(context.id&&(storeRaw!==generation||localStorage.getItem(PROJECT_STORE_KEY)!==generation)))throw new Error('Source or project changed while loading. Choose the example again.');await commit(loaded);}catch(error){note(error.message);}});
+$('#solid-profile-example').addEventListener('click',async()=>{const generation=storeRaw,before=$('#solid-source').value;try{const loaded=await example('profile-plate');if($('#solid-source').value!==before||(context.id&&(storeRaw!==generation||localStorage.getItem(PROJECT_STORE_KEY)!==generation)))throw new Error('Source or project changed while loading. Choose the example again.');await commit(loaded);}catch(error){note(error.message);}});
+$('#solid-curve-example').addEventListener('click',async()=>{const generation=storeRaw,before=$('#solid-source').value;try{const loaded=await example('rounded-pull-tab');if($('#solid-source').value!==before||(context.id&&(storeRaw!==generation||localStorage.getItem(PROJECT_STORE_KEY)!==generation)))throw new Error('Source or project changed while loading. Choose the example again.');await commit(loaded);}catch(error){note(error.message);}});
+$('#solid-import').addEventListener('change',async event=>{const file=event.target.files?.[0],captured=storeRaw,sourceBefore=$('#solid-source').value;event.target.value='';if(!file)return;try{if(file.size>65536)throw new Error('Import source under 64 KB.');const contents=await file.text();if(context.id&&(storeRaw!==captured||localStorage.getItem(PROJECT_STORE_KEY)!==captured)||$('#solid-source').value!==sourceBefore)throw new Error('Source or project changed while the file was read. Import it again.');await commit(JSON.parse(contents));}catch(error){note(error.message);}});
 $('#solid-export').addEventListener('click',()=>download('hardware-studio-feature-source.json',$('#solid-source').value));
 $('#solid-backup').addEventListener('click',()=>{
- download(context.partId?'hardware-studio-original-assembly-source.json':'hardware-studio-original-feature-source.json',preservedRaw??'');
+ download(context.partId?'hardware-studio-original-assembly-source.json':'hardware-studio-original-feature-source.json',recoveryBundle??preservedRaw??'');
+ if(context.id){note('Saved and working bytes downloaded. Reload the latest project before reconciling this source.');return;}
  if(context.partId&&preservedRaw!==null){try{validateAssemblySpec(JSON.parse(preservedRaw));}catch{note('Original assembly bytes downloaded. They are unreadable; repair or import the complete assembly in the assembly workspace before reopening this part. Export this working source separately.');return;}}
  $('#solid-replace').disabled=false;
 });
-$('#solid-replace').addEventListener('click',()=>{
+$('#solid-replace').addEventListener('click',async()=>{
+ if(context.id)return note('Export your working source and reload the latest project before applying it.');
  if($('#solid-replace').disabled||dirty()||!spec)return note('Apply edited source before replacing saved bytes.');
  try{
   const project=context.partId?requireBoundCurrent():null;
   const replacement=context.partId?setAssemblyPartSource(preservedRaw===null?(project.assemblySpec||emptyAssembly(project.title.slice(0,100))):validateAssemblySpec(JSON.parse(preservedRaw)),context.partId,spec,project.title.slice(0,100)):spec;
-  expectedRaw=writeWorkspace(localStorage,KEY,preservedRaw,JSON.stringify(replacement));
+  expectedRaw=await writeStandalone(localStorage,navigator.locks,KEY,preservedRaw,JSON.stringify(replacement));
   if(context.partId){assemblyBase=replacement;boundBaseline=boundIdentity(project);embeddedBaseline=embeddedIdentity(project);}
   blocked=false;preservedRaw=null;$('#solid-recovery').hidden=true;try{sessionStorage.removeItem(DRAFT);}catch{}
   intent?.refresh();note(context.partId?'This part source saved after original-byte backup. Other part sources and all placements were preserved.':'Working source saved after original-byte backup.');
@@ -127,9 +135,10 @@ async function initialize(){
  }
  let initial;
  try{
+  if(context.id){owner=createProjectStore({storage:localStorage,locks:navigator.locks});const opened=await owner.open();storeRaw=opened.raw;}
   const project=context.id?currentProject():null;
   if(context.partId){boundBaseline=boundIdentity(project);embeddedBaseline=embeddedIdentity(project);$('#solid-project').textContent=`PROJECT / ${project.title} / PART / ${project.parts.find(part=>part.id===context.partId).name}`;}
-  expectedRaw=localStorage.getItem(KEY);
+  expectedRaw=context.id?(context.partId?(project.assemblySpec==null?null:JSON.stringify(project.assemblySpec)):(project.solidSpec==null?null:JSON.stringify(project.solidSpec))):localStorage.getItem(KEY);
   if(expectedRaw!==null){
    try{
     if(expectedRaw.length>(context.partId?262144:65536))throw new Error('Saved source exceeds its size limit.');
@@ -143,7 +152,8 @@ async function initialize(){
   note(initial?'Saved feature source restored. Generate to check geometry.':blocked?'Saved bytes preserved. Import or explicitly load a separate working source.':'No source inherited. Describe the first part and supply its dimensions.');
   try{const draft=sessionStorage.getItem(DRAFT);if(draft&&draft.length<=65536&&draft!==source()){$('#solid-source').value=draft;if(!dimensionEditor.setSource(draft))$('#solid-json').open=true;note('Unapplied source restored from this tab. Apply or export it before closing.');$('#solid-chip').textContent='UNAPPLIED';buttons();}}catch{}
   void runtime();
-  intent=installSolidIntent({storageKey:DRAFT+'-intent-v1',boundPartId:context.partId||null,project:context.id?currentProject:null,readState:intentReadState,apply:next=>commit(next,true,true)});
+  intent=installSolidIntent({storageKey:DRAFT+'-intent-v1',boundPartId:context.partId||null,project:context.id?currentProject:null,readState:intentReadState,apply:(next,guard)=>commit(next,true,true,guard)});
  }catch(error){note(error.message);}
 }
+addEventListener('storage',event=>{if(context.id&&(event.key===PROJECT_STORE_KEY||event.key===STORAGE_KEY||event.key===KEY)){buttons();if(projectRaw()!==expectedRaw)note('Project or legacy source changed elsewhere. Export your working source and reload before generating.');}});
 void initialize();
